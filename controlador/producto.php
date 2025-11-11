@@ -1,0 +1,172 @@
+<?php
+
+use LoveMakeup\Proyecto\Modelo\Producto;
+use LoveMakeup\Proyecto\Modelo\Bitacora;
+
+session_start();
+if (empty($_SESSION["id"])) {
+    header("location:?pagina=login");
+    exit;
+}
+if (!empty($_SESSION['id'])) {
+        require_once 'verificarsession.php';
+} 
+
+if ($_SESSION["nivel_rol"] == 1) {
+        header("Location: ?pagina=catalogo");
+        exit();
+}/*  Validacion cliente  */
+
+require_once 'permiso.php';
+$objproducto = new Producto();
+
+$registro = $objproducto->consultar();
+$categoria = $objproducto->obtenerCategoria();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['registrar'])) {
+        if (!empty($_POST['nombre']) && !empty($_POST['descripcion']) && !empty($_POST['marca']) && !empty($_POST['cantidad_mayor']) && !empty($_POST['precio_mayor']) && !empty($_POST['precio_detal']) && !empty($_POST['stock_maximo']) && !empty($_POST['stock_minimo']) && !empty($_POST['categoria'])) {
+            $rutaImagen = 'assets/img/logo.PNG';
+            
+            if (isset($_FILES['imagenarchivo']) && $_FILES['imagenarchivo']['error'] == 0) {
+                $nombreArchivo = $_FILES['imagenarchivo']['name'];
+                $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'];
+                $rutaDestino = 'assets/img/Imgproductos/' . $nombreArchivo;
+                move_uploaded_file($rutaTemporal, $rutaDestino);
+                $rutaImagen = $rutaDestino;
+            }
+
+            $datosProducto = [
+                'operacion' => 'registrar',
+                'datos' => [
+                    'nombre' => ucfirst(strtolower($_POST['nombre'])),
+                    'descripcion' => $_POST['descripcion'],
+                    'marca' => ucfirst(strtolower($_POST['marca'])),
+                    'cantidad_mayor' => $_POST['cantidad_mayor'],
+                    'precio_mayor' => $_POST['precio_mayor'],
+                    'precio_detal' => $_POST['precio_detal'],
+                    'stock_maximo' => $_POST['stock_maximo'],
+                    'stock_minimo' => $_POST['stock_minimo'],
+                    'imagen' => $rutaImagen,
+                    'id_categoria' => $_POST['categoria']
+                ]
+            ];
+
+            $resultadoRegistro = $objproducto->procesarProducto(json_encode($datosProducto));
+
+            if ($resultadoRegistro['respuesta'] == 1) {
+                $bitacora = [
+                    'id_persona' => $_SESSION["id"],
+                    'accion' => 'Registro de producto',
+                    'descripcion' => 'Se registró el producto: ' . $datosProducto['datos']['nombre'] . ' ' . 
+                                    $datosProducto['datos']['marca']
+                ];
+                $bitacoraObj = new Bitacora();
+                $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);
+            }
+
+            echo json_encode($resultadoRegistro);
+        }
+    } else if(isset($_POST['actualizar'])) {
+        $rutaImagen = $_POST['imagenActual'];
+            
+        if (isset($_FILES['imagenarchivo']) && $_FILES['imagenarchivo']['error'] == 0) {
+            $nombreArchivo = $_FILES['imagenarchivo']['name'];
+            $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'];
+            $rutaDestino = 'assets/img/Imgproductos/' . $nombreArchivo;
+            move_uploaded_file($rutaTemporal, $rutaDestino);
+            $rutaImagen = $rutaDestino;
+        }
+
+        $datosProducto = [
+            'operacion' => 'actualizar',
+            'datos' => [
+                'id_producto' => $_POST['id_producto'],
+                'nombre' => ucfirst(strtolower($_POST['nombre'])),
+                'descripcion' => $_POST['descripcion'],
+                'marca' => ucfirst(strtolower($_POST['marca'])),
+                'cantidad_mayor' => $_POST['cantidad_mayor'],
+                'precio_mayor' => $_POST['precio_mayor'],
+                'precio_detal' => $_POST['precio_detal'],
+                'stock_maximo' => $_POST['stock_maximo'],
+                'stock_minimo' => $_POST['stock_minimo'],
+                'imagen' => $rutaImagen,
+                'id_categoria' => $_POST['categoria']
+            ]
+        ];
+
+        $resultado = $objproducto->procesarProducto(json_encode($datosProducto));
+
+        if ($resultado['respuesta'] == 1) {
+            $bitacora = [
+                'id_persona' => $_SESSION["id"],
+                'accion' => 'Modificación de producto',
+                'descripcion' => 'Se modificó el producto: ' . $datosProducto['datos']['nombre'] . ' ' . 
+                                $datosProducto['datos']['marca']
+            ];
+            $bitacoraObj = new Bitacora();
+            $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);
+        }
+
+        echo json_encode($resultado);
+
+    } else if(isset($_POST['eliminar'])) {
+        $datosProducto = [
+            'operacion' => 'eliminar',
+            'datos' => [
+                'id_producto' => $_POST['id_producto']
+            ]
+        ];
+
+        $resultado = $objproducto->procesarProducto(json_encode($datosProducto));
+
+        if ($resultado['respuesta'] == 1) {
+            $bitacora = [
+                'id_persona' => $_SESSION["id"],
+                'accion' => 'Eliminación de producto',
+                'descripcion' => 'Se eliminó el producto con ID: ' . $datosProducto['datos']['id_producto']
+            ];
+            $bitacoraObj = new Bitacora();
+            $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);
+        }
+
+        echo json_encode($resultado);
+    } else if(isset($_POST['accion']) && $_POST['accion'] == 'cambiarEstatus') {
+        $datosProducto = [
+            'operacion' => 'cambiarEstatus',
+            'datos' => [
+                'id_producto' => $_POST['id_producto'],
+                'estatus_actual' => $_POST['estatus_actual']
+            ]
+        ];
+
+        $resultado = $objproducto->procesarProducto(json_encode($datosProducto));
+
+        if ($resultado['respuesta'] == 1) {
+            $bitacora = [
+                'id_persona' => $_SESSION["id"],
+                'accion' => 'Cambio de estatus de producto',
+                'descripcion' => 'Se cambió el estatus del producto con ID: ' . $datosProducto['datos']['id_producto']
+            ];
+            $bitacoraObj = new Bitacora();
+            $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);
+        }
+
+        echo json_encode($resultado);
+    }
+} else if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'ver')) {
+        $bitacora = [
+        'id_persona' => $_SESSION["id"],
+        'accion' => 'Acceso a Módulo',
+        'descripcion' => 'módulo de Producto'
+         ];
+        $bitacoraObj = new Bitacora();
+        $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);
+ $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'producto';
+        require_once 'vista/producto.php';
+        } else {
+                require_once 'vista/seguridad/privilegio.php';
+
+        } 
+
+?>
