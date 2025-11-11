@@ -35,6 +35,13 @@ Este archivo es el corazón de Composer. Define la configuración del proyecto y
             "LoveMakeup\\Proyecto\\Controlador\\": "controlador/",
             "LoveMakeup\\Proyecto\\Config\\": "config/"
         }
+    },
+    "require": {
+        "dompdf/dompdf": "^2.0",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
     }
 }
 ```
@@ -128,6 +135,108 @@ class Salida extends Conexion {
 - Se agregó `use LoveMakeup\Proyecto\Config\Conexion;` para importar la clase de conexión
 - Ahora la clase se identifica completamente por su namespace
 
+---
+
+### 5. Integración de PHPUnit para Testing
+
+**PHPUnit** es un framework de pruebas unitarias para PHP que permite verificar que el código funciona correctamente mediante la ejecución de tests automatizados.
+
+#### 5.1. Configuración en `composer.json`
+
+PHPUnit se ha añadido como dependencia de desarrollo en la sección `require-dev`:
+
+```json
+"require-dev": {
+    "phpunit/phpunit": "*"
+}
+```
+
+**¿Por qué en `require-dev`?**
+- Las herramientas de testing solo se necesitan durante el desarrollo
+- No se instalan en producción, reduciendo el tamaño del proyecto en servidores
+- Permite mantener el código de producción más limpio
+
+#### 5.2. Instalación de PHPUnit
+
+Para instalar PHPUnit y sus dependencias, ejecutar:
+
+```bash
+composer update
+```
+
+O específicamente para dependencias de desarrollo:
+
+```bash
+composer install --dev
+```
+
+#### 5.3. Uso de PHPUnit
+
+Una vez instalado, PHPUnit estará disponible en:
+
+```
+vendor/bin/phpunit
+```
+
+**Ejemplo de ejecución de tests:**
+
+```bash
+# Ejecutar todos los tests
+vendor/bin/phpunit
+
+# Ejecutar tests de un directorio específico
+vendor/bin/phpunit tests/
+
+# Ejecutar un archivo de test específico
+vendor/bin/phpunit tests/ModeloTest.php
+```
+
+#### 5.4. Estructura de Tests
+
+Se ha creado la carpeta `tests/` en la raíz del proyecto para organizar los archivos de prueba. La estructura recomendada es:
+
+```
+Proyecto-III/
+├── tests/
+│   ├── Modelo/
+│   │   └── SalidaTest.php
+│   ├── Controlador/
+│   └── Config/
+│       └── ConexionTest.php
+├── composer.json
+└── ...
+```
+
+**Nota:** La carpeta `tests/` ya está creada y lista para agregar los archivos de prueba.
+
+**Ejemplo de test básico:**
+
+```php
+<?php
+
+namespace Tests\Modelo;
+
+use PHPUnit\Framework\TestCase;
+use LoveMakeup\Proyecto\Modelo\Salida;
+
+class SalidaTest extends TestCase
+{
+    public function testSalidaExiste()
+    {
+        $salida = new Salida();
+        $this->assertInstanceOf(Salida::class, $salida);
+    }
+}
+```
+
+#### 5.5. Ventajas de PHPUnit
+
+- **Detección temprana de errores**: Los tests ayudan a encontrar problemas antes de que lleguen a producción
+- **Documentación viva**: Los tests sirven como documentación de cómo debe funcionar el código
+- **Refactorización segura**: Permite modificar código con confianza sabiendo que los tests detectarán errores
+- **Mejora de calidad**: Fomenta escribir código más modular y testeable
+
+---
 
 ## Ventajas de estos Cambios
 
@@ -150,6 +259,11 @@ class Salida extends Conexion {
 - Fácil agregar nuevas dependencias externas
 - Preparado para usar librerías de terceros
 - Estructura lista para crecer
+
+### 5. **Testing y Calidad**
+- PHPUnit integrado para pruebas unitarias
+- Permite verificar el correcto funcionamiento del código
+- Facilita la detección temprana de errores
 
 ---
 
@@ -186,6 +300,7 @@ $salida = new \LoveMakeup\Proyecto\Modelo\Salida();
 ### Archivos Nuevos Creados:
 1. `composer.json` - Configuración de Composer
 2. `vendor/autoload.php` - Autoloader personalizado
+3. `tests/` - Carpeta para archivos de pruebas unitarias con PHPUnit
 
 ### Archivos Modificados:
 1. `index.php` - Agregado `require vendor/autoload.php`
@@ -201,6 +316,8 @@ $salida = new \LoveMakeup\Proyecto\Modelo\Salida();
 2. **Eliminar `require_once` innecesarios** que ahora se manejan con autoload
 3. **Agregar dependencias externas** si es necesario (ej: PHPMailer, librerías de PDF, etc.)
 4. **Actualizar controladores** para usar namespaces
+5. **Crear tests unitarios** usando PHPUnit para las clases principales del sistema
+6. **Configurar un archivo `phpunit.xml`** para personalizar la ejecución de tests
 
 ---
 
@@ -217,6 +334,7 @@ $salida = new \LoveMakeup\Proyecto\Modelo\Salida();
 
 - **PSR-4 Autoloading Standard**: https://www.php-fig.org/psr/psr-4/
 - **Composer Documentation**: https://getcomposer.org/doc/
+- **PHPUnit Documentation**: https://phpunit.de/documentation.html
 
 ---
 
