@@ -1,0 +1,23 @@
+{
+    "name": "lovemakeup/proyecto",
+    "description": "PLATAFORMA DE COMERCIO ELECTRONICO PARA LA LÍNEA DE PRODUCTOS DE BELLEZA “LOVEMAKEUP” C.A.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "LoveMakeup\\Proyecto\\Modelo\\": "modelo/",
+            "LoveMakeup\\Proyecto\\Controlador\\": "controlador/",
+            "LoveMakeup\\Proyecto\\Config\\": "config/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Equipo de proyecto de LoveMakeup C.A.",
+            "email": "help.lovemakeupca@gmail.com"
+        }
+    ],
+    "require": {
+        "dompdf/dompdf": "^2.0",
+        "phpmailer/phpmailer": "^6.9"
+    }
+}
+
