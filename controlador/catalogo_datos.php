@@ -1,6 +1,6 @@
 <?php  
 
-use LoveMakeup\Proyecto\Modelo\Datoscliente;
+use LoveMakeup\Proyecto\Modelo\catalogo_datos;
 
 session_start();
 $nombre = isset($_SESSION["nombre"]) && !empty($_SESSION["nombre"]) ? $_SESSION["nombre"] : "Estimado Cliente";

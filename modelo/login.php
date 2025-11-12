@@ -56,7 +56,7 @@ class Login extends Conexion {
                     }
                     return $this->registrarCliente($datosProcesar);
                 case 'validar':
-                    return $this->obtenerPersonaPorCedula(['cedula' => $datosProcesar['cedula']]);
+                    return $this->obtenerPersonaPorCedula($datosProcesar);
 
                 case 'activocliente':
                     return $this->activocliente($datosProcesar);
@@ -68,7 +68,7 @@ class Login extends Conexion {
                     return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
             }
         } catch (\Exception $e) {
-            return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
+            return ['respuesta' => 0, 'accion' => 'incluir', 'text' => $e->getMessage()];
         }
     }
 
@@ -127,32 +127,46 @@ class Login extends Conexion {
 
 /*||||||||||||||||||||||||||||||| REGISTRAR CLIENTE NUEVO  |||||||||||||||||||||||||  05  |||||*/            
     private function registrarCliente($datos) {
-        $conex = $this->getConex1();
+        
+        $conex = $this->getConex2();
         try {
-            $conex->beginTransaction();
-            
-            $sql = "INSERT INTO cliente(cedula, nombre, apellido, correo, telefono, clave, estatus, rol)
-                    VALUES(:cedula, :nombre, :apellido, :correo, :telefono, :clave, 1, 1)";
-            
-            $datosInsertar = [
+             $conex->beginTransaction();
+
+            // 1. Insertar en persona
+            $sqlPersona = "INSERT INTO persona (cedula, nombre, apellido, correo, telefono, tipo_documento)
+                        VALUES (:cedula, :nombre, :apellido, :correo, :telefono, :tipo_documento)";
+
+            $paramPersona = [
                 'cedula' => $datos['cedula'],
                 'nombre' => ucfirst(strtolower($datos['nombre'])),
                 'apellido' => ucfirst(strtolower($datos['apellido'])),
                 'correo' => strtolower($datos['correo']),
                 'telefono' => $datos['telefono'],
+                'tipo_documento' => $datos['tipo_documento']
+            ];
+
+            $stmtPersona = $conex->prepare($sqlPersona);
+            $stmtPersona->execute($paramPersona);
+
+            // 2. Insertar en usuario
+            $sqlUsuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol)
+                             VALUES (:cedula, :clave, 1, 1)";
+
+            $paramUsuario = [
+                'cedula' => $datos['cedula'],
                 'clave' => $this->encryptClave(['clave' => $datos['clave']])
             ];
+
+            $stmtUsuario = $conex->prepare($sqlUsuario);
+            $stmtUsuario->execute($paramUsuario);
             
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($datosInsertar);
-            
-            if ($resultado) {
+            if ($stmtUsuario) {
                 $conex->commit();
                 $conex = null;
-                
+             
                 return ['respuesta' => 1, 'accion' => 'incluir'];
             }
-            
+              
             $conex->rollBack();
             $conex = null;
             return ['respuesta' => 0, 'accion' => 'incluir'];
@@ -168,75 +182,62 @@ class Login extends Conexion {
 
 /*||||||||||||||||||||||||||||||| VERIFICAR CEDULA Y CORREO SI EXISTE  |||||||||||||||||||||||||  06  |||||*/            
     private function verificarExistencia($datos) {
-        $conex1 = $this->getConex1();
-        $conex2 = $this->getConex2();
-        try {
-            // Verificar en clientes
-            $sql = "SELECT COUNT(*) FROM cliente WHERE {$datos['campo']} = :valor AND estatus >= 1";
-            $stmt = $conex1->prepare($sql);
-            $stmt->execute(['valor' => $datos['valor']]);
-            $existe = $stmt->fetchColumn() > 0;
-            
-            if (!$existe) {
-                // Si no existe en clientes, verificar en usuarios
-                $sql = "SELECT COUNT(*) FROM usuario WHERE {$datos['campo']} = :valor AND estatus >= 1";
-                $stmt = $conex2->prepare($sql);
-                $stmt->execute(['valor' => $datos['valor']]);
-                $existe = $stmt->fetchColumn() > 0;
-            }
-            
-            $conex1 = null;
-            $conex2 = null;
-            return $existe;
-        } catch (\PDOException $e) {
-            if ($conex1) $conex1 = null;
-            if ($conex2) $conex2 = null;
-            throw $e;
-        }
+    $conex = $this->getConex2();
+    try {
+        $conex->beginTransaction();
+        $sql = "SELECT COUNT(*) FROM persona 
+                WHERE ({$datos['campo']} = :valor)";
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['valor' => $datos['valor']]);
+        $existe = $stmt->fetchColumn() > 0;
+
+        $conex->commit();
+        $conex = null;
+        return $existe;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
     }
+}
 
 /*||||||||||||||||||||||||||||||| OBTENER CEDULA PARA INGRESAR OLVIDO CLAVE  |||||||||||||||||||||||||  07  |||||*/            
     private function obtenerPersonaPorCedula($datos) {
-        if (!isset($datos['cedula']) || !is_numeric($datos['cedula']) || strlen((string)$datos['cedula']) > 8) {
-            $error="10";
-            return $error;
-        }
-        $conex1 = $this->getConex1();
-        $conex2 = $this->getConex2();
-        try {
-            // Buscar en cliente
-            $sql = "SELECT *, 'cliente' AS origen FROM cliente WHERE cedula = :cedula AND estatus >= 1";
-            $stmt = $conex1->prepare($sql);
-            $stmt->execute(['cedula' => $datos['cedula']]);
-            
-            if ($stmt->rowCount() > 0) {
-                $resultado = $stmt->fetchObject();
-                $conex1 = null;
-                $conex2 = null;
-                return $resultado;
-            }
 
-            // Buscar en usuario
-            $sql = "SELECT *, 'usuario' AS origen FROM usuario WHERE cedula = :cedula AND estatus >= 1";
-            $stmt = $conex2->prepare($sql);
-            $stmt->execute(['cedula' => $datos['cedula']]);
-            
-            if ($stmt->rowCount() > 0) {
-                $resultado = $stmt->fetchObject();
-                $conex1 = null;
-                $conex2 = null;
-                return $resultado;
-            }
-            
-            $conex1 = null;
-            $conex2 = null;
-            return null;
-        } catch (\PDOException $e) {
-            if ($conex1) $conex1 = null;
-            if ($conex2) $conex2 = null;
-            throw $e;
-        }
-    }
+    $conex = $this->getConex2();
+    try {
+    $sql = "SELECT 
+                p.cedula,
+                p.nombre,
+                p.apellido,
+                p.correo,
+                p.telefono,
+                p.tipo_documento,
+                u.estatus,
+                u.id_rol,
+                ru.nivel
+            FROM persona p
+            INNER JOIN usuario u ON p.cedula = u.cedula
+            INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+            WHERE p.cedula = :cedula AND p.tipo_documento = :tipo_documento AND u.estatus >= 1";
+
+    $stmt = $conex->prepare($sql);
+    $stmt->execute([
+        'cedula' => $datos['cedula'],
+        'tipo_documento' => $datos['tipo_documento']
+    ]);
+
+    $resultado = $stmt->fetchObject();
+
+    $conex = null;
+    return $resultado ?: null;
+
+} catch (\PDOException $e) {
+    if ($conex) $conex = null;
+    return null;
+}
+}
+
 
 /*||||||||||||||||||||||||||||||| CONSULTAR PERMISOS ID PERMISOS  |||||||||||||||||||||||||  08  |||||*/            
      public function consultar($id_persona) {

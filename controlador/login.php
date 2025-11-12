@@ -101,10 +101,13 @@ if (isset($_POST['ingresar'])) {
             'cedula' => $_POST['cedula'],
             'telefono' => $_POST['telefono'],
             'correo' => $_POST['correo'],
+            'tipo_documento' => $_POST['tipo_documento'],
             'clave' => $_POST['clave']
         ]
     ];
+    
     $correo = $_POST['correo'];
+    
     $resultado = $objlogin->procesarLogin(json_encode($datosRegistro));
 
     if ($resultado['respuesta'] == 1) {
@@ -119,19 +122,20 @@ if (isset($_POST['ingresar'])) {
     $datosValidar = [
         'operacion' => 'validar',
         'datos' => [
-            'cedula' => $_POST['cedula']
+            'cedula' => $_POST['cedula'],
+            'tipo_documento' => $_POST['tipo_documentos']
         ]
     ];
 
-    $persona = $objlogin->procesarLogin(json_encode($datosValidar));
+    $resultado = $objlogin->procesarLogin(json_encode($datosValidar));
 
-    if ($persona && isset($persona->id_persona)) {
-        $_SESSION["persona"] = $persona->id_persona;
-        $_SESSION["nombres"] = $persona->nombre;
-        $_SESSION["apellidos"] = $persona->apellido;
-        $_SESSION["correos"] = $persona->correo;
+    if ($resultado && isset($resultado->cedula)) {
+        $_SESSION["cedula"] = $resultado->cedula;
+        $_SESSION["nombres"] = $resultado->nombre;
+        $_SESSION["apellidos"] = $resultado->apellido;
+        $_SESSION["correos"] = $resultado->correo;
         $_SESSION["iduser"] = 1;
-        $_SESSION["tabla_origen"] = ($persona->origen == 'usuario') ? 2 : 1;
+        $_SESSION["nivel"] = $resultado->nivel;
         echo json_encode(['respuesta' => 1, 'accion' => 'validarclave']);
         exit;
     } else {
