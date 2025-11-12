@@ -150,6 +150,7 @@ function validarCampos() {
     let confirmarClave = $("#confirmar_clave").val();
     let confirmarValida = /^.{8,16}$/.test(confirmarClave) && confirmarClave === $("#clave").val();
     let rolValido = $("#rolSelect").val() !== "";
+    let rolValido2 = $("#rolSelect2").val() !== "";
 
     function aplicarEstado(input, valido, feedback, mensaje = "") {
         if (valido) {
@@ -168,10 +169,10 @@ function validarCampos() {
     aplicarEstado("#clave", claveValida, "#textoclave", "la clave es entre 8 y 16 caracteres");
     aplicarEstado("#confirmar_clave", confirmarValida, "#textoconfirmar", "Las contraseñas no coinciden o no cumplen con el formato");
     aplicarEstado("#rolSelect", rolValido, "#textorol", "Por favor, seleccione un rol válido.");
-
+    aplicarEstado("#rolSelect2", rolValido2, "#textorol2", "Por favor, seleccione nacionalidad.");
     return cedulaValida && telefonoValido && correoValido &&
            nombreValido && apellidoValido && claveValida &&
-           confirmarValida && rolValido;
+           confirmarValida && rolValido && rolValido2;
 }
 
 
@@ -266,6 +267,11 @@ $('#actualizar').on("click", function () {
   $("#rolSelect").on("change", function () {
     validarCampo($(this), null, $("#textorol"), "Por favor, seleccione un rol válido.");
   });
+
+    $("#rolSelect2").on("change", function () {
+    validarCampo($(this), null, $("#textorol"), "Por favor, seleccione un rol válido.");
+  });
+
 
   $("#cedula").on("keypress",function(e){
     validarkeypress(/^[0-9\b]*$/,e);

@@ -8,34 +8,11 @@ session_start();
 $objlogin = new Login();
 
 if (isset($_POST['ingresar'])) {
-    /*
-    if (empty($_POST['g-recaptcha-response'])) {
-            echo json_encode([
-                'respuesta' => 0,
-                'accion' => 'ingresar',
-                'text' => 'No se recibió el token de reCAPTCHA.'
-            ]);
-    exit;
-    }
-
-    $ip=$_SERVER['REMOTE_ADDR'];
-    $captcha  = $_POST['g-recaptcha-response'];
-    $secretkey = "6LfHU6YrAAAAAPNZ1yCRwIo0UgBAMbnnNwTQaSFJ";
-    $validacion=file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$secretkey&response=$captcha&remoteip=$ip");
-    $atributos= json_decode($validacion, TRUE);
-
-    if(!$atributos['success']){
-            echo json_encode([
-            'respuesta' => 0,
-            'accion' => 'ingresar',
-            'text' => 'Verificación fallida: el CAPTCHA está vacío o fue rechazado. Intenta nuevamente.'
-        ]);
-        exit;
-    }
-    */
+   
     $datosLogin = [
         'operacion' => 'verificar',
         'datos' => [
+            'tipo_documento' => $_POST['tipo_documento'],
             'cedula' => $_POST['usuario'],
             'clave' => $_POST['clave']
         ]
@@ -43,7 +20,7 @@ if (isset($_POST['ingresar'])) {
 
     $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
 
-  if ($resultado && isset($resultado->id_persona)) {
+  if ($resultado && isset($resultado->cedula)) {
     if ((int)$resultado->estatus === 2) {
         echo json_encode([
             'respuesta' => 0,
@@ -54,7 +31,7 @@ if (isset($_POST['ingresar'])) {
     }
 
     if ((int)$resultado->estatus === 1) {
-        $_SESSION["id"] = $resultado->id_persona;
+        $_SESSION["id"] = $resultado->cedula;
 
         $id_persona = $_SESSION["id"]; 
         $resultadopermiso = $objlogin->consultar($id_persona);
@@ -75,14 +52,7 @@ if (isset($_POST['ingresar'])) {
             exit;
        
         } elseif ($_SESSION["nivel_rol"] == 2 || $_SESSION["nivel_rol"] == 3) {
-            $bitacora = [
-                'id_persona' => $resultado->id_persona,
-                'accion' => 'Inicio de sesión',
-                'descripcion' => 'El usuario ha iniciado sesión exitosamente.'
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bitacora['accion'], 'login', $bitacora);
-            
+          
             echo json_encode(['respuesta' => 2, 'accion' => 'ingresar']);
             exit;
         } else {
@@ -114,15 +84,7 @@ if (isset($_POST['ingresar'])) {
 // ------------------
 
 } else if (isset($_POST['cerrar'])) {
-    if (isset($_SESSION["id"])) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Cierre de sesión',
-            'descripcion' => 'El usuario ha cerrado sesión.'
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'login', $bitacora);
-    }
+    
     session_destroy();
     header('Location: ?pagina=login');
     exit;

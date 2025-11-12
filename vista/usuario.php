@@ -49,14 +49,14 @@
 
     
        <!-- Button que abre el Modal N1 Registro -->
-       <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(13, 'registrar')): ?>
+       
           <button type="button" class="btn btn-success registrar" title="(CONTROL + ALT + N) Registrar usuario" data-bs-toggle="modal" data-bs-target="#registro">
             <span class="icon text-white">
             <i class="fas fa-file-medical me-2"></i>
             </span>
             <span class="text-white" id="btnAbrirRegistrar">Registrar</span>
           </button>
-         <?php endif; ?>
+   
          
   <button type="button" class="btn btn-primary" id="ayuda" title="(CONTROL + ALT + A) click para ver la ayuda">
     <span class="icon text-white">
@@ -275,6 +275,11 @@
         <label for="cedula">N° DE CÉDULA</label>
         <div class="input-group">
           <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
+           <select class="form-select" name="tipo_documento" id="rolSelect2" required>
+            <option value="V"> V </option>
+            <option value="E"> E </option>
+    
+          </select>
           <input type="text" class="form-control" name="cedula" id="cedula" placeholder="cedula: 11222333">
         </div>
         <span id="textocedula" class="error-message"></span>

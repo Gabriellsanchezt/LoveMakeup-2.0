@@ -61,6 +61,16 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
               </div>
               <form action="?pagina=login" method="POST" autocomplete="off" id="login">
                 <div class="form-group first">
+                  <i class="fa-solid fa-id-card tex-i"></i> <label for="usuario" class="text-g">Tipo de Documento</label>
+                  <select class="form-control text-dark" name="tipo_documento" id="DocumentoSelct">
+                    <option value="V">Venezolano</option>
+                    <option value="E">Extranjero</option>
+                    <option value="J">Juridico</option>
+                  </select>
+                  <p id="textoususario" class="text-danger"></p>
+                </div>
+
+                <div class="form-group first">
                   <i class="fa-solid fa-id-card tex-i"></i> <label for="usuario" class="text-g">N° Cedula</label>
                   <input class="form-control text-dark" type="text" name="usuario" id="usuario" placeholder="00100200" >
                   <p id="textousuario" class="text-danger"></p>

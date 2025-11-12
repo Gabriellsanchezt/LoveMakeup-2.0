@@ -4,17 +4,17 @@ use LoveMakeup\Proyecto\Modelo\Usuario;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 
     session_start();
-    if (empty($_SESSION["id"])){
+    /* if (empty($_SESSION["id"])){
       header("location:?pagina=login");
-    } /*  Validacion URL  */
-
+    }  Validacion URL  */
+/* 
     if (!empty($_SESSION['id'])) {
         require_once 'verificarsession.php';
     }
     if ($_SESSION["nivel_rol"] == 1) {
         header("Location: ?pagina=catalogo");
         exit();
-    }/*  Validacion cliente  */ 
+    } Validacion cliente  */ 
 
    require_once 'permiso.php';
 
@@ -42,6 +42,7 @@ if (isset($_POST['registrar'])) { /* -------  */
                 'nombre' => ucfirst(strtolower($_POST['nombre'])),
                 'apellido' => ucfirst(strtolower($_POST['apellido'])),
                 'cedula' => $_POST['cedula'],
+                'tipo_documento' => $_POST['tipo_documento'],
                 'telefono' => $_POST['telefono'],
                 'correo' => strtolower($_POST['correo']),
                 'clave' => $_POST['clave'],
@@ -52,16 +53,7 @@ if (isset($_POST['registrar'])) { /* -------  */
 
         $resultadoRegistro = $objusuario->procesarUsuario(json_encode($datosUsuario));
 
-        if ($resultadoRegistro['respuesta'] == 1) {
-            $bitacora = [
-                'id_persona' => $_SESSION["id"],
-                'accion' => 'Registro de usuario',
-                'descripcion' => 'Se registró el usuario: ' . $datosUsuario['datos']['cedula'] . ' ' . 
-                                $datosUsuario['datos']['nombre'] . ' ' . $datosUsuario['datos']['apellido']
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-        }
+        
 
         echo json_encode($resultadoRegistro);
     }
@@ -199,20 +191,12 @@ if (isset($_POST['registrar'])) { /* -------  */
 
     echo json_encode($resultado);
 
-} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 'ver')) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Acceso a Módulo',
-            'descripcion' => 'módulo de Usuario'
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-        $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
-        require_once 'vista/usuario.php';
 } else {
-        require_once 'vista/seguridad/privilegio.php';
-
-}
+      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
+        require_once 'vista/usuario.php';  
+        
+        
+} 
  
 
 ?>

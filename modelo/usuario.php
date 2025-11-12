@@ -42,12 +42,12 @@ class Usuario extends Conexion
         try {
             switch ($operacion) {
                 case 'registrar':
-                    if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                    /*if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
                         return ['respuesta' => 0, 'accion' => 'incluir', 'text' => 'La cédula ya está registrada'];
                     }
                     if ($this->verificarExistencia(['campo' => 'correo', 'valor' => $datosProcesar['correo']])) {
                         return ['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El correo electrónico ya está registrado'];
-                    }
+                    }*/
                     $datosProcesar['clave'] = $this->encryptClave($datosProcesar['clave']);
                     return $this->ejecutarRegistro($datosProcesar);
                     
@@ -92,51 +92,61 @@ class Usuario extends Conexion
 
 /*||||||||||||||||||||||||||||||| REGISTRO DE UN NUEVO USUARIO ||||||||||||||||||||||||||| 04 |||*/    
     private function ejecutarRegistro($datos) {
-        $conex = $this->getConex2();
-        try {
-            $conex->beginTransaction();
-            
-            $sql = "INSERT INTO usuario(cedula, nombre, apellido, correo, telefono, clave, estatus, id_rol)
-                    VALUES(:cedula, :nombre, :apellido, :correo, :telefono, :clave, 1, :id_rol)";
-            
-            $parametros = [
-                'cedula' => $datos['cedula'],
-                'nombre' => $datos['nombre'],
-                'apellido' => $datos['apellido'],
-                'correo' => $datos['correo'],
-                'telefono' => $datos['telefono'],
-                'clave' => $datos['clave'],
-                'id_rol' => $datos['id_rol']
-                ];
+    $conex = $this->getConex2();
+    try {
+        $conex->beginTransaction();
 
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($parametros);
-            
-            $id_persona = $conex->lastInsertId();
- 
-            $nivel = $datos['nivel'];
-                $datosPermisos = $this->generarPermisosPorNivel($id_persona, $nivel);
+        // 1. Insertar en la tabla persona
+        $sqlPersona = "INSERT INTO persona (cedula, nombre, apellido, correo, telefono, tipo_documento)
+                       VALUES (:cedula, :nombre, :apellido, :correo, :telefono, :tipo_documento)";
+        $paramPersona = [
+            'cedula' => $datos['cedula'],
+            'nombre' => $datos['nombre'],
+            'apellido' => $datos['apellido'],
+            'correo' => $datos['correo'],
+            'telefono' => $datos['telefono'],
+            'tipo_documento' => $datos['tipo_documento']
+        ];
+        $stmtPersona = $conex->prepare($sqlPersona);
+        $stmtPersona->execute($paramPersona);
 
-                $sqlPermiso = "INSERT INTO permiso (id_modulo, id_persona, accion, estado)
-                            VALUES (:id_modulo, :id_persona, :accion, :estado)";
-                $stmtPermiso = $conex->prepare($sqlPermiso);
+        // 2. Insertar en la tabla usuario
+        $sqlUsuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol)
+                       VALUES (:cedula, :clave, 1, :id_rol)";
+        $paramUsuario = [
+            'cedula' => $datos['cedula'],
+            'clave' => $datos['clave'],
+            'id_rol' => $datos['id_rol']
+        ];
+        $stmtUsuario = $conex->prepare($sqlUsuario);
+        $stmtUsuario->execute($paramUsuario);
 
-                foreach ($datosPermisos as $permiso) {
-                    $stmtPermiso->execute($permiso);
-                }
+        // 3. Obtener nivel y generar permisos
+        $nivel = $datos['nivel'];
+        $cedula = $datos['cedula']; // ahora usamos la cédula como identificador
+        $datosPermisos = $this->generarPermisosPorNivel($cedula, $nivel);
 
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'incluir'];
-                    
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
-            }
-            throw $e;
+        $sqlPermiso = "INSERT INTO permiso (id_modulo, cedula, accion, estado)
+                       VALUES (:id_modulo, :cedula, :accion, :estado)";
+        $stmtPermiso = $conex->prepare($sqlPermiso);
+
+        foreach ($datosPermisos as $permiso) {
+            $stmtPermiso->execute($permiso);
         }
+
+        $conex->commit();
+        $conex = null;
+        return ['respuesta' => 1, 'accion' => 'incluir'];
+
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex->rollBack();
+            $conex = null;
+        }
+        throw $e;
     }
+}
+
 
 /*||||||||||||||||||||||||||||||| ACTUALIZAR DATOS DEL USUARIO  ||||||||||||||||||||||||||| 05 |||*/
    private function ejecutarActualizacion($datos) { 
@@ -252,11 +262,19 @@ class Usuario extends Conexion
     public function consultar() {
         $conex = $this->getConex2();
         try {
-            $sql = "SELECT p.*, ru.id_rol, ru.nombre AS nombre_tipo, ru.nivel
-                    FROM usuario p 
-                    INNER JOIN rol_usuario ru ON p.id_rol = ru.id_rol
-                    WHERE ru.nivel IN (2, 3) AND p.estatus >= 1 AND p.id_persona >=2
-                    ORDER BY p.id_persona DESC";
+            $sql = "SELECT 
+                        per.*, 
+                        ru.id_rol, 
+                        ru.nombre AS nombre_tipo, 
+                        ru.nivel,
+                        u.id_usuario,
+                        u.estatus
+                    FROM usuario u
+                    INNER JOIN persona per ON u.cedula = per.cedula
+                    INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                    WHERE ru.nivel IN (2, 3) 
+                    AND u.estatus >= 1
+                    ORDER BY per.cedula DESC";
                     
             $stmt = $conex->prepare($sql);
             $stmt->execute();
@@ -277,123 +295,119 @@ class Usuario extends Conexion
     }
 
 /*||||||||||||||||||||||||||||||| PERMISOS PREDETERMINADOS DEL USUARIO |||||||||||||||||||||||| 10 |||||*/    
-   private function generarPermisosPorNivel($id_persona, $nivel) {
+   private function generarPermisosPorNivel($cedula, $nivel) {
     $permisos = [];
 
     if ($nivel == 3) { // Admin
         $permisos = [
-            ['id_modulo' => 1, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 2, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 2, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 2, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '1'],
-            ['id_modulo' => 4, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 4, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 4, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '1'],
-            ['id_modulo' => 5, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 5, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 5, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1'],
-            ['id_modulo' => 8, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 8, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 9, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 9, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '1'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1'],
-            ['id_modulo' => 12, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '1'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '1'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '1']
+            ['id_modulo' => 1, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+
+            ['id_modulo' => 2, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 2, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 2, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+
+            ['id_modulo' => 3, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 3, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+
+            ['id_modulo' => 4, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 4, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1'],
+
+            ['id_modulo' => 5, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 5, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1'],
+     
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1'],
+
+            ['id_modulo' => 7, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 7, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 7, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 7, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 8, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 8, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 8, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 8, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 9, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 9, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 9, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 9, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 10, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 10, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+        
+            ['id_modulo' => 11, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 11, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 11, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 11, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 12, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 12, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 12, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 12, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 13, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 13, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 13, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 13, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 14, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 14, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+
+            ['id_modulo' => 15, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'], //Bitacora
+            ['id_modulo' => 15, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+
+            ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+            ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1'],
+
+            ['id_modulo' => 17, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 17, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
+            ['id_modulo' => 17, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
+            ['id_modulo' => 17, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+            
+            ['id_modulo' => 18, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 18, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1']
         ];
     } elseif ($nivel == 2) { // Usuario básico
         $permisos = [
-            ['id_modulo' => 1, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 2, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 2, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 2, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-           
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0'],
-            ['id_modulo' => 3, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '0'],
+           ['id_modulo' => 1, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
 
-            ['id_modulo' => 4, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 4, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 4, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '0'],
+           ['id_modulo' => 3, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+           ['id_modulo' => 3, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
 
-            ['id_modulo' => 5, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 5, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '1'],
-            ['id_modulo' => 5, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
+            ['id_modulo' => 4, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 4, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1'],
 
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 6, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0'],
-            
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 7, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0'],
+            ['id_modulo' => 5, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 5, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1'],
 
-            ['id_modulo' => 8, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 8, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '0'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '0'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '0'],
+            ['id_modulo' => 6, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '0'],
 
-            ['id_modulo' => 9, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '1'],
-            ['id_modulo' => 9, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '0'],
+            ['id_modulo' => 10, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 10, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '0'],
 
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 10, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0'],
+            ['id_modulo' => 14, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 14, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
 
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 11, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0'],
-
-            ['id_modulo' => 12, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0'],
-            ['id_modulo' => 13, 'id_persona' => $id_persona, 'accion' => 'especial', 'estado' => '0'],
-
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'ver', 'estado' => '0'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'registrar', 'estado' => '0'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'editar', 'estado' => '0'],
-            ['id_modulo' => 14, 'id_persona' => $id_persona, 'accion' => 'eliminar', 'estado' => '0']
+            ['id_modulo' => 18, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
+            ['id_modulo' => 18, 'cedula' => $cedula, 'accion' => 'especial', 'estado' => '1']
         ];
     }
 
     return array_map(function($permiso) {
         return [
             ':id_modulo' => $permiso['id_modulo'],
-            ':id_persona' => $permiso['id_persona'],
+            ':cedula' => $permiso['cedula'],
             ':accion' => $permiso['accion'],
             ':estado' => $permiso['estado'],
         ];

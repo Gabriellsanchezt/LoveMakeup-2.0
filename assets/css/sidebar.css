@@ -2,7 +2,7 @@
    height: 150vh; 
 }
 #sidenav-collapse-main {
-   max-height: 130vh;
+   max-height: 150vh;
    overflow: hidden; 
 }
 .sidedar-color {
@@ -337,7 +337,7 @@
   color: #f53b98 !important;
 }
 
-Lara123.
+
 .modo-oscuro .table-m {
   background-color: #6e6e6e86 !important;
   color: #ffffff !important;
