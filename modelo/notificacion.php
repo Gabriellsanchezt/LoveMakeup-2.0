@@ -105,7 +105,7 @@ public function getAll(): array
                id_pedido
           FROM notificaciones
          WHERE estado IN (1,2,3,4)   -- ADDED 4
-         ORDER BY fecha DESC, id_notificacion DESC
+         ORDER BY fecha ASC, id_notificacion ASC
     ";
     return $conex->query($sql)
                  ->fetchAll(\PDO::FETCH_ASSOC);

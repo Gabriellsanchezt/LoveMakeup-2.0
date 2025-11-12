@@ -24,6 +24,99 @@
     .table-compact td:nth-child(4) {
       padding-left: 0;
     }
+    
+    /* Estilos para el buscador */
+    .dataTables_wrapper {
+      margin: 15px;
+      padding: 0 15px;
+    }
+    
+    .dataTables_filter {
+      margin-bottom: 15px;
+      text-align: right;
+      padding: 10px 0;
+    }
+    
+    .dataTables_filter input {
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      margin-left: 0.5rem;
+      width: 250px;
+    }
+    
+    .dataTables_filter label {
+      font-weight: 500;
+      color: #6c757d;
+      display: inline-flex;
+      align-items: center;
+    }
+    
+    .dataTables_length {
+      margin-bottom: 15px;
+    }
+    
+    .dataTables_length select {
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      padding: 0.375rem;
+      margin: 0 0.5rem;
+    }
+    
+    .dataTables_length label {
+      font-weight: 500;
+      color: #6c757d;
+    }
+    
+    /* Estilos para la tabla de notificaciones */
+    .table-compact {
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .table-compact thead th {
+      background-color: #e9ecef;
+      border-top: none;
+      border-bottom: 1px solid #dee2e6;
+      color: #495057;
+      font-weight: 600;
+    }
+    
+    .table-compact th:first-child {
+      border-top-left-radius: 0.5rem;
+    }
+    
+    .table-compact th:last-child {
+      border-top-right-radius: 0.5rem;
+    }
+    
+    .table-compact tr:last-child td:first-child {
+      border-bottom-left-radius: 0.5rem;
+    }
+    
+    .table-compact tr:last-child td:last-child {
+      border-bottom-right-radius: 0.5rem;
+    }
+    
+    .table-compact td, .table-compact th {
+      border-top: 1px solid #dee2e6;
+    }
+    
+    .table-compact tr:first-child td {
+      border-top: none;
+    }
+    
+    /* Estilo para las filas de la tabla */
+    .table-compact tbody tr {
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .table-compact tbody tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
   </style>
 </head>
 <body class="g-sidenav-show bg-gray-100">
@@ -70,8 +163,8 @@
         
 
         <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-m table-sm table-compact mb-0">
+          <div class="table-responsive p-3">
+            <table class="table table-m table-sm table-compact mb-0" id="myTable" data-page="notificaciones" data-nivel="<?= $nivel ?>">
               <thead class="bg-light">
                 <tr>
                   <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
@@ -92,11 +185,7 @@
                 </tr>
               </thead>
 
-<tbody
-  id="notif-body"
-  data-empty-msg="<?= $nivel === 2
-        ? 'Esperando nuevas notificaciones.'
-        : 'No hay notificaciones registradas.' ?>">
+<tbody>
   
   <?php if (empty($notificaciones)): ?>
     <tr>
@@ -136,7 +225,7 @@
       </td>
       <td class="text-sm mb-0 ">
         <span class="text-secondary text-sm texto-secundario">
-          <?= date('d-m-Y h:i a', strtotime($n['fecha'])) ?>
+          <?= date('d-m-Y g:i a', strtotime($n['fecha'])) ?>
         </span>
       </td>
       <td class="text-center">
@@ -176,5 +265,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="assets/js/notificacion.js"></script>
+  <!-- para el datatable-->
+  <script src="assets/js/demo/datatables-demo.js"></script>
 </body>
 </html>

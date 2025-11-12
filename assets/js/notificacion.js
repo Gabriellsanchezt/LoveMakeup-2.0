@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const BASE    = '?pagina=notificacion';
   const bellBtn = document.querySelector('.notification-icon');
-  const tbody   = document.getElementById('notif-body');
   const helpBtn = document.getElementById('btnAyudanoti');
   let lastId    = Number(localStorage.getItem('lastPedidoId') || 0);
 
@@ -63,68 +62,75 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 3) Delegación: marcar como leída (solo si existe la tabla)
-  if (tbody) {
-    tbody.addEventListener('click', async e => {
-      const btn = e.target.closest('.btn-action');
-      if (!btn) return;
-      e.preventDefault();
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('.btn-action');
+    if (!btn) return;
+    e.preventDefault();
 
-      const id     = btn.dataset.id;
-      const accion = btn.dataset.accion;
-      const row    = btn.closest('tr');
+    const id     = btn.dataset.id;
+    const accion = btn.dataset.accion;
+    const row    = btn.closest('tr');
 
-      const { isConfirmed } = await Swal.fire({
-        title: '¿Marcar como leída?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí',
-        cancelButtonText: 'Cancelar'
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Marcar como leída?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!isConfirmed) return;
+
+    try {
+      const res  = await fetch(`${BASE}&accion=${accion}`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({ id })
       });
-      if (!isConfirmed) return;
+      const data = await res.json();
 
-      try {
-        const res  = await fetch(`${BASE}&accion=${accion}`, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({ id })
-        });
-        const data = await res.json();
-
-        await Swal.fire(
-          data.success ? '¡Listo!' : 'Error',
-          data.mensaje,
-          data.success ? 'success' : 'error'
-        );
+      await Swal.fire(
+        data.success ? '¡Listo!' : 'Error',
+        data.mensaje,
+        data.success ? 'success' : 'error'
+      );
 
 if (data.success && row) {
   // 1) elimino la fila
-  row.remove();
+  // Si usamos DataTables, necesitamos eliminar la fila de manera diferente
+  if ($.fn.DataTable.isDataTable('#myTable')) {
+    $('#myTable').DataTable().row(row).remove().draw();
+  } else {
+    row.remove();
+    
+    // 2) actualizo el badge
+    updateBadge();
 
-  // 2) actualizo el badge
-  updateBadge();
-
-  // 3) si ya no hay ninguna fila
-  if (tbody.children.length === 0) {
-    const msg = tbody.dataset.emptyMsg || 'No hay notificaciones.';
-    const tr  = document.createElement('tr');
-    tr.innerHTML = `
-      <td colspan="5" class="text-center py-3">
-        ${msg}
-      </td>
-    `;
-    tbody.appendChild(tr);
+    // 3) si ya no hay ninguna fila
+    const tbody = document.querySelector('#myTable tbody');
+    if (tbody && tbody.children.length === 0) {
+      const nivel = document.getElementById('myTable').dataset.nivel;
+      const msg = nivel === '2'
+        ? 'Esperando nuevas notificaciones.'
+        : 'No hay notificaciones registradas.';
+      const tr  = document.createElement('tr');
+      tr.innerHTML = `
+        <td colspan="5" class="text-center py-3">
+          ${msg}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
   }
 }
 
-      } catch (err) {
-        console.error('marcarLeida error:', err);
-        Swal.fire('Error','No se pudo conectar','error');
-      }
-    });
-  }
+    } catch (err) {
+      console.error('marcarLeida error:', err);
+      Swal.fire('Error','No se pudo conectar','error');
+    }
+  });
 
   // 4) Guía interactiva (solo si existe el botón)
   if (helpBtn) {
