@@ -112,18 +112,22 @@
       $acciones_por_modulo = [
         1 => ['ver'],
         2 => ['ver', 'registrar', 'editar'],
-        3 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
-        4 => ['ver', 'registrar', 'especial'],
-        5 => ['ver', 'registrar', 'editar'],
-        6 => ['ver', 'registrar', 'editar', 'eliminar'],
+        3 => ['ver', 'registrar'],
+        4 => ['ver', 'especial'],
+        5 => ['ver', 'especial'],
+        6 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
         7 => ['ver', 'registrar', 'editar', 'eliminar'],
-        8 => ['ver', 'editar'],
-        9 => ['ver', 'especial'],
-        10 => ['ver', 'registrar', 'editar', 'eliminar'],
+        8 => ['ver', 'registrar', 'editar', 'eliminar'],
+        9 => ['ver', 'registrar', 'editar', 'eliminar'],
+        10 => ['ver','editar'],
         11 => ['ver', 'registrar', 'editar', 'eliminar'],
-        12 => ['ver'],
-        13 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
-        14 => ['ver', 'registrar', 'editar', 'eliminar']
+        12 => ['ver', 'registrar', 'editar', 'eliminar'],
+        13 => ['ver', 'registrar', 'editar', 'eliminar'],
+        14 => ['ver','editar'],
+        15 => ['ver', 'eliminar'],
+        16 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
+        17 => ['ver', 'registrar', 'editar', 'eliminar'],
+        18 => ['ver', 'especial']
       ];
 
       $contador = 1;

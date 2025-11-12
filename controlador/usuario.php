@@ -4,9 +4,9 @@ use LoveMakeup\Proyecto\Modelo\Usuario;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 
     session_start();
-    if (empty($_SESSION["id"])){
+     if (empty($_SESSION["id"])){
       header("location:?pagina=login");
-    } /*  Validacion URL  */
+    }  /* Validacion URL  */
 
     if (!empty($_SESSION['id'])) {
         require_once 'verificarsession.php';
@@ -14,7 +14,7 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
     if ($_SESSION["nivel_rol"] == 1) {
         header("Location: ?pagina=catalogo");
         exit();
-    }/*  Validacion cliente  */ 
+    } // Validacion cliente  
 
    require_once 'permiso.php';
 
@@ -42,6 +42,7 @@ if (isset($_POST['registrar'])) { /* -------  */
                 'nombre' => ucfirst(strtolower($_POST['nombre'])),
                 'apellido' => ucfirst(strtolower($_POST['apellido'])),
                 'cedula' => $_POST['cedula'],
+                'tipo_documento' => $_POST['tipo_documento'],
                 'telefono' => $_POST['telefono'],
                 'correo' => strtolower($_POST['correo']),
                 'clave' => $_POST['clave'],
@@ -52,33 +53,24 @@ if (isset($_POST['registrar'])) { /* -------  */
 
         $resultadoRegistro = $objusuario->procesarUsuario(json_encode($datosUsuario));
 
-        if ($resultadoRegistro['respuesta'] == 1) {
-            $bitacora = [
-                'id_persona' => $_SESSION["id"],
-                'accion' => 'Registro de usuario',
-                'descripcion' => 'Se registró el usuario: ' . $datosUsuario['datos']['cedula'] . ' ' . 
-                                $datosUsuario['datos']['nombre'] . ' ' . $datosUsuario['datos']['apellido']
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-        }
+        
 
         echo json_encode($resultadoRegistro);
     }
 } else  if(isset($_POST['modificar'])){ /* -------  */
-     $id_persona = $_POST['modificar'];    
+     $id_usuario = $_POST['modificar'];    
         
-     if ($id_persona == $_SESSION['id']) {
+     if ($id_usuario == $_SESSION['id']) {
         header("location:?pagina=usuario");
         exit;
     }
-     if ($id_persona == 2) {
+     if ($id_usuario == 10200300) {
         header("location:?pagina=usuario");
         exit;
     }
        
-        $modificar = $objusuario->buscar($id_persona);
-        $nivel_usuario = $objusuario->obtenerNivelPorId($id_persona);
+        $modificar = $objusuario->buscar($id_usuario);
+        $nivel_usuario = $objusuario->obtenerNivelPorId($id_usuario);
         
         $nombre_usuario = trim($_POST['permisonombre']);
         $apellido_usuario = trim($_POST['permisoapellido']);
@@ -97,6 +89,7 @@ if (isset($_POST['registrar'])) { /* -------  */
             'cedula_actual' => $_POST['cedulaactual'],
             'correo_actual' => $_POST['correoactual'],
             'rol_actual' => $_POST['rol_actual'],
+            'tipo_documento' => $_POST['tipo_documento'],
             'nivel' => $_POST['nivel']
         ]
     ]; 
@@ -113,7 +106,7 @@ if (isset($_POST['registrar'])) { /* -------  */
     }
 
     $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-
+/*
     if ($resultado['respuesta'] == 1) {
         $bitacora = [
             'id_persona' => $_SESSION["id"],
@@ -125,7 +118,7 @@ if (isset($_POST['registrar'])) { /* -------  */
         $bitacoraObj = new Bitacora();
         $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
     }
-
+*/
     echo json_encode($resultado);
 
 } else if (isset($_POST['actualizar_permisos'])) { /* -------  */
@@ -171,22 +164,22 @@ if (isset($_POST['registrar'])) { /* -------  */
     $datosUsuario = [
         'operacion' => 'eliminar',
         'datos' => [
-            'id_persona' => $_POST['eliminar']
+            'cedula' => $_POST['eliminar']
         ] 
     ];
 
-    if ($datosUsuario['datos']['id_persona'] == 2) {
+    if ($datosUsuario['datos']['cedula'] == 10200300) {
         echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No se puede eliminar al usuario administrador']);
         exit;
     } 
     
-    if ($datosUsuario['datos']['id_persona'] == $_SESSION['id']) {
+    if ($datosUsuario['datos']['cedula'] == $_SESSION['id']) {
         echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No puedes eliminarte a ti mismo']);
         exit;
     }
 
     $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-
+/*
     if ($resultado['respuesta'] == 1) {
         $bitacora = [
             'id_persona' => $_SESSION["id"],
@@ -196,23 +189,15 @@ if (isset($_POST['registrar'])) { /* -------  */
         $bitacoraObj = new Bitacora();
         $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
     }
-
+*/
     echo json_encode($resultado);
 
-} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 'ver')) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Acceso a Módulo',
-            'descripcion' => 'módulo de Usuario'
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-        $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
-        require_once 'vista/usuario.php';
 } else {
-        require_once 'vista/seguridad/privilegio.php';
-
-}
+      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
+        require_once 'vista/usuario.php';  
+        
+        
+} 
  
 
 ?>

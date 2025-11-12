@@ -79,51 +79,47 @@ class Login extends Conexion {
         $error="10";
         return $error;
     }
-
-    $conex1 = $this->getConex1();
+    
     $conex2 = $this->getConex2();
 
     try {
+        // Verificar credenciales en usuario, filtrando también por tipo_documento
+        $sql = "SELECT 
+                    u.*, 
+                    ru.nombre AS nombre_rol, 
+                    ru.nivel, 
+                    p.nombre, 
+                    p.apellido, 
+                    p.correo, 
+                    p.telefono, 
+                    p.tipo_documento
+                FROM usuario u
+                INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                INNER JOIN persona p ON u.cedula = p.cedula
+                WHERE u.cedula = :cedula 
+                  AND p.tipo_documento = :tipo_documento
+                  AND u.estatus IN (1, 2)";
         
-        $sql = "SELECT p.*, ru.nombre AS nombre_usuario, ru.nivel, p.clave
-                FROM usuario p
-                INNER JOIN rol_usuario ru ON p.id_rol = ru.id_rol
-                WHERE p.cedula = :cedula AND p.estatus IN (1, 2)";
-
         $stmt = $conex2->prepare($sql);
-        $stmt->execute(['cedula' => $datos['cedula']]);
+        $stmt->execute([
+            'cedula' => $datos['cedula'],
+            'tipo_documento' => $datos['tipo_documento']
+        ]);
         $resultado = $stmt->fetchObject();
 
         if ($resultado) {
             $claveDesencriptada = $this->decryptClave(['clave_encriptada' => $resultado->clave]);
+           
             if ($claveDesencriptada === $datos['clave']) {
-                $conex1 = null;
                 $conex2 = null;
                 return $resultado;
             }
         }
 
-        // Verificar en clientes (estatus 1 o 2)
-        $sql = "SELECT * FROM cliente WHERE cedula = :cedula AND estatus IN (1, 2)";
-        $stmt = $conex1->prepare($sql);
-        $stmt->execute(['cedula' => $datos['cedula']]);
-        $resultado = $stmt->fetchObject();
-
-        if ($resultado) {
-            $claveDesencriptada = $this->decryptClave(['clave_encriptada' => $resultado->clave]);
-            if ($claveDesencriptada === $datos['clave']) {
-                $conex1 = null;
-                $conex2 = null;
-                return $resultado;
-            }
-        }
-
-        $conex1 = null;
         $conex2 = null;
         return null;
 
     } catch (\PDOException $e) {
-        if ($conex1) $conex1 = null;
         if ($conex2) $conex2 = null;
         throw $e;
     }
@@ -248,12 +244,12 @@ class Login extends Conexion {
         try {
         $sql = "SELECT 
                 ru.id_rol, 
-                p.id_persona, 
+                p.cedula, 
                 permiso.*
                 FROM usuario p
                 INNER JOIN rol_usuario ru ON p.id_rol = ru.id_rol
-                INNER JOIN permiso ON p.id_persona = permiso.id_persona
-                WHERE p.id_persona = :id_persona
+                INNER JOIN permiso ON p.cedula = permiso.cedula
+                WHERE p.cedula = :id_persona
                 ";
                     
            $stmt = $conex->prepare($sql);
