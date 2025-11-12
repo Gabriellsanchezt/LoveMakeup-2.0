@@ -357,8 +357,8 @@ class Usuario extends Conexion
             ['id_modulo' => 14, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
             ['id_modulo' => 14, 'cedula' => $cedula, 'accion' => 'editar', 'estado' => '1'],
 
-            ['id_modulo' => 15, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'], //Bitacora
-            ['id_modulo' => 15, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '1'],
+            ['id_modulo' => 15, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '0'], //Bitacora
+            ['id_modulo' => 15, 'cedula' => $cedula, 'accion' => 'eliminar', 'estado' => '0'],
 
             ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'ver', 'estado' => '1'],
             ['id_modulo' => 16, 'cedula' => $cedula, 'accion' => 'registrar', 'estado' => '1'],
