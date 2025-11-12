@@ -27,18 +27,18 @@ if(isset($_POST['actualizar'])){
      $datosCliente = [
         'operacion' => 'actualizar',
         'datos' => [
-            'id_persona' => $_POST['id_persona'],
             'cedula' => $_POST['cedula'],
             'correo' => strtolower($_POST['correo']),
             'estatus' => $_POST['estatus'],
             'cedula_actual' => $_POST['cedulaactual'],
+            'tipo_documento' => $_POST['tipo_documento'],
             'correo_actual' => $_POST['correoactual']
         ]
     ]; 
   
 
     $resultado = $objcliente->procesarCliente(json_encode($datosCliente));
-    
+    /*
      if ($resultado['respuesta'] == 1) {
         $bitacora = [
             'id_persona' => $_SESSION["id"],
@@ -50,7 +50,7 @@ if(isset($_POST['actualizar'])){
         $bitacoraObj = new Bitacora();
         $bitacoraObj->registrarOperacion($bitacora['accion'], 'cliente', $bitacora);
     }
-
+*/
     echo json_encode($resultado);
 
       

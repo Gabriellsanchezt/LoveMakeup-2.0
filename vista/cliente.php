@@ -102,7 +102,7 @@
                   <th class="text-white text-center">Telefono</th>
                   <th class="text-white text-center">Correo</th>
                   <th class="text-white text-center">Estatus</th>
-                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'editar')): ?>
+                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <th class="text-white text-center">Acción</th>
                     <?php endif; ?>
                 </tr>
@@ -144,7 +144,7 @@
                       </div>
                       <div>
                         <div class="text-dark texto-secundario"><b><?php echo $dato['nombre'] . ' ' . $dato['apellido']; ?></b></div>
-                        <div class="texto-tercero">N° Cédula: <?php echo $dato['cedula']; ?></div>
+                        <div class="texto-tercero">N° Cédula: <?php echo $dato['tipo_documento'].'-'.$dato['cedula']; ?></div>
                       </div>
                     </div>
                   </td>
@@ -184,15 +184,16 @@
                   </span>
                   </td>
                     
-                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'editar')): ?>
+                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <td class="text-center">
                       <form method="POST" action="?pagina=cliente" id="formestatus">
                   
                         <button type="button" class="btn btn-primary btn-sm modificar" title="Editar datos del cliente"
                             data-bs-toggle="modal"
                             data-bs-target="#editarModal"
-                            data-id="<?php echo $dato['id_persona']; ?>"
+                            data-id="<?php echo $dato['cedula']; ?>"
                             data-cedula="<?php echo $dato['cedula']; ?>" 
+                            data-tipo_documento="<?php echo $dato['tipo_documento']; ?>" 
                             data-correo="<?php echo $dato['correo']; ?>"
                             data-estatus="<?php echo $dato['estatus']; ?>">
                             <i class="fas fa-pencil-alt" title="Editar"></i> 
@@ -266,9 +267,9 @@
                        <option value="2">Inactivo</option>
                     </select>
               </div>   
-            <input type="hidden" id="modalIdPersona" name="id_persona">
             <input type="hidden" id="modalce" name="cedulaactual">
             <input type="hidden" id="modalco" name="correoactual">
+            <input type="hidden" id="Nacionalidad" name="tipo_documento">
            </div>
         
           </form>

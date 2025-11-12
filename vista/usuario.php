@@ -6,6 +6,19 @@
   <?php include 'complementos/head.php' ?> 
   <title> Usuario | LoveMakeup  </title> 
   <link rel="stylesheet" href="assets/css/formulario.css">
+  
+<style>
+/* Hace que el select ocupe exactamente el 10% del ancho del input-group */
+.input-group #rolSelect2 {
+  flex: 0 0 25%;
+  max-width: 50%;
+}
+
+/* Opcional: asegura que el input de texto tome el resto del espacio */
+.input-group .form-control {
+  flex: 1 1 auto;
+}
+</style>
 </head>
 
 <body class="g-sidenav-show bg-gray-100">
@@ -271,12 +284,13 @@
         <span id="textoapellido" class="error-message"></span>
       </div>
 
+
       <!-- F2: Cédula y Rol -->
       <div class="col-md-6">
         <label for="cedula">N° DE CÉDULA</label>
         <div class="input-group">
           <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-           <select class="form-select" name="tipo_documento" id="rolSelect2" required>
+           <select class="form-select" name="tipo_documento" id="rolSelect2"  required >
             <option value="V"> V </option>
             <option value="E"> E </option>
     

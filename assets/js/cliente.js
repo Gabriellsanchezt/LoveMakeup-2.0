@@ -43,18 +43,20 @@ document.addEventListener("DOMContentLoaded", function() {
   var editarModal = document.getElementById("editarModal");
   editarModal.addEventListener("show.bs.modal", function(event) {
     var button = event.relatedTarget; // Botón que activó el modal
-    var idPersona = button.getAttribute("data-id");
+ 
     var cedula = button.getAttribute("data-cedula");
     var correo = button.getAttribute("data-correo");
     var estatus = button.getAttribute("data-estatus"); 
+    var tipo_doc = button.getAttribute("data-tipo_documento"); 
 
     // Asignar valores al modal
-    document.getElementById("modalIdPersona").value = idPersona;
+
     document.getElementById("modalCedula").value = cedula;
     document.getElementById("modalCorreo").value = correo;
     document.getElementById("modalce").value = cedula;
     document.getElementById("modalco").value = correo;
     document.getElementById("modalestatus").value = estatus;
+    document.getElementById("Nacionalidad").value = tipo_doc;
     document.getElementById("modalestatus").textContent = estatus == "1" ? "Activo - Actual" : estatus == "2" ? "Inactivo - Actual" : "Desconocido";
   });
 });
