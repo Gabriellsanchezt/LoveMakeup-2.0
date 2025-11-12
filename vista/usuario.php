@@ -76,7 +76,7 @@
                   <th class="text-white text-center">Nombre y Cédula</th>
                  
                   <th class="text-white text-center">Rol</th>
-                    <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(13, 'especial')): ?>
+                    <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 'especial')): ?>
                   <th class="text-white text-center">Permisos</th>
                     <?php endif; ?>
                   <th class="text-white text-center">Estatus</th>
@@ -117,12 +117,12 @@
                         <div class="text-dark texto-secundario">
                           <b>
                             <?php echo $dato['nombre'] . ' ' . $dato['apellido']; ?>
-                            <?php if ($dato['id_persona'] == 2): ?>
+                            <?php if ($dato['id_usuario'] == 2): ?>
                               <i class="fa-solid fa-circle-check text-primary ms-1" title="Jefa Lovemakeup C.A"></i>
                             <?php endif; ?>
                           </b>
                         </div>
-                        <div class="texto-tercero">N° Cédula: <?php echo $dato['cedula']; ?></div>
+                        <div class="texto-tercero">N° Cédula:  <?php echo $dato['tipo_documento'].'-'.$dato['cedula']; ?></div>
                       </div>
                     </div>
                   </td>
@@ -137,12 +137,12 @@
                       </div>
                   </td>
                   
-                 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(13, 'especial')): ?>
+                 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 'especial')): ?>
                     <td class="text-center">
                         <form action="?pagina=usuario" method="POST">
                             <?php
                                 $idActual = $_SESSION["id"];
-                                $idFila = $dato['id_persona'];
+                                $idFila = $dato['cedula'];
                                 $deshabilitado = ($idActual == $idFila || $idFila == 2) ? 'disabled' : '';
                             ?>
                             <button type="submit" class="btn btn-warning btn-sm permisotur" name="modificar" title="Modificar Permiso del usuario" value="<?php echo $idFila ?>" <?php echo $deshabilitado ?>>
@@ -182,10 +182,11 @@
                       <button type="button" class="btn btn-primary btn-sm modificar" title="Editar datos del usuario"
                       data-bs-toggle="modal"
                       data-bs-target="#editarModal"
-                      data-id="<?php echo $dato['id_persona']; ?>"
+                      data-id="<?php echo $dato['id_usuario']; ?>"
                       data-cedula="<?php echo $dato['cedula']; ?>" 
                       data-correo="<?php echo $dato['correo']; ?>"
                       data-nombre_rol="<?php echo $dato['nombre_tipo']; ?>"
+                      data-tipo_documento="<?php echo $dato['tipo_documento']; ?>"
                       data-estatus="<?php echo $dato['estatus']; ?>"
                       data-id_tipo="<?php echo $dato['id_rol'];
                     ?>" >
@@ -199,14 +200,14 @@
                             name="eliminar" 
                             id="eliminar" 
                             class="btn btn-danger btn-sm eliminar" 
-                            value="<?php echo $dato['id_persona']?>" 
+                            value="<?php echo $dato['cedula']?>" 
                             title="Eliminar Usuario"
                             data-nombre="<?php echo $dato['nombre']; ?>"
                             data-apellido="<?php echo $dato['apellido']; ?>"
                           >
                             <i class="fas fa-trash-alt" title="Eliminar"></i>
                           </button>
-                          <input type="hidden" name="eliminar" value="<?php echo $dato['id_persona']; ?>">
+                          <input type="hidden" name="eliminar" value="<?php echo $dato['cedula']; ?>">
                         <?php endif; ?>
 
 
@@ -423,6 +424,7 @@
 
                     <input type="hidden" name="rol_actual" id="rolactual">
                     <input type="hidden" name="nivel" id="idnivel">
+                    <input type="hidden" name="tipo_documento" id="roldocumento">
               </div> 
               
 

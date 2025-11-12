@@ -55,13 +55,13 @@ class Usuario extends Conexion
                     $datosProcesar['insertar_permisos'] = false;
 
                     if ($datosProcesar['id_rol'] !== $datosProcesar['rol_actual']) {
-                        $resultado = $this->ejecutarEliminacionPermisos($datosProcesar['id_persona']);
+                        $resultado = $this->ejecutarEliminacionPermisos($datosProcesar['cedula']);
                         if ($resultado['respuesta'] === 0) {
                             return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No se pudo eliminar permisos'];
                         }
                         $datosProcesar['insertar_permisos'] = true;
                     }
-
+/*
                      if ($datosProcesar['cedula'] !== $datosProcesar['cedula_actual']) {
                         if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
                             return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'La cédula ya está registrada'];
@@ -73,7 +73,7 @@ class Usuario extends Conexion
                             return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El correo electrónico ya está registrado'];
                         }
                     }
-
+*/
                     return $this->ejecutarActualizacion($datosProcesar);
                     
                 case 'eliminar':
@@ -96,7 +96,7 @@ class Usuario extends Conexion
     try {
         $conex->beginTransaction();
 
-        // 1. Insertar en la tabla persona
+        // 1
         $sqlPersona = "INSERT INTO persona (cedula, nombre, apellido, correo, telefono, tipo_documento)
                        VALUES (:cedula, :nombre, :apellido, :correo, :telefono, :tipo_documento)";
         $paramPersona = [
@@ -110,7 +110,7 @@ class Usuario extends Conexion
         $stmtPersona = $conex->prepare($sqlPersona);
         $stmtPersona->execute($paramPersona);
 
-        // 2. Insertar en la tabla usuario
+        // 2
         $sqlUsuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol)
                        VALUES (:cedula, :clave, 1, :id_rol)";
         $paramUsuario = [
@@ -121,7 +121,7 @@ class Usuario extends Conexion
         $stmtUsuario = $conex->prepare($sqlUsuario);
         $stmtUsuario->execute($paramUsuario);
 
-        // 3. Obtener nivel y generar permisos
+        // 3
         $nivel = $datos['nivel'];
         $cedula = $datos['cedula']; // ahora usamos la cédula como identificador
         $datosPermisos = $this->generarPermisosPorNivel($cedula, $nivel);
@@ -152,34 +152,48 @@ class Usuario extends Conexion
    private function ejecutarActualizacion($datos) { 
     $conex = $this->getConex2();
     try {
-        $conex->beginTransaction();
+         $conex->beginTransaction();
 
-        $sql = "UPDATE usuario 
-                SET cedula = :cedula, 
-                    correo = :correo, 
-                    estatus = :estatus, 
-                    id_rol = :id_rol 
-                WHERE id_persona = :id_persona";
+        // 1. Actualizar datos en la tabla persona
+        $sqlPersona = "UPDATE persona 
+                       SET cedula = :cedula, 
+                           correo = :correo, 
+                           tipo_documento = :tipo_documento 
+                       WHERE cedula = :cedula";
 
-        $parametros = [
+        $paramPersona = [
             'cedula' => $datos['cedula'],
             'correo' => $datos['correo'],
-            'estatus' => $datos['estatus'],
-            'id_rol' => $datos['id_rol'],
-            'id_persona' => $datos['id_persona']
+            'tipo_documento' => $datos['tipo_documento']
         ];
 
-        $stmt = $conex->prepare($sql);
-        $resultado = $stmt->execute($parametros);
+        $stmtPersona = $conex->prepare($sqlPersona);
+        $stmtPersona->execute($paramPersona);
 
-        if ($resultado && !empty($datos['insertar_permisos'])) {
+        // 2. Actualizar datos en la tabla usuario
+        $sqlUsuario = "UPDATE usuario 
+                       SET cedula = :cedula, 
+                           estatus = :estatus, 
+                           id_rol = :id_rol 
+                       WHERE cedula = :cedula";
+
+        $paramUsuario = [
+            'cedula' => $datos['cedula'],
+            'estatus' => $datos['estatus'],
+            'id_rol' => $datos['id_rol']
+        ];
+
+        $stmtUsuario = $conex->prepare($sqlUsuario);
+        $stmtUsuario->execute($paramUsuario);
+
+        if ($stmtUsuario && !empty($datos['insertar_permisos'])) {
             
             $nivel = $datos['nivel'];
-            $id_persona = $datos['id_persona'];
-            $datosPermisos = $this->generarPermisosPorNivel($id_persona, $nivel);
+            $cedula = $datos['cedula'];
+            $datosPermisos = $this->generarPermisosPorNivel($cedula, $nivel);
 
-            $sqlPermiso = "INSERT INTO permiso (id_modulo, id_persona, accion, estado)
-                           VALUES (:id_modulo, :id_persona, :accion, :estado)";
+            $sqlPermiso = "INSERT INTO permiso (id_modulo, cedula, accion, estado)
+                           VALUES (:id_modulo, :cedula, :accion, :estado)";
             $stmtPermiso = $conex->prepare($sqlPermiso);
 
             foreach ($datosPermisos as $permiso) {
@@ -205,7 +219,7 @@ class Usuario extends Conexion
         try {
             $conex->beginTransaction();
             
-            $sql = "UPDATE usuario SET estatus = 0 WHERE id_persona = :id_persona";
+            $sql = "UPDATE usuario SET estatus = 0 WHERE cedula = :cedula";
             
             $stmt = $conex->prepare($sql);
             $resultado = $stmt->execute($datos);
@@ -274,7 +288,7 @@ class Usuario extends Conexion
                     INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
                     WHERE ru.nivel IN (2, 3) 
                     AND u.estatus >= 1
-                    ORDER BY per.cedula DESC";
+                    ORDER BY u.id_usuario DESC";
                     
             $stmt = $conex->prepare($sql);
             $stmt->execute();
@@ -415,15 +429,16 @@ class Usuario extends Conexion
 }
 
 /*||||||||||||||||||||||||||||||| ELIMINAR PERMISOS (USUARIO CAMBIO DE ROL)  |||||||||||||||||||||||||| 11 ||||*/
-private function ejecutarEliminacionPermisos($id_persona) {
+private function ejecutarEliminacionPermisos($cedula) {
+    
     $conex = $this->getConex2();
     try {
         $conex->beginTransaction();
 
-        $sql = "DELETE FROM permiso WHERE id_persona = ?";
+        $sql = "DELETE FROM permiso WHERE cedula = ?";
         $stmt = $conex->prepare($sql);
 
-        $resultado = $stmt->execute([$id_persona]);
+        $resultado = $stmt->execute([$cedula]);
 
         if ($resultado) {
             $conex->commit();
@@ -444,20 +459,20 @@ private function ejecutarEliminacionPermisos($id_persona) {
 }
 
 /*||||||||||||||||||||||||||||||| CONSULTAR PERMISO DEL USUARIO SELECCIONADO  |||||||||||||||||||||||||| 12 ||||*/
-     public function buscar($id_persona) {
+     public function buscar($cedula) {
         $conex = $this->getConex2();
-        try {
+        try { 
         $sql = "SELECT 
                 permiso.*, 
                 modulo.id_modulo, 
                 modulo.nombre
                 FROM permiso
                 INNER JOIN modulo ON permiso.id_modulo = modulo.id_modulo
-                WHERE permiso.id_persona = :id_persona;
+                WHERE permiso.cedula = :cedula;
                 ";
                     
            $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_persona' => $id_persona]);
+            $stmt->execute(['cedula' => $cedula]);
 
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex = null;
@@ -471,15 +486,15 @@ private function ejecutarEliminacionPermisos($id_persona) {
     }
 
 /*||||||||||||||||||||||||||||||| CONSULTAR EL NIVEL PARA EDITAR LOS PERMISOS  ||||||||||||||||||||||||| 13 |||||*/    
-    public function obtenerNivelPorId($id_persona) {
+    public function obtenerNivelPorId($id_usuario) {
     $conex = $this->getConex2();
     try {
         $sql = "SELECT r.nivel
                 FROM usuario u
                 INNER JOIN rol_usuario r ON u.id_rol = r.id_rol
-                WHERE u.id_persona = :id_persona";
+                WHERE u.id_usuario = :id_usuario";
         $stmt = $conex->prepare($sql);
-        $stmt->execute(['id_persona' => $id_persona]);
+        $stmt->execute(['id_usuario' => $id_usuario]);
         $nivel = $stmt->fetchColumn();
         $conex = null;
         return $nivel !== false ? (int)$nivel : null;

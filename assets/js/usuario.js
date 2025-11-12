@@ -97,6 +97,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var id_tipo = button.getAttribute("data-id_tipo");
     var nombre_rol = button.getAttribute("data-nombre_rol");
     var estatus = button.getAttribute("data-estatus"); 
+    var tipo_doc = button.getAttribute("data-tipo_documento"); 
 
     // Asignar valores al modal
     document.getElementById("modalIdPersona").value = idPersona;
@@ -107,6 +108,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("modalrol").value = id_tipo;
     document.getElementById("modalrol").textContent = nombre_rol;
     document.getElementById("rolactual").value = id_tipo;
+    document.getElementById("roldocumento").value = tipo_doc;
 
     document.getElementById("modalestatus").value = estatus;
     document.getElementById("modalestatus").textContent = estatus == "1" ? "Activo - Actual" : estatus == "2" ? "Inactivo - Actual" : "Desconocido";
