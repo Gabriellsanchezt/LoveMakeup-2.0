@@ -96,7 +96,7 @@ class ReservaCliente extends Conexion {
         try {
             $conex->beginTransaction();
             foreach ($carrito as $item) {
-                $stmt = $conex->prepare("SELECT stock_disponible, nombre FROM productos WHERE id_producto = :id");
+                $stmt = $conex->prepare("SELECT stock_disponible, nombre FROM producto WHERE id_producto = :id");
                 $stmt->execute(['id' => $item['id']]);
                 $p = $stmt->fetch(\PDO::FETCH_ASSOC);
                 if (!$p) throw new \Exception("Producto {$item['id']} no encontrado.");
@@ -164,7 +164,7 @@ class ReservaCliente extends Conexion {
         $conex = $this->getConex1();
         try {
             $conex->beginTransaction();
-            $sql = "UPDATE productos SET stock_disponible = stock_disponible - :cantidad WHERE id_producto = :id";
+            $sql = "UPDATE producto SET stock_disponible = stock_disponible - :cantidad WHERE id_producto = :id";
             $stmt = $conex->prepare($sql);
             $stmt->execute(['cantidad' => $cantidad, 'id' => $id]);
             $conex->commit();

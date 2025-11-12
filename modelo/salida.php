@@ -46,7 +46,7 @@ class Salida extends Conexion {
         }
         
         if (!isset($datos['detalles']) || empty($datos['detalles'])) {
-            throw new \Exception('No hay productos en la venta');
+            throw new \Exception('No hay producto en la venta');
         }
 
         $conex = $this->getConex1();
@@ -92,7 +92,7 @@ class Salida extends Conexion {
                 ]);
                 
                 // Actualizar stock
-                $sql_stock = "UPDATE productos SET stock_disponible = stock_disponible - :cantidad 
+                $sql_stock = "UPDATE producto SET stock_disponible = stock_disponible - :cantidad 
                                    WHERE id_producto = :id_producto";
                 $stmt_stock = $conex->prepare($sql_stock);
                 $stmt_stock->execute([
@@ -190,7 +190,7 @@ class Salida extends Conexion {
             
             // Devolver stock
             foreach ($detalles as $detalle) {
-                $sql_stock = "UPDATE productos SET stock_disponible = stock_disponible + :cantidad 
+                $sql_stock = "UPDATE producto SET stock_disponible = stock_disponible + :cantidad 
                                    WHERE id_producto = :id_producto";
                 $stmt_stock = $conex->prepare($sql_stock);
                 $stmt_stock->execute([
@@ -366,7 +366,7 @@ class Salida extends Conexion {
 
         $conex = $this->getConex1();
         try {
-            $sql = "SELECT stock_disponible FROM productos WHERE id_producto = :id_producto AND estatus = 1";
+            $sql = "SELECT stock_disponible FROM producto WHERE id_producto = :id_producto AND estatus = 1";
             $stmt = $conex->prepare($sql);
             $stmt->execute(['id_producto' => $id_producto]);
             $resultado = $stmt->fetchColumn();
@@ -384,7 +384,7 @@ class Salida extends Conexion {
         $conex = $this->getConex1();
         try {
             $sql = "SELECT id_producto, nombre, descripcion, marca, precio_detal, stock_disponible 
-                     FROM productos 
+                     FROM producto 
                      WHERE estatus = 1 AND stock_disponible > 0
                      ORDER BY nombre ASC";
             
@@ -431,7 +431,7 @@ class Salida extends Conexion {
         try {
             $sql = "SELECT pd.cantidad, pd.precio_unitario, p.nombre as nombre_producto 
                      FROM pedido_detalles pd 
-                     JOIN productos p ON pd.id_producto = p.id_producto 
+                     JOIN producto p ON pd.id_producto = p.id_producto 
                      WHERE pd.id_pedido = :id_pedido";
             
             $stmt = $conex->prepare($sql);
@@ -518,7 +518,7 @@ class Salida extends Conexion {
         }
         
         if (!isset($datos['detalles']) || empty($datos['detalles'])) {
-            throw new \Exception('No hay productos en la venta');
+            throw new \Exception('No hay producto en la venta');
         }
 
         $conex = $this->getConex1();
@@ -552,7 +552,7 @@ class Salida extends Conexion {
             
             error_log("ID del pedido insertado: " . $id_pedido);
 
-            // Procesar detalles de productos
+            // Procesar detalles de producto
             foreach ($datos['detalles'] as $detalle) {
                 // Validar datos del detalle
                 if (!isset($detalle['id_producto']) || $detalle['id_producto'] <= 0) {
@@ -566,7 +566,7 @@ class Salida extends Conexion {
                 }
 
                 // Verificar que el producto existe y tiene stock
-                $sql_verificar_producto = "SELECT stock_disponible, nombre FROM productos WHERE id_producto = ? AND estatus = 1";
+                $sql_verificar_producto = "SELECT stock_disponible, nombre FROM producto WHERE id_producto = ? AND estatus = 1";
                 $stmt_verificar_producto = $conex->prepare($sql_verificar_producto);
                 $stmt_verificar_producto->execute([$detalle['id_producto']]);
                 $producto = $stmt_verificar_producto->fetch(\PDO::FETCH_ASSOC);
@@ -597,7 +597,7 @@ class Salida extends Conexion {
                 error_log("Detalle insertado para producto ID: " . $detalle['id_producto']);
 
                 // Actualizar stock
-                $sql_stock = "UPDATE productos SET stock_disponible = stock_disponible - ? WHERE id_producto = ?";
+                $sql_stock = "UPDATE producto SET stock_disponible = stock_disponible - ? WHERE id_producto = ?";
                 $stmt_stock = $conex->prepare($sql_stock);
                 $stmt_stock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }
@@ -743,7 +743,7 @@ class Salida extends Conexion {
             $stmt_detalles->execute([$datos['id_pedido']]);
             $detalles = $stmt_detalles->fetchAll(\PDO::FETCH_ASSOC);
             foreach ($detalles as $detalle) {
-                $sql_stock = "UPDATE productos SET stock_disponible = stock_disponible + ? WHERE id_producto = ?";
+                $sql_stock = "UPDATE producto SET stock_disponible = stock_disponible + ? WHERE id_producto = ?";
                 $stmt_stock = $conex->prepare($sql_stock);
                 $stmt_stock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }

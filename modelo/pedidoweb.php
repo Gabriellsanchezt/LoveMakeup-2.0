@@ -107,7 +107,7 @@ public function consultarDetallesPedido($id_pedido) {
                 pd.precio_unitario,
                 (pd.cantidad * pd.precio_unitario) AS subtotal
             FROM pedido_detalles pd
-            JOIN productos pr ON pd.id_producto = pr.id_producto
+            JOIN producto pr ON pd.id_producto = pr.id_producto
             WHERE pd.id_pedido = ?";
 
     $stmt = $this->getConex1()->prepare($sql);
@@ -125,7 +125,7 @@ public function consultarDetallesPedido($id_pedido) {
             $detalles = $stmtDetalles->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($detalles as $detalle) {
-                $sqlUpdateStock = "UPDATE productos SET stock_disponible = stock_disponible + ? WHERE id_producto = ?";
+                $sqlUpdateStock = "UPDATE producto SET stock_disponible = stock_disponible + ? WHERE id_producto = ?";
                 $stmtStock = $conex->prepare($sqlUpdateStock);
                 $stmtStock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }

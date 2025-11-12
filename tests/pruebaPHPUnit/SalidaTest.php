@@ -6,11 +6,11 @@ use PHPUnit\Framework\TestCase;
 use LoveMakeup\Proyecto\Modelo\Salida;
 
 // Cargar el autoloader de Composer
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Cargar configuración de base de datos si no está definida
 if (!defined('DB_HOST')) {
-    require_once __DIR__ . '/../config/config.php';
+    require_once __DIR__ . '/../../config/config.php';
 }
 
 /**

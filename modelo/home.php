@@ -15,19 +15,19 @@ class Home extends Conexion {
         try {
             $sql = "
                 SELECT 
-                    productos.nombre AS nombre_producto, 
+                    producto.nombre AS nombre_producto, 
                     SUM(pedido_detalles.cantidad) AS cantidad_vendida, 
                     SUM(pedido_detalles.cantidad * pedido_detalles.precio_unitario) AS total_vendido
                 FROM 
-                    productos
+                    producto
                 INNER JOIN 
-                    pedido_detalles ON productos.id_producto = pedido_detalles.id_producto
+                    pedido_detalles ON producto.id_producto = pedido_detalles.id_producto
                 INNER JOIN 
                     pedido ON pedido.id_pedido = pedido_detalles.id_pedido
                 WHERE 
-                    pedido.estado = 2
+                    pedido.estatus = '2'
                 GROUP BY 
-                    productos.id_producto
+                    producto.id_producto
                 ORDER BY 
                     cantidad_vendida DESC
                 LIMIT 5
@@ -57,7 +57,7 @@ class Home extends Conexion {
                 FROM 
                     pedido
                 WHERE 
-                    estado = 2
+                    estatus = '2'
             ";
 
             $stmt = $conex->prepare($sql);
@@ -82,7 +82,7 @@ class Home extends Conexion {
          FROM 
         pedido
          WHERE 
-        estado = 1
+        estatus = '1'
         AND tipo IN (2, 3)
 ";
 

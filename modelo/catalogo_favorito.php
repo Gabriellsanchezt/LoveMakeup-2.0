@@ -27,7 +27,7 @@ class Catalogo extends Conexion {
     
 
     public function obtenerProductosActivos() {
-        $sql = "SELECT * FROM productos WHERE estatus = 1";  // Filtra por productos activos (estatus = 1)
+        $sql = "SELECT * FROM producto WHERE estatus = 1";  // Filtra por productos activos (estatus = 1)
         $consulta = $this->conex1->prepare($sql);
         $consulta->execute();
         return $consulta->fetchAll(\PDO::FETCH_ASSOC);
@@ -37,14 +37,14 @@ class Catalogo extends Conexion {
     public function obtenerPorCategoria($categoriaId) {
         $sql = "
             SELECT 
-                productos.*, 
+                producto.*, 
                 categoria.nombre AS nombre_categoria 
             FROM 
-                productos 
+                producto 
             INNER JOIN 
-                categoria ON productos.id_categoria = categoria.id_categoria
+                categoria ON producto.id_categoria = categoria.id_categoria
             WHERE 
-                productos.estatus = 1 AND productos.id_categoria = :categoriaId
+                producto.estatus = 1 AND producto.id_categoria = :categoriaId
         ";  // Filtra por estatus y categoría
         $consulta = $this->conex1->prepare($sql);
         $consulta->bindParam(':categoriaId', $categoriaId);
@@ -63,7 +63,7 @@ class Catalogo extends Conexion {
     public function buscarProductos($termino) {
         $sql = "
             SELECT * 
-            FROM productos 
+            FROM producto 
             WHERE estatus = 1 
               AND (nombre LIKE :busqueda OR marca LIKE :busqueda)
         ";

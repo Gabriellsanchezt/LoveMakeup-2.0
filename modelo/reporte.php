@@ -38,7 +38,7 @@ public static function compra(
     try {
         $conex->beginTransaction();
 
-        // — Gráfico Top 10 productos comprados —
+        // — Gráfico Top 10 producto comprados —
         $whereG = []; $paramsG = [];
 
         // a) Sólo inicio
@@ -85,7 +85,7 @@ public static function compra(
         $sqlG = "
           SELECT p.nombre AS producto, SUM(cd.cantidad) AS total
             FROM compra_detalles cd
-            JOIN productos p ON p.id_producto = cd.id_producto
+            JOIN producto p ON p.id_producto = cd.id_producto
             JOIN compra    c ON c.id_compra   = cd.id_compra
            " . ($whereG
                  ? 'WHERE '.implode(' AND ', $whereG)
@@ -174,7 +174,7 @@ public static function compra(
             GROUP_CONCAT(
               p.nombre,' (',cd.cantidad,'u)'
               ORDER BY cd.cantidad DESC SEPARATOR ', '
-            ) AS productos,
+            ) AS producto,
             GROUP_CONCAT(
               DISTINCT cat.nombre
               ORDER BY cat.nombre SEPARATOR ', '
@@ -182,7 +182,7 @@ public static function compra(
             SUM(cd.cantidad * cd.precio_unitario) AS total
           FROM compra c
           JOIN compra_detalles cd ON cd.id_compra = c.id_compra
-          JOIN productos        p  ON p.id_producto = cd.id_producto
+          JOIN producto        p  ON p.id_producto = cd.id_producto
           JOIN categoria        cat ON cat.id_categoria = p.id_categoria
           JOIN proveedor        pr ON pr.id_proveedor = c.id_proveedor
            " . ($whereT
@@ -217,7 +217,7 @@ public static function compra(
         }
         if ($prodId) {
             $pSt = $conex->prepare(
-                'SELECT nombre FROM productos WHERE id_producto = :pid'
+                'SELECT nombre FROM producto WHERE id_producto = :pid'
             );
             $pSt->execute([':pid' => $prodId]);
             $filtro .= ' | Producto: '.htmlspecialchars($pSt->fetchColumn());
@@ -280,7 +280,7 @@ public static function compra(
             $html .= "<tr>
                         <td>{$d}</td>
                         <td>".htmlspecialchars($r['proveedor'])."</td>
-                        <td>".htmlspecialchars($r['productos'])."</td>
+                        <td>".htmlspecialchars($r['producto'])."</td>
                         <td>".htmlspecialchars($r['categorias'])."</td>
                         <td>{$t}</td>
                       </tr>";
@@ -365,13 +365,13 @@ public static function producto(
             $paramsG[':stockMaxG'] = $stockMax;
         }
         if ($estado !== null) {
-            $whereG[]          = 'p.estado = :estadoG';
+            $whereG[]          = 'p.estatus = :estadoG';
             $paramsG[':estadoG'] = $estado;
         }
 
         $sqlG = "
           SELECT p.nombre, p.stock_disponible
-            FROM productos p
+            FROM producto p
             JOIN categoria cat ON cat.id_categoria = p.id_categoria
             {$joinG}
            WHERE " . implode(' AND ', $whereG) . "
@@ -389,7 +389,7 @@ public static function producto(
 
         // renderizar gráfico
         $imgDir  = __DIR__ . '/../assets/img/grafica_reportes/';
-        $imgFile = $imgDir . 'grafico_productos.png';
+        $imgFile = $imgDir . 'grafico_producto.png';
         if (!is_dir($imgDir)) mkdir($imgDir, 0777, true);
         if (file_exists($imgFile)) unlink($imgFile);
         if ($data) {
@@ -405,7 +405,7 @@ public static function producto(
               ? 'data:image/png;base64,'.base64_encode(file_get_contents($imgFile))
               : '';
 
-        // ——— Tabla de productos ———
+        // ——— Tabla de producto ———
         $whereT  = ['1=1'];
         $paramsT = [];
         $joinT   = '';
@@ -442,7 +442,7 @@ public static function producto(
             $paramsT[':stockMaxT'] = $stockMax;
         }
         if ($estado !== null) {
-            $whereT[]         = 'p.estado = :estadoT';
+            $whereT[]         = 'p.estatus = :estadoT';
             $paramsT[':estadoT'] = $estado;
         }
 
@@ -455,7 +455,7 @@ public static function producto(
             p.precio_mayor,
             p.stock_disponible,
             cat.nombre AS categoria
-          FROM productos p
+          FROM producto p
           JOIN categoria cat ON cat.id_categoria = p.id_categoria
           {$joinT}
          WHERE " . implode(' AND ', $whereT) . "
@@ -481,7 +481,7 @@ public static function producto(
             // la cate﻿goría ya está en cada fila, usamos la primera
             $parts[] = 'Categoría: ' . htmlspecialchars($rows[0]['categoria'] ?? '');
         }
-        $filtro   = $parts ? implode(' | ', $parts) : 'Listado general de productos';
+        $filtro   = $parts ? implode(' | ', $parts) : 'Listado general de producto';
         $fechaGen = date('d/m/Y H:i:s');
 
         // ——— Generar PDF ———
@@ -580,7 +580,7 @@ public static function venta(
     try {
         $conex->beginTransaction();
 
-        // — Top 10 productos más vendidos (gráfico) —
+        // — Top 10 producto más vendidos (gráfico) —
         $whereG  = ['pe.tipo = 1'];
         $paramsG = [];
 
@@ -627,7 +627,7 @@ public static function venta(
                  SUM(pd.cantidad) AS total
             FROM pedido pe
             JOIN pedido_detalles pd ON pd.id_pedido = pe.id_pedido
-            JOIN productos       pr ON pr.id_producto = pd.id_producto
+            JOIN producto       pr ON pr.id_producto = pd.id_producto
            WHERE " . implode(' AND ', $whereG) . "
           GROUP BY pr.id_producto
           ORDER BY total DESC
@@ -712,12 +712,12 @@ public static function venta(
               pr.nombre,' (',pd.cantidad,'u)'
               ORDER BY pd.cantidad DESC
               SEPARATOR ', '
-            ) AS productos,
+            ) AS producto,
             cat.nombre                      AS categoria
           FROM pedido pe
           JOIN cliente         c   ON c.id_persona     = pe.id_persona
           JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
-          JOIN productos       pr  ON pr.id_producto   = pd.id_producto
+          JOIN producto       pr  ON pr.id_producto   = pd.id_producto
           JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
          WHERE " . implode(' AND ', $whereT) . "
         GROUP BY cliente, pe.fecha, total_usd, cat.nombre
@@ -747,7 +747,7 @@ public static function venta(
         }
         if ($prodId) {
             $pSt = $conex->prepare(
-                'SELECT nombre FROM productos WHERE id_producto = :pid'
+                'SELECT nombre FROM producto WHERE id_producto = :pid'
             );
             $pSt->execute([':pid'=>$prodId]);
             $filtro .= ' | Producto: '.htmlspecialchars($pSt->fetchColumn());
@@ -793,7 +793,7 @@ public static function venta(
             $d    = date('d/m/Y',strtotime($r['fecha']));
             $tot  = '$'.number_format($r['total_usd'],2);
             $cli  = htmlspecialchars($r['cliente']);
-            $prods= htmlspecialchars($r['productos'] ?? '—');
+            $prods= htmlspecialchars($r['producto'] ?? '—');
             $catn = htmlspecialchars($r['categoria'] ?? '—');
             $html .= "<tr>
                         <td>{$cli}</td>
@@ -835,11 +835,11 @@ public static function graficaVentaTop5(): array
              SUM(pd.cantidad) AS total
         FROM pedido pe
         JOIN pedido_detalles pd ON pd.id_pedido = pe.id_pedido
-        JOIN productos       pr ON pr.id_producto = pd.id_producto
+        JOIN producto       pr ON pr.id_producto = pd.id_producto
        WHERE
-         (pe.tipo = 1 AND pe.estado = 1)      
+         (pe.tipo = 1 AND pe.estatus = '1')      
          OR
-         (pe.tipo = 2 AND pe.estado IN (2,3,4,5))  
+         (pe.tipo = 2 AND pe.estatus IN ('2','3','4','5'))  
     GROUP BY pr.id_producto
     ORDER BY total DESC
        LIMIT 5
@@ -886,7 +886,7 @@ public static function pedidoWeb(
     }
 
     // 2) Armar WHERE y params (solo tipo=2, excluyendo verificar pago)
-    $where  = ['p.tipo = 2', 'p.estado != 1'];
+    $where  = ['p.tipo = 2', 'p.estatus != 1'];
     $params = [];
     if ($origStart && !$origEnd) {
         $where[]      = 'p.fecha >= :s AND p.fecha <= :e';
@@ -905,7 +905,7 @@ public static function pedidoWeb(
         $params[':pid'] = $prodId;
     }
     if ($estado !== null) {
-        $where[]        = 'p.estado = :estado';
+        $where[]        = 'p.estatus = :estado';
         $params[':estado'] = $estado;
     }
     if ($metodoPago !== null) {
@@ -936,7 +936,7 @@ public static function pedidoWeb(
           SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
             FROM pedido p
        LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
-       LEFT JOIN productos pr       ON pr.id_producto = pd.id_producto
+       LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
            WHERE {$whereSql}
         GROUP BY pr.id_producto
         ORDER BY total DESC
@@ -976,11 +976,11 @@ public static function pedidoWeb(
               DISTINCT pr.nombre
               ORDER BY pr.nombre
               SEPARATOR ', '
-            )                                      AS productos,
+            )                                      AS producto,
             CONCAT(c.nombre,' ',c.apellido)        AS usuario
           FROM pedido p
           LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
-          LEFT JOIN productos       pr ON pr.id_producto  = pd.id_producto
+          LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
           LEFT JOIN cliente         c  ON c.id_persona   = p.id_persona
           WHERE {$whereSql}
           GROUP BY p.id_pedido
@@ -1010,7 +1010,7 @@ public static function pedidoWeb(
         }
         if ($prodId) {
             $pSt = $conex->prepare(
-                "SELECT nombre FROM productos WHERE id_producto = :pid"
+                "SELECT nombre FROM producto WHERE id_producto = :pid"
             );
             $pSt->execute([':pid'=>$prodId]);
             $filtro .= ' | Producto: '.htmlspecialchars($pSt->fetchColumn());
@@ -1056,7 +1056,7 @@ public static function pedidoWeb(
                         <td>{$r['fecha']}</td>
                         <td>{$e}</td>
                         <td>{$tot}</td>
-                        <td>".htmlspecialchars($r['productos'])."</td>
+                        <td>".htmlspecialchars($r['producto'])."</td>
                         <td>".htmlspecialchars($r['usuario'])."</td>
                       </tr>";
         }
@@ -1158,7 +1158,7 @@ public static function countCompra($start = null, $end = null, $prodId = null, $
           pr.nombre AS proveedor
         FROM compra c
         JOIN compra_detalles cd ON cd.id_compra = c.id_compra
-        JOIN productos        p  ON p.id_producto = cd.id_producto
+        JOIN producto        p  ON p.id_producto = cd.id_producto
         JOIN categoria        cat ON cat.id_categoria = p.id_categoria
         JOIN proveedor        pr ON pr.id_proveedor = c.id_proveedor
          " . ($where ? 'WHERE ' . implode(' AND ', $where) : '') . "
@@ -1216,14 +1216,14 @@ public static function countProducto($prodId = null, $provId = null, $catId = nu
       $params[':stockMax'] = $stockMax;
     }
     if ($estado !== null) {
-      $where[]          = 'p.estado = :estado';
+      $where[]          = 'p.estatus = :estado';
       $params[':estado'] = $estado;
     }
 
     $w   = implode(' AND ', $where);
     $sql = "
       SELECT COUNT(DISTINCT p.id_producto) 
-      FROM productos p
+      FROM producto p
       $join
       WHERE $w
     ";
@@ -1305,7 +1305,7 @@ public static function countVenta(
         FROM pedido pe
         JOIN cliente         c   ON c.id_persona     = pe.id_persona
         JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
-        JOIN productos       pr  ON pr.id_producto   = pd.id_producto
+        JOIN producto       pr  ON pr.id_producto   = pd.id_producto
         JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
         WHERE " . implode(' AND ', $where) . "
         GROUP BY cliente, pe.fecha, total_usd, cat.nombre
@@ -1330,7 +1330,7 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
     }
 
     // 2) Armar condiciones y parámetros
-    $where  = ['p.tipo = 2', 'p.estado != 1'];
+    $where  = ['p.tipo = 2', 'p.estatus != 1'];
     $params = [];
 
     if ($origStart && !$origEnd) {
@@ -1356,7 +1356,7 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
     }
 
     if ($estado !== null) {
-        $where[]        = 'p.estado = :estado';
+        $where[]        = 'p.estatus = :estado';
         $params[':estado'] = $estado;
     }
 
