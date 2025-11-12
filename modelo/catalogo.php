@@ -27,14 +27,14 @@ class Catalogo extends Conexion {
         try {
             $sql = "
                 SELECT 
-                    productos.*, 
+                    producto.*, 
                     categoria.nombre AS nombre_categoria 
                 FROM 
-                    productos 
+                    producto 
                 INNER JOIN 
-                    categoria ON productos.id_categoria = categoria.id_categoria
+                    categoria ON producto.id_categoria = categoria.id_categoria
                 WHERE 
-                    productos.estatus = 1 AND productos.id_categoria = :categoriaId
+                    producto.estatus = 1 AND producto.id_categoria = :categoriaId
             ";
             $stmt = $conex->prepare($sql);
             $stmt->bindParam(':categoriaId', $categoriaId, \PDO::PARAM_INT);
@@ -59,7 +59,7 @@ class Catalogo extends Conexion {
         try {
             $sql = "
                 SELECT *  
-                FROM productos  
+                FROM producto  
                 WHERE estatus = 1  
                   AND (nombre LIKE :busqueda OR marca LIKE :busqueda)
             ";

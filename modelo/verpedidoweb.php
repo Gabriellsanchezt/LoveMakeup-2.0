@@ -114,7 +114,7 @@ class VentaWeb extends Conexion {
        try{
         $conex->beginTransaction();
         foreach($carrito as $it) {
-            $stmt = $conex->prepare("SELECT stock_disponible,nombre FROM productos WHERE id_producto=:id");
+            $stmt = $conex->prepare("SELECT stock_disponible,nombre FROM producto WHERE id_producto=:id");
             $stmt->execute(['id'=>$it['id']]);
             $p = $stmt->fetch(\PDO::FETCH_ASSOC);
             if(!$p) throw new \Exception("Producto {$it['id']} no encontrado");
@@ -214,7 +214,7 @@ class VentaWeb extends Conexion {
         $conex = $this->getConex1();
        try{ 
         $conex->beginTransaction();
-        $sql = "UPDATE productos SET stock_disponible=stock_disponible-:cant WHERE id_producto=:id";
+        $sql = "UPDATE producto SET stock_disponible=stock_disponible-:cant WHERE id_producto=:id";
         $stmt = $conex->prepare($sql);
         $stmt->execute(['cant'=>$cant,'id'=>$id]);
         $conex->commit();

@@ -22,6 +22,7 @@ class Cliente extends Conexion
         try {
             switch ($operacion) {
                 case 'actualizar':
+                    
                     // Verifica si cambió la cédula antes de validar existencia
                     if ($datosProcesar['cedula'] !== $datosProcesar['cedula_actual']) {
                         if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
@@ -39,7 +40,7 @@ class Cliente extends Conexion
                     return $this->ejecutarActualizacion($datosProcesar);
                                         
                 default:
-                    return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
+                    return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'Operación no válida'];
             }
         } catch (\Exception $e) {
             return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
@@ -48,10 +49,21 @@ class Cliente extends Conexion
 
 /*||||||||||||||||||||||||||||||| CONSULTAR DATOS  |||||||||||||||||||||||||  02  |||||*/        
         public function consultar() {
-            $conex = $this->getConex1();
+            $conex = $this->getConex2();
             try {
-                $sql = "SELECT * FROM cliente WHERE estatus >=1
-                ORDER BY id_persona DESC";
+                $sql = "SELECT 
+                        per.*, 
+                        ru.id_rol, 
+                        ru.nombre AS nombre_tipo, 
+                        ru.nivel,
+                        u.id_usuario,
+                        u.estatus
+                    FROM usuario u
+                    INNER JOIN persona per ON u.cedula = per.cedula
+                    INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                    WHERE ru.nivel IN (1) 
+                    AND u.estatus >= 1
+                    ORDER BY u.id_usuario DESC";
                         
                 $stmt = $conex->prepare($sql);
                 $stmt->execute();
@@ -67,73 +79,77 @@ class Cliente extends Conexion
         }
 
 /*||||||||||||||||||||||||||||||| ACTUALIZAR DATOS DEL CLIENTE  |||||||||||||||||||||||||  03  |||||*/    
-    protected function ejecutarActualizacion($datos) {
-        $conex = $this->getConex1();
-        try {
-            $conex->beginTransaction();
-            
-            $sql = "UPDATE cliente 
-                        SET cedula = :cedula, 
-                            correo = :correo, 
-                            estatus = :estatus 
-                        WHERE id_persona = :id_persona";
-            
-               $parametros = [
-                'cedula' => $datos['cedula'],
-                'correo' => $datos['correo'],
-                'estatus' => $datos['estatus'],
-                'id_persona' => $datos['id_persona']
-                ];
+   private function ejecutarActualizacion($datos) {
+    $conex = $this->getConex2();
+    try {
+        $conex->beginTransaction();
 
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($parametros);
-            
-            if ($resultado) {
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'actualizar'];
-            }
-            
+           // 1. Actualizar tabla persona primero
+        $sqlPersona = "UPDATE persona 
+                       SET cedula = :cedula_nueva, 
+                           correo = :correo, 
+                           tipo_documento = :tipo_documento 
+                       WHERE cedula = :cedula_actual";
+
+        $paramPersona = [
+            'cedula_nueva' => $datos['cedula'],
+            'correo' => $datos['correo'],
+            'tipo_documento' => $datos['tipo_documento'],
+            'cedula_actual' => $datos['cedula_actual']
+        ];
+
+        $stmtPersona = $conex->prepare($sqlPersona);
+        $stmtPersona->execute($paramPersona);
+
+        // 2. Luego actualizar tabla usuario
+        $sqlUsuario = "UPDATE usuario 
+                       SET cedula = :cedula_nueva, 
+                           estatus = :estatus 
+                       WHERE cedula = :cedula_actual";
+
+        $paramUsuario = [
+            'cedula_nueva' => $datos['cedula'],
+            'estatus' => $datos['estatus'],
+            'cedula_actual' => $datos['cedula_actual']
+        ];
+
+        $stmtPersona = $conex->prepare($sqlPersona);
+        $stmtPersona->execute($paramPersona);
+
+        $conex->commit();
+        $conex = null;
+        return ['respuesta' => 1, 'accion' => 'actualizar'];
+
+    } catch (\PDOException $e) {
+        if ($conex) {
             $conex->rollBack();
             $conex = null;
-            return ['respuesta' => 0, 'accion' => 'actualizar'];
-            
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
-            }
-            throw $e;
         }
+        return ['respuesta' => 0, 'text' => $e->getMessage()];
     }
+}
+
 
 /*||||||||||||||||||||||||||||||| VERIFICAR CEDULA Y CORREO  |||||||||||||||||||||||||  04  |||||*/        
-     protected function verificarExistencia($datos) {
-        $conex1 = $this->getConex1();
-        $conex2 = $this->getConex2();
-        try {
-            // Verificar en clientes
-            $sql = "SELECT COUNT(*) FROM cliente WHERE {$datos['campo']} = :valor AND estatus >= 1";
-            $stmt = $conex1->prepare($sql);
-            $stmt->execute(['valor' => $datos['valor']]);
-            $existe = $stmt->fetchColumn() > 0;
-            
-            if (!$existe) {
-                // Si no existe en clientes, verificar en usuarios
-                $sql = "SELECT COUNT(*) FROM usuario WHERE {$datos['campo']} = :valor AND estatus >= 1";
-                $stmt = $conex2->prepare($sql);
-                $stmt->execute(['valor' => $datos['valor']]);
-                $existe = $stmt->fetchColumn() > 0;
-            }
-            
-            $conex1 = null;
-            $conex2 = null;
-            return $existe;
-        } catch (\PDOException $e) {
-            if ($conex1) $conex1 = null;
-            if ($conex2) $conex2 = null;
-            throw $e;
-        }
+   private function verificarExistencia($datos) {
+    $conex = $this->getConex2();
+    try {
+        $conex->beginTransaction();
+        $sql = "SELECT COUNT(*) FROM persona 
+                WHERE ({$datos['campo']} = :valor)";
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['valor' => $datos['valor']]);
+        $existe = $stmt->fetchColumn() > 0;
+
+        $conex->commit();
+        $conex = null;
+        return $existe;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
     }
+}
+
 
 }

@@ -50,7 +50,7 @@ class Reservas extends Conexion {
             $detalles = $stmtDetalles->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($detalles as $detalle) {
-                $sqlUpdateStock = "UPDATE productos SET stock_disponible = stock_disponible + ? WHERE id_producto = ?";
+                $sqlUpdateStock = "UPDATE producto SET stock_disponible = stock_disponible + ? WHERE id_producto = ?";
                 $stmtStock = $conex->prepare($sqlUpdateStock);
                 $stmtStock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }
@@ -108,7 +108,7 @@ class Reservas extends Conexion {
                     pd.cantidad,
                     pd.precio_unitario
                 FROM pedido_detalles pd
-                JOIN productos pr ON pd.id_producto = pr.id_producto
+                JOIN producto pr ON pd.id_producto = pr.id_producto
                 WHERE pd.id_pedido = ?";
 
         $stmt = $this->getconex1()->prepare($sql);
@@ -131,7 +131,7 @@ class Reservas extends Conexion {
     }
 
     private function consultarProductos() {
-        $sql = "SELECT id_producto, nombre, stock_disponible, precio FROM productos WHERE activo = 1";
+        $sql = "SELECT id_producto, nombre, stock_disponible, precio FROM producto WHERE activo = 1";
         $stmt = $this->getconex1()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);

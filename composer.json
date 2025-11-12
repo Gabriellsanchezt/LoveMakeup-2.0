@@ -25,6 +25,14 @@
         "phpmailer/phpmailer": "^6.9"
     },
     "require-dev": {
-        "phpunit/phpunit": "*"
+        "phpunit/phpunit": "*",
+        "php-webdriver/webdriver": "^1.15",
+        "symfony/process": "^6.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-phpunit": "phpunit --testsuite=\"PHPUnit Tests\"",
+        "test-selenium": "phpunit --testsuite=\"Selenium Tests\"",
+        "test-all": "phpunit"
     }
 }

@@ -69,7 +69,7 @@ return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         pd.precio_unitario,
         (pd.cantidad * pd.precio_unitario) AS subtotal
     FROM pedido_detalles pd
-    JOIN productos pr ON pd.id_producto = pr.id_producto
+    JOIN producto pr ON pd.id_producto = pr.id_producto
     WHERE pd.id_pedido = ?";
 
 $stmt = $this->getconex1()->prepare($sql);

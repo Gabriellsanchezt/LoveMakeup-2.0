@@ -48,7 +48,7 @@ class Producto extends Conexion {
     private function verificarProductoExistente($nombre, $marca) {
         $conex = $this->getConex1();
         try {
-            $sql = "SELECT COUNT(*) FROM productos WHERE LOWER(nombre) = LOWER(:nombre) AND LOWER(marca) = LOWER(:marca) AND estatus = 1";
+            $sql = "SELECT COUNT(*) FROM producto WHERE LOWER(nombre) = LOWER(:nombre) AND LOWER(marca) = LOWER(:marca) AND estatus = 1";
             $stmt = $conex->prepare($sql);
             $stmt->execute(['nombre' => $nombre, 'marca' => $marca]);
             $resultado = $stmt->fetchColumn() > 0;
@@ -67,7 +67,7 @@ class Producto extends Conexion {
         try {
             $conex->beginTransaction();
             
-            $sql = "INSERT INTO productos(nombre, descripcion, marca, cantidad_mayor, precio_mayor, precio_detal, 
+            $sql = "INSERT INTO producto(nombre, descripcion, marca, cantidad_mayor, precio_mayor, precio_detal, 
                     stock_disponible, stock_maximo, stock_minimo, imagen, id_categoria, estatus)
                     VALUES (:nombre, :descripcion, :marca, :cantidad_mayor, :precio_mayor, :precio_detal, 
                     0, :stock_maximo, :stock_minimo, :imagen, :id_categoria, 1)";
@@ -99,7 +99,7 @@ class Producto extends Conexion {
         try {
             $conex->beginTransaction();
             
-            $sql = "UPDATE productos SET 
+            $sql = "UPDATE producto SET 
                     nombre = :nombre,
                     descripcion = :descripcion,
                     marca = :marca,
@@ -140,7 +140,7 @@ class Producto extends Conexion {
             $conex->beginTransaction();
             
             // Verificar stock antes de eliminar
-            $sql = "SELECT stock_disponible FROM productos WHERE id_producto = :id_producto";
+            $sql = "SELECT stock_disponible FROM producto WHERE id_producto = :id_producto";
             $stmt = $conex->prepare($sql);
             $stmt->execute(['id_producto' => $datos['id_producto']]);
             $stock = $stmt->fetchColumn();
@@ -151,7 +151,7 @@ class Producto extends Conexion {
                 return ['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'No se puede eliminar un producto con stock disponible'];
             }
     
-            $sql = "UPDATE productos SET estatus = 0 WHERE id_producto = :id_producto";
+            $sql = "UPDATE producto SET estatus = 0 WHERE id_producto = :id_producto";
             $stmt = $conex->prepare($sql);
             $resultado = $stmt->execute($datos);
             
@@ -181,7 +181,7 @@ class Producto extends Conexion {
             
             $nuevo_estatus = ($datos['estatus_actual'] == 2) ? 1 : 2;
             
-            $sql = "UPDATE productos SET estatus = :nuevo_estatus WHERE id_producto = :id_producto";
+            $sql = "UPDATE producto SET estatus = :nuevo_estatus WHERE id_producto = :id_producto";
             $stmt = $conex->prepare($sql);
             $resultado = $stmt->execute([
                 'nuevo_estatus' => $nuevo_estatus,
@@ -212,7 +212,7 @@ class Producto extends Conexion {
         $conex = $this->getConex1();
         try {
             $sql = "SELECT p.*, c.nombre AS nombre_categoria 
-                    FROM productos p 
+                    FROM producto p 
                     INNER JOIN categoria c ON p.id_categoria = c.id_categoria 
                     WHERE p.estatus IN (1,2)";
             
@@ -234,17 +234,17 @@ class Producto extends Conexion {
          try {
         $sql = "
             SELECT 
-                productos.*
+                producto.*
             FROM 
-                productos
+                producto
             INNER JOIN 
-                pedido_detalles ON productos.id_producto = pedido_detalles.id_producto
+                pedido_detalles ON producto.id_producto = pedido_detalles.id_producto
             INNER JOIN 
                 pedido ON pedido.id_pedido = pedido_detalles.id_pedido
             WHERE 
-                productos.estatus = 1 AND pedido.estado = 2
+                producto.estatus = 1 AND pedido.estatus = '2'
             GROUP BY 
-                productos.id_producto
+                producto.id_producto
             ORDER BY 
                 SUM(pedido_detalles.cantidad) DESC
             LIMIT 10
@@ -265,7 +265,7 @@ class Producto extends Conexion {
     public function ProductosActivos() {
     $conex = $this->getConex1();
     try {
-        $sql = "SELECT * FROM productos WHERE estatus = 1";
+        $sql = "SELECT * FROM producto WHERE estatus = 1";
         $stmt = $conex->prepare($sql);
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);

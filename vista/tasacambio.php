@@ -48,14 +48,7 @@
         Tasa de Cambio</h4>
            
         <div class="d-flex gap-2">
-      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
-  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar">
-    <span class="icon text-white">
-      <i class="fas fa-file-medical"></i>
-    </span>
-    <span class="text-white">Registrar</span>
-  </button>
-  <?php endif; ?>
+      
   <button type="button" class="btn btn-primary" id="btnAyuda">
     <span class="icon text-white">
       <i class="fas fa-info-circle"></i>
@@ -65,22 +58,65 @@
 </div>
 </div>
         
-
-      <div class="table-responsive"> <!-- comienzo div table-->
-           <!-- comienzo de tabla-->                      
-           <table class="table table-m table-hover" id="myTable" width="100%" cellspacing="0">
-              <thead class="table-color">
-                <tr>
-                 
-                </tr>
-              </thead>
-              <tbody>
-              
-              </tbody>
-                               
-          </table> <!-- Fin tabla-->
+        
+  <!-- Fila 1: Cards -->
+  <div class="row mb-4">
+    <!-- Card 1 -->
+    <div class="col-md-6">
+      <div class="card" style="background-color: #fce4ec;">
+        <div class="card-body">
+          <h5 class="card-title">Tasa del Dolar (Guardada)</h5>
+          <h4 class="card-subtitle mb-2 text-dark">Bs. 200.55</h4>
+          <p class="card-text">Actualmente estás es la tasa de cambio de USD a Bolívares (Bs) guardada en nuestra base de datos. puedes modificarla manualmente en cualquier momento según tu preferencia o la tasa vigente.</p>
+          <label for="">Modificarla manualmente la tasa del $ a Bs</label>
+          <div class="input-group">
+          <input type="text" class="form-control mb-2" placeholder="100.50">
+        <button class="btn btn-primary btn-sm">Registrar</button>
+        </div>
           
-      </div>  <!-- Fin div table-->
+
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="col-md-6">
+      <div class="card" style="background-color: #e3f2fd;">
+        <div class="card-body">
+          <h5 class="card-title">Tasa del Dolar (Actual - Via Internet) </h5>
+         <h4 class="card-subtitle mb-2 text-dark">Bs. 200.55</h4>
+          <p class="card-text">Estás utilizando la tasa de cambio USD a Bs obtenida automáticamente desde internet. Si lo prefieres, puedes sincronizar esta tasa y actualizar la que está guardada en la base de datos.</p>
+          <button class="btn btn-info btn-sm">Sincronizar y Actualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fila 2: Tabla -->
+  <div class="row">
+    <div class="col-12 mb-5">
+      <table class="table table-bordered table-striped w-100">
+        <thead class="table-light">
+          <tr>
+            <th>FECHA</th>
+            <th>TASA BS</th>
+            <th>FUENTE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Registro A</td><td>Activo</td></tr>
+          <tr><td>2</td><td>Registro B</td><td>Inactivo</td></tr>
+          <tr><td>3</td><td>Registro C</td><td>Activo</td></tr>
+          <tr><td>4</td><td>Registro D</td><td>Inactivo</td></tr>
+          <tr><td>5</td><td>Registro E</td><td>Activo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+     
 
     </div><!-- FIN CARD N-1 -->  
     </div>

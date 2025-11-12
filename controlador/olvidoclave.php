@@ -1,6 +1,6 @@
 <?php  
 
-use LoveMakeup\Proyecto\Modelo\Olvido;
+use LoveMakeup\Proyecto\Modelo\Olvidoclave;
 
      session_start();
      if (empty($_SESSION["iduser"])){
@@ -10,7 +10,7 @@ use LoveMakeup\Proyecto\Modelo\Olvido;
         require_once 'verificarsession.php';
 } 
   
-  $objolvido = new Olvido();    
+  $objolvido = new Olvidoclave();    
   
   if (isset($_POST['cerrarolvido'])) {    
       session_destroy(); 
@@ -74,9 +74,9 @@ use LoveMakeup\Proyecto\Modelo\Olvido;
      $datosOlvido = [
         'operacion' => 'actualizar',
         'datos' => [
-            'id_persona' => $_SESSION["persona"],
-             'clave' => $_POST['clavenueva'],
-            'tabla_origen' => $_SESSION["tabla_origen"]
+            'cedula' => $_SESSION["cedula"],
+             'clave' => $_POST['clavenueva']
+            
         ]
     ]; 
 

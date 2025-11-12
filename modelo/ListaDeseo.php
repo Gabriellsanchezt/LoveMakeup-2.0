@@ -79,7 +79,7 @@ class ListaDeseo extends Conexion {
                        p.precio_detal, p.precio_mayor, 
                        p.cantidad_mayor, p.stock_disponible
                 FROM lista_deseo ld
-                JOIN productos p ON ld.id_producto = p.id_producto
+                JOIN producto p ON ld.id_producto = p.id_producto
                 WHERE ld.id_persona = :id_persona
             ";
             $stmt = $conex->prepare($sql);

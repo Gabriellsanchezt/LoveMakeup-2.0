@@ -1,4 +1,3 @@
-
 ## Resumen General
 
 Este documento explica los cambios realizados para incorporar **Composer** al sistema de gestión de LoveMakeup. Composer es un gestor de dependencias para PHP que permite organizar mejor el código mediante el uso de **namespaces** y **autoloading automático**.

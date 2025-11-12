@@ -48,7 +48,7 @@
 		
     	<h6 class="text-center">
 			Estimado 
-			<?php  echo ($_SESSION["tabla_origen"] == 1) ? "Cliente" : "Usuario";?>, 
+			<?php  echo ($_SESSION["nivel"] == 1) ? "Cliente" : "Usuario";?>, 
 			<?php echo $_SESSION["nombres"] . " " . $_SESSION["apellidos"]; ?>
 		</h6>
 <hr class="bg-dark">

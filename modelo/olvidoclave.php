@@ -6,7 +6,7 @@ use LoveMakeup\Proyecto\Config\Conexion;
 
 /*||||||||||||||||||||||||||||||| TOTAL METODOS =   06  |||||||||||||||||||||||||||||*/    
 
-class Olvido extends Conexion{
+class Olvidoclave extends Conexion{
 
     private $encryptionKey = "MotorLoveMakeup"; 
     private $cipherMethod = "AES-256-CBC";
@@ -51,7 +51,7 @@ class Olvido extends Conexion{
         try {
             switch ($operacion) {
                  case 'actualizar':
-                     return $this->ejecutarActualizacionPorOrigen($datosProcesar);            
+                     return $this->ejecutarActualizacionUsuario($datosProcesar);            
                 default:
                     return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
             }
@@ -60,51 +60,6 @@ class Olvido extends Conexion{
         }
     }
 
-/*||||||||||||||||||||||||||||||| TABLA DE ORIGEN PARA SABER SI ES USUARIO O CLIENTE  |||||||||||||||||||||||||  04  |||||*/        
-    protected function ejecutarActualizacionPorOrigen($datosProcesar) {
-        if (isset($datosProcesar['tabla_origen']) && $datosProcesar['tabla_origen'] == 1) {
-            return $this->ejecutarActualizacionCliente($datosProcesar);
-        } else {
-            return $this->ejecutarActualizacionUsuario($datosProcesar);
-        }
-    }
-
-/*||||||||||||||||||||||||||||||| ACTUALIZAR DE CLAVE CLIENTE  |||||||||||||||||||||||||  05  |||||*/        
-    protected function ejecutarActualizacionCliente($datos) {
-        $conex = $this->getConex1();
-        try {
-            $conex->beginTransaction();
-            
-            $sql = "UPDATE cliente 
-                        SET  clave = :clave
-                        WHERE id_persona = :id_persona";
-            
-               $parametros = [
-                'clave' => $this->encryptClave(['clave' => $datos['clave']]),
-                'id_persona' => $datos['id_persona']
-                ];
-
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($parametros);
-            
-            if ($resultado) {
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'actualizar'];
-            }
-            
-            $conex->rollBack();
-            $conex = null;
-            return ['respuesta' => 0, 'accion' => 'actualizar'];
-            
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
-            }
-            throw $e;
-        }
-    }
 
 /*||||||||||||||||||||||||||||||| ACTUALIZAR DE CLAVE USUARIO  |||||||||||||||||||||||||  06  |||||*/        
      protected function ejecutarActualizacionUsuario($datos) {
@@ -114,11 +69,11 @@ class Olvido extends Conexion{
             
             $sql = "UPDATE usuario 
                         SET  clave = :clave
-                        WHERE id_persona = :id_persona";
+                        WHERE cedula = :cedula";
             
                $parametros = [
                 'clave' => $this->encryptClave(['clave' => $datos['clave']]),
-                'id_persona' => $datos['id_persona']
+                'cedula' => $datos['cedula']
                 ];
 
             $stmt = $conex->prepare($sql);

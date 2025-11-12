@@ -128,20 +128,37 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
             <div class="modal-body">
               <form method="POST" action="?pagina=login" autocomplete="off" id="olvidoclave" class="form-registro">
                               
-                  <div class="row">
-                    <div class="col">
-                      <label class="labelform text-g"> <i class="fa-solid fa-id-card tex-i"></i> Introducir el Nro. de Cedula</label>
-                          <input type="text" class="form-control" id="cedulac" name="cedula" placeholder="Cedula: 11222333 ">
-                          <span id="textocedulac" class="text-danger"></span>
+                
+               <label class="labelform text-g"> <i class="fa-solid fa-id-card tex-i"></i> Introducir el Nro. de Cedula</label>
+
+
+        
+
+              <div class="mb-1 ">
+                  <label for="nombre" class="form-label">Tipo Documento</label>
+                  <select class="form-select" name="tipo_documentos" id="rolSelect20"  required >
+                    <option value="V"> Venezolano </option>
+                    <option value="E"> Extranjero </option>
+                    <option value="J"> Juridico </option>
+                  </select>
+                  <span id="textodocumento" class="text-danger"></span>
+              </div>
+
+            <div class="mb-5 ">
+                <label for="usuario" class="form-label">Cedula</label>
+                <input type="text" class="form-control" id="cedulac" name="cedula" placeholder="Cedula: 11222333 ">
+                <span id="textocedulac" class="text-danger"></span>
+            </div>
+               
+            <div class="row">
+
+                <div class="col"> 
+                      <div class="d-grid gap-2 d-md-flex justify-content-center">
+                        <button type="button" class="btn btn-secondary btn-sm me-md-2 tex-modal" data-bs-dismiss="modal" aria-label="Cerrar">Cancelar</button>
+                        <button type="button" class="btn btn-success btn-sm tex-modal" id="validarolvido">Validar</button>
+                      </div>
                     </div>
-                  </div>
-                  <br>
-                  <div class="row">
-                    <div class="col">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                          <button type="button" class="btn btn-secondary btn-sm me-md-2 tex-modal" data-bs-dismiss="modal" aria-label="Cerrar">Cancelar</button>
-                         <button type="button" class="btn btn-success btn-sm tex-modal text-dark"  id="validarolvido">Validar</button>
-                  </div>
+
                     </div>
                   </div>
               
@@ -181,10 +198,24 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
         <form method="POST" action="?pagina=login" autocomplete="off" id="registrocliente">
           <div class="row">
              <div class="mb-1">
-            <label for="usuario" class="form-label">Cedula</label>
+         
+          </div>
+          
+           <div class="mb-1 col-md-6">
+              <label for="nombre" class="form-label">Tipo Documento</label>
+              <select class="form-select" name="tipo_documento" id="rolSelect2"  required >
+                <option value="V"> Venezolano </option>
+                <option value="E"> Extranjero </option>
+                <option value="J"> Juridico </option>
+              </select>
+              <span id="textodocumento" class="text-danger"></span>
+            </div>
+
+            <div class="mb-1 col-md-6">
+                <label for="usuario" class="form-label">Cedula</label>
             <input type="text" class="form-control" id="cedula"  name="cedula" placeholder="00100300">
             <span id="textocedula" class="text-danger"></span>
-          </div>
+            </div>
 
             <div class="mb-1 col-md-6">
               <label for="nombre" class="form-label">Nombre</label>
