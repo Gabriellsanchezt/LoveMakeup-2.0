@@ -148,7 +148,7 @@ $(function(){
       $telefono.addClass('is-invalid');
       $spanTelefono.text('Este campo es obligatorio');
       esValido = false;
-    } else if (!validarkeyup(/^(04|02)[0-9]{9}$/, $telefono, $spanTelefono, 'Debe comenzar en 04 o 02 y tener el formato 04xx-XXXXXXX')) {
+    } else if (!validarkeyup(/^[0-9]{4}[-]{1}[0-9]{7}$/, $telefono, $spanTelefono, 'El formato debe ser 0414-0000000')) {
       esValido = false;
     }
     
@@ -252,10 +252,18 @@ $("#correo").on("keyup", function() {
 });
 
 $("#telefono").on("keypress", function(e) {
-    validarkeypress(/^[0-9\b-]*$/, e);
+    validarkeypress(/^[0-9-\-]*$/, e);
 });
 $("#telefono").on("keyup", function() {
-    validarkeyup(/^(04|02)[0-9]{9}$/, $(this), $("#stelefono"), "Debe comenzar en 04 o 02 y tener el formato 04xx-XXXXXXX");
+    validarkeyup(/^[0-9]{4}[-]{1}[0-9]{7}$/, $(this), $("#stelefono"), "El formato debe ser 0414-0000000");
+});
+
+$("#telefono").on("input", function () {
+  var input = $(this).val().replace(/[^0-9]/g, '');
+  if (input.length > 4) {
+    input = input.substring(0, 4) + '-' + input.substring(4, 11);
+  }
+  $(this).val(input);
 });
 
 $("#numero_documento").on("keypress", function(e) {

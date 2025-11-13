@@ -263,23 +263,29 @@
             
             <div class="row g-3 mt-2">
               <div class="col-md-12">
-                <label for="tipo">TIPO</label>
+                <label for="contacto">NÚMERO DE TELÉFONO</label>
                 <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-tags"></i></span>
-                  <input type="text" class="form-control" name="tipo" id="tipo" placeholder="Tipo de delivery" maxlength="80" required>
-                </div>
-                <span id="stipo" class="error-message"></span>
-              </div>
-            </div>
-            
-            <div class="row g-3 mt-2">
-              <div class="col-md-12">
-                <label for="contacto">CONTACTO</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fa-solid fa-address-book"></i></span>
-                  <input type="text" class="form-control" name="contacto" id="contacto" placeholder="Información de contacto" maxlength="100" required>
+                  <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
+                  <input type="text" class="form-control" name="contacto" id="contacto" placeholder="0414-0000000" maxlength="12" required>
                 </div>
                 <span id="scontacto" class="error-message"></span>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-12">
+                <label for="tipo">TIPO DE VEHÍCULO</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-solid fa-motorcycle"></i></span>
+                  <select class="form-select" name="tipo" id="tipo" required>
+                    <option value="">Seleccione un tipo</option>
+                    <option value="Carro">Carro</option>
+                    <option value="Moto">Moto</option>
+                    <option value="Bicicleta">Bicicleta</option>
+                    <option value="Camión">Camión</option>
+                  </select>
+                </div>
+                <span id="stipo" class="error-message"></span>
               </div>
             </div>
             
@@ -333,8 +339,8 @@
 <?php include 'complementos/footer.php'; ?>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/delivery.js"></script>
+<!-- para el datatable-->
 <script src="assets/js/demo/datatables-demo.js"></script>
+<script src="assets/js/delivery.js"></script>
 </body>
 </html>

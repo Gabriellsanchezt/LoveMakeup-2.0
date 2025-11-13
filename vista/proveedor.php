@@ -201,7 +201,7 @@
                 <label for="telefono">TELÉFONO</label>
                 <div class="input-group">
                   <span class="input-group-text"><i class="fa-solid fa-mobile-screen-button"></i></span>
-                  <input type="text" class="form-control" name="telefono" id="telefono" placeholder="Ejemplo: 04121234567" maxlength="11" required>
+                  <input type="text" class="form-control" name="telefono" id="telefono" placeholder="0414-0000000" maxlength="12" required>
                 </div>
                 <span id="stelefono" class="error-message"></span>
               </div>
