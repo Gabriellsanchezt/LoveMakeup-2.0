@@ -106,25 +106,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
             ? 'Asesora de Ventas'
             : 'Administrador';
 
-    switch ($accion) {
-        case 'compra':
-            Reporte::compra($start, $end, $prodId, $catId, $provId, $montoMin, $montoMax);
-            $desc = 'Generó Reporte de Compras';
-            break;
-        case 'producto':
-            Reporte::producto($prodId, $provId, $catId, $precioMin, $precioMax, $stockMin, $stockMax, $estado);
-            $desc = 'Generó Reporte de Productos';
-            break;
-        case 'venta':
-            Reporte::venta($start, $end, $prodId, $catId, $metodoPago, $montoMin, $montoMax);
-            $desc = 'Generó Reporte de Ventas';
-            break;
-        case 'pedidoWeb':
-            Reporte::pedidoWeb($start, $end, $prodId, $estado, $metodoPagoWeb, $montoMin, $montoMax);
-            $desc = 'Generó Reporte de Pedidos Web';
-            break;
-        default:
-            $desc = '';
+    try {
+        switch ($accion) {
+            case 'compra':
+                Reporte::compra($start, $end, $prodId, $catId, $provId, $montoMin, $montoMax);
+                $desc = 'Generó Reporte de Compras';
+                break;
+            case 'producto':
+                Reporte::producto($prodId, $provId, $catId, $precioMin, $precioMax, $stockMin, $stockMax, $estado);
+                $desc = 'Generó Reporte de Productos';
+                break;
+            case 'venta':
+                Reporte::venta($start, $end, $prodId, $catId, $metodoPago, $montoMin, $montoMax);
+                $desc = 'Generó Reporte de Ventas';
+                break;
+            case 'pedidoWeb':
+                Reporte::pedidoWeb($start, $end, $prodId, $estado, $metodoPagoWeb, $montoMin, $montoMax);
+                $desc = 'Generó Reporte de Pedidos Web';
+                break;
+            default:
+                $desc = '';
+        }
+    } catch (\Exception $e) {
+        // Si hay un error (por ejemplo, GD no está habilitado), mostrar mensaje al usuario
+        header('Content-Type: text/html; charset=utf-8');
+        echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Error al generar reporte</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { color: #721c24; }
+        p { color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h1>Error al generar el reporte</h1>
+        <p>' . htmlspecialchars($e->getMessage()) . '</p>
+        <p><strong>Solución:</strong> Por favor, habilite la extensión GD de PHP en el archivo php.ini de su servidor.</p>
+        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
+    </div>
+</body>
+</html>';
+        exit;
     }
 
     if ($desc) {

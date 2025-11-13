@@ -279,7 +279,10 @@ class JpGraphErrObjectImg extends JpGraphErrObject {
             $supported = 0;
         }
         
-        if( ob_get_length() || headers_sent() || !($supported & IMG_PNG) ) {
+        // Verificar si IMG_PNG está definida antes de usarla
+        $hasPngSupport = defined('IMG_PNG') ? ($supported & IMG_PNG) : false;
+        
+        if( ob_get_length() || headers_sent() || !$hasPngSupport ) {
             // Special case for headers already sent or that the installation doesn't support
             // the PNG format (which the error icon is encoded in).
             // Dont return an image since it can't be displayed

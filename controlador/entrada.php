@@ -401,6 +401,12 @@ if(isset($_POST['generar'])){
 
 // Generar gráfico antes de cargar la vista
 function generarGrafico() {
+    // Verificar si GD está habilitado y tiene soporte PNG
+    if (!extension_loaded('gd') || !function_exists('imagetypes') || !(imagetypes() & IMG_PNG)) {
+        error_log("GD library no está habilitado o no tiene soporte PNG. No se puede generar el gráfico.");
+        return; // Salir silenciosamente si GD no está disponible
+    }
+    
     try {
         require_once('assets/js/jpgraph/src/jpgraph.php');
         require_once('assets/js/jpgraph/src/jpgraph_pie.php');

@@ -28,9 +28,16 @@ public static function compra(
     }
 
     // 3) Dependencias
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
+    $gdAvailable = extension_loaded('gd') && function_exists('imagetypes') && (imagetypes() & IMG_PNG);
+    
+    if ($gdAvailable) {
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    } else {
+        error_log("GD library no está habilitado o no tiene soporte PNG. No se puede generar el gráfico.");
+    }
     
 
     $conex = (new Conexion())->getConex1();
@@ -110,7 +117,7 @@ public static function compra(
         $imgFile = $imgDir . 'grafico_compras.png';
         if (!is_dir($imgDir)) mkdir($imgDir, 0777, true);
         if (file_exists($imgFile)) unlink($imgFile);
-        if ($data) {
+        if ($data && $gdAvailable) {
             $graph = new \PieGraph(900,500);
             $pie   = new \PiePlot3D($data);
             $pie->SetLegends($labels);
@@ -289,6 +296,19 @@ public static function compra(
                . '<footer>Página <span class="pageNumber"></span> de <span class="totalPages"></span></footer>'
                . '</body></html>';
 
+        // Verificar si GD está disponible (DomPDF requiere GD solo si hay imágenes PNG en el HTML)
+        // Si no hay imágenes (graf está vacío), podemos generar el PDF sin GD
+        $hasImages = !empty($graf) || !empty($logoData);
+        $gdAvailable = extension_loaded('gd') && function_exists('imagetypes');
+        $hasPngSupport = $gdAvailable && defined('IMG_PNG') && (imagetypes() & IMG_PNG);
+        
+        if ($hasImages && (!$gdAvailable || !$hasPngSupport)) {
+            // Si hay imágenes pero GD no está disponible, remover todas las imágenes del HTML
+            $html = preg_replace('/<h2>Top 10 Productos Comprados<\/h2>.*?<\/div>/s', '', $html);
+            $html = preg_replace('/<img[^>]*>/', '', $html); // Remover cualquier imagen restante
+            error_log("GD no disponible: Se generará el PDF sin gráficos ni imágenes.");
+        }
+        
         $opts = new Options();
         $opts->set('isRemoteEnabled', true);
         $pdf = new Dompdf($opts);
@@ -319,9 +339,16 @@ public static function producto(
     $estado = null
 ): void {
     // 1) Cargar dependencias
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
+    $gdAvailable = extension_loaded('gd') && function_exists('imagetypes') && (imagetypes() & IMG_PNG);
+    
+    if ($gdAvailable) {
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    } else {
+        error_log("GD library no está habilitado o no tiene soporte PNG. No se puede generar el gráfico.");
+    }
 
     $conex = (new Conexion())->getConex1();
 
@@ -392,7 +419,7 @@ public static function producto(
         $imgFile = $imgDir . 'grafico_producto.png';
         if (!is_dir($imgDir)) mkdir($imgDir, 0777, true);
         if (file_exists($imgFile)) unlink($imgFile);
-        if ($data) {
+        if ($data && $gdAvailable) {
             $graph = new \PieGraph(900,500);
             $pie   = new \PiePlot3D($data);
             $pie->SetLegends($labels);
@@ -533,6 +560,19 @@ public static function producto(
                . '<footer>Página <span class="pageNumber"></span> de <span class="totalPages"></span></footer>'
                . '</body></html>';
 
+        // Verificar si GD está disponible (DomPDF requiere GD solo si hay imágenes PNG en el HTML)
+        // Si no hay imágenes (graf está vacío), podemos generar el PDF sin GD
+        $hasImages = !empty($graf) || !empty($logoData);
+        $gdAvailable = extension_loaded('gd') && function_exists('imagetypes');
+        $hasPngSupport = $gdAvailable && defined('IMG_PNG') && (imagetypes() & IMG_PNG);
+        
+        if ($hasImages && (!$gdAvailable || !$hasPngSupport)) {
+            // Si hay imágenes pero GD no está disponible, remover todas las imágenes del HTML
+            $html = preg_replace('/<h2>Top 10 Productos por Stock<\/h2>.*?<\/div>/s', '', $html);
+            $html = preg_replace('/<img[^>]*>/', '', $html); // Remover cualquier imagen restante
+            error_log("GD no disponible: Se generará el PDF sin gráficos ni imágenes.");
+        }
+        
         $opts = new Options();
         $opts->set('isRemoteEnabled', true);
         $pdf  = new Dompdf($opts);
@@ -571,9 +611,16 @@ public static function venta(
     }
 
     // 3) Cargar dependencias
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
+    $gdAvailable = extension_loaded('gd') && function_exists('imagetypes') && (imagetypes() & IMG_PNG);
+    
+    if ($gdAvailable) {
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    } else {
+        error_log("GD library no está habilitado o no tiene soporte PNG. No se puede generar el gráfico.");
+    }
 
     $conex = (new Conexion())->getConex1();
 
@@ -648,7 +695,7 @@ public static function venta(
         $imgFile = $imgDir . 'grafico_ventas.png';
         if (!is_dir($imgDir)) mkdir($imgDir, 0777, true);
         if (file_exists($imgFile)) unlink($imgFile);
-        if ($data) {
+        if ($data && $gdAvailable) {
             $graph = new \PieGraph(900, 500);
             $pie   = new \PiePlot3D($data);
             $pie->SetLegends($labels);
@@ -807,6 +854,19 @@ public static function venta(
                . '<footer>Página <span class="pageNumber"></span> de <span class="totalPages"></span></footer>'
                . '</body></html>';
 
+        // Verificar si GD está disponible (DomPDF requiere GD solo si hay imágenes PNG en el HTML)
+        // Si no hay imágenes (graf está vacío), podemos generar el PDF sin GD
+        $hasImages = !empty($graf) || !empty($logoData);
+        $gdAvailable = extension_loaded('gd') && function_exists('imagetypes');
+        $hasPngSupport = $gdAvailable && defined('IMG_PNG') && (imagetypes() & IMG_PNG);
+        
+        if ($hasImages && (!$gdAvailable || !$hasPngSupport)) {
+            // Si hay imágenes pero GD no está disponible, remover todas las imágenes del HTML
+            $html = preg_replace('/<h2>Top 10 Productos Más Vendidos<\/h2>.*?<\/div>/s', '', $html);
+            $html = preg_replace('/<img[^>]*>/', '', $html); // Remover cualquier imagen restante
+            error_log("GD no disponible: Se generará el PDF sin gráficos ni imágenes.");
+        }
+        
         $opts = new Options();
         $opts->set('isRemoteEnabled', true);
         $pdf  = new Dompdf($opts);
@@ -925,9 +985,16 @@ public static function pedidoWeb(
     $whereSql = implode(' AND ', $where);
 
     // 3) Incluir dependencias
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
-    require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
+    $gdAvailable = extension_loaded('gd') && function_exists('imagetypes') && (imagetypes() & IMG_PNG);
+    
+    if ($gdAvailable) {
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie.php';
+        require_once __DIR__ . '/../assets/js/jpgraph/src/jpgraph_pie3d.php';
+    } else {
+        error_log("GD library no está habilitado o no tiene soporte PNG. No se puede generar el gráfico.");
+    }
 
     $conex = (new Conexion())->getConex1();
     try {
@@ -955,7 +1022,7 @@ public static function pedidoWeb(
         $imgFile = $imgDir . 'grafico_pedidoweb.png';
         if (!is_dir($imgDir)) mkdir($imgDir, 0777, true);
         if (file_exists($imgFile)) unlink($imgFile);
-        if ($data) {
+        if ($data && $gdAvailable) {
             $graph = new \PieGraph(900,500);
             $pie   = new \PiePlot3D($data);
             $pie->SetLegends($labels);
@@ -1066,6 +1133,19 @@ public static function pedidoWeb(
                . '<footer>Página <span class="pageNumber"></span> de <span class="totalPages"></span></footer>'
                . '</body></html>';
 
+        // Verificar si GD está disponible (DomPDF requiere GD solo si hay imágenes PNG en el HTML)
+        // Si no hay imágenes (graf está vacío), podemos generar el PDF sin GD
+        $hasImages = !empty($graf) || !empty($logoData);
+        $gdAvailable = extension_loaded('gd') && function_exists('imagetypes');
+        $hasPngSupport = $gdAvailable && defined('IMG_PNG') && (imagetypes() & IMG_PNG);
+        
+        if ($hasImages && (!$gdAvailable || !$hasPngSupport)) {
+            // Si hay imágenes pero GD no está disponible, remover todas las imágenes del HTML
+            $html = preg_replace('/<div[^>]*>.*?<h3>Top 5 Productos<\/h3>.*?<\/div>/s', '', $html);
+            $html = preg_replace('/<img[^>]*>/', '', $html); // Remover cualquier imagen restante
+            error_log("GD no disponible: Se generará el PDF sin gráficos ni imágenes.");
+        }
+        
         $opts = new \Dompdf\Options();
         $opts->set('isRemoteEnabled', true);
         $pdf = new \Dompdf\Dompdf($opts);
