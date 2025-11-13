@@ -57,6 +57,32 @@ if(isset($_POST['modificar'])){
         $resultado = $objtasa->procesarTasa(json_encode($datosTasa));
         echo json_encode($resultado);
     
+} else if(isset($_POST['obtener_tasa_actual']) || (isset($_GET['obtener_tasa_actual']) && $_GET['obtener_tasa_actual'] == '1')) {
+    // Endpoint para obtener la tasa actual desde la base de datos
+    header('Content-Type: application/json; charset=utf-8');
+    try {
+        $tasa = $objtasa->obtenerTasaActual();
+        if ($tasa && isset($tasa['tasa_bs'])) {
+            echo json_encode([
+                'respuesta' => 1,
+                'tasa' => floatval($tasa['tasa_bs']),
+                'fecha' => $tasa['fecha'],
+                'fuente' => $tasa['fuente'] ?? 'Base de datos'
+            ]);
+        } else {
+            echo json_encode([
+                'respuesta' => 0,
+                'mensaje' => 'No se encontró una tasa de cambio en la base de datos'
+            ]);
+        }
+    } catch (\Exception $e) {
+        echo json_encode([
+            'respuesta' => 0,
+            'mensaje' => 'Error al obtener la tasa de cambio: ' . $e->getMessage()
+        ]);
+    }
+    exit;
+    
 } else if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'ver')) {
      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tasacambio';
     require_once 'vista/tasacambio.php'; // Asegúrate de tener esta vista

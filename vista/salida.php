@@ -7,6 +7,9 @@
   <title> Venta | LoveMakeup  </title> 
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
   <style>
     @media (forced-colors: active) {
@@ -346,41 +349,13 @@
       outline: none;
     }
 
-    /* Estilos para el buscador de productos */
-    .producto-search-container {
-      position: relative;
+    /* Estilos para Select2 */
+    .select2-container--bootstrap-5 .select2-selection {
+      min-height: 38px;
     }
     
-    .producto-search {
-      border: 2px solid #e9ecef;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.9rem;
-      background-color: #f8f9fa;
-      transition: all 0.3s ease;
-      margin-bottom: 8px;
-    }
-    
-    .producto-search:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-      background-color: white;
-    }
-    
-    .producto-search::placeholder {
-      color: #6c757d;
-      font-style: italic;
-    }
-    
-    /* Mostrar todas las opciones por defecto */
-    .producto-select-venta option {
-      display: block;
-    }
-    
-    /* Estilo para opciones filtradas (opcional - para resaltar) */
-    .producto-select-venta option.filtered {
-      background-color: #f8f9fa;
-      color: #6c757d;
+    .select2-container--bootstrap-5 .select2-selection__rendered {
+      padding-left: 12px;
     }
   </style>
 </head>
@@ -832,11 +807,9 @@
                   <tbody id="productos-container-venta">
                     <tr class="producto-fila">
                       <td>
-                        <!-- Buscador de productos -->
-                        <div class="producto-search-container">
-                          <input type="text" class="form-control producto-search" placeholder="Buscar producto..." style="margin-bottom: 5px;">
-                          <select class="form-select producto-select-venta" name="id_producto[]" required>
-                            <option value="">Seleccione un producto</option>
+                        <!-- Select de productos con Select2 -->
+                        <select class="form-select producto-select-venta" name="id_producto[]" required>
+                          <option value="">Seleccione un producto</option>
                             <?php if(isset($productos_lista) && !empty($productos_lista)): ?>
                               <?php foreach($productos_lista as $producto): ?>
                                 <?php 
@@ -852,7 +825,6 @@
                               <?php endforeach; ?>
                             <?php endif; ?>
                           </select>
-                        </div>
                       </td>
                       <td>
                         <div class="input-group">
@@ -1239,6 +1211,9 @@
 <!-- php barra de navegacion-->
 <?php include 'complementos/footer.php' ?>
   
+  <!-- Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
   <!-- Script para inicializar DataTable -->
   <script src="assets/js/demo/datatables-demo.js"></script>
 
@@ -1278,214 +1253,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar collapsibles inicialmente si ya están en el DOM
     configurarCollapsiblesDetalles();
 
-    // Funcionalidad de búsqueda de productos
-    function configurarBuscadorProductos() {
-        document.querySelectorAll('.producto-search').forEach(buscador => {
-            buscador.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase().trim();
-                const select = this.nextElementSibling;
-                const options = select.querySelectorAll('option[data-search-text]');
-                
-                // Si no hay término de búsqueda, mostrar todas las opciones
-                if (searchTerm === '') {
-                    options.forEach(option => {
-                        option.style.display = 'block';
-                        option.classList.remove('filtered');
-                    });
-                    return;
-                }
-                
-                // Filtrar opciones y mostrar solo las que coinciden
-                options.forEach(option => {
-                    const searchText = option.getAttribute('data-search-text');
-                    if (searchText.includes(searchTerm)) {
-                        option.style.display = 'block';
-                        option.classList.remove('filtered');
-                    } else {
-                        option.style.display = 'none';
-                        option.classList.add('filtered');
-                    }
-                });
-                
-                // Mostrar la opción por defecto
-                const defaultOption = select.querySelector('option[value=""]');
-                if (defaultOption) {
-                    defaultOption.style.display = 'block';
-                }
-            });
-            
-            // Limpiar búsqueda cuando se selecciona un producto
-            buscador.addEventListener('change', function() {
-                const select = this.nextElementSibling;
-                if (select.value !== '') {
-                    this.value = select.options[select.selectedIndex].text;
-                }
-            });
-            
-            // Limpiar búsqueda cuando se hace clic en el select
-            const select = buscador.nextElementSibling;
-            select.addEventListener('click', function() {
-                if (buscador.value !== '') {
-                    // Mostrar todas las opciones cuando se hace clic en el select
-                    const options = this.querySelectorAll('option[data-search-text]');
-                    options.forEach(option => {
-                        option.style.display = 'block';
-                        option.classList.remove('filtered');
-                    });
-                }
-            });
-            
-            // Restaurar filtro cuando se cierra el select
-            select.addEventListener('blur', function() {
-                setTimeout(() => {
-                    if (buscador.value !== '') {
-                        const searchTerm = buscador.value.toLowerCase().trim();
-                        const options = this.querySelectorAll('option[data-search-text]');
-                        
-                        options.forEach(option => {
-                            const searchText = option.getAttribute('data-search-text');
-                            if (searchText.includes(searchTerm)) {
-                                option.style.display = 'block';
-                                option.classList.remove('filtered');
-                            } else {
-                                option.style.display = 'none';
-                                option.classList.add('filtered');
-                            }
-                        });
-                    }
-                }, 200); // Pequeño delay para permitir la selección
-            });
-        });
-    }
-
-    // Configurar buscadores cuando se abre el modal de registro
-    const registroModal = document.getElementById('registroModal');
-    if (registroModal) {
-        registroModal.addEventListener('shown.bs.modal', function() {
-            configurarBuscadorProductos();
-        });
-    }
-
-    // Configurar buscadores inicialmente si ya están en el DOM
-    configurarBuscadorProductos();
-
-    // Función para agregar nueva fila de producto con buscador
-    function agregarFilaProducto() {
-        const container = document.getElementById('productos-container-venta');
-        const nuevaFila = document.createElement('tr');
-        nuevaFila.className = 'producto-fila';
-        
-        nuevaFila.innerHTML = `
-            <td>
-                <!-- Buscador de productos -->
-                <div class="producto-search-container">
-                    <input type="text" class="form-control producto-search" placeholder="Buscar producto..." style="margin-bottom: 5px;">
-                    <select class="form-select producto-select-venta" name="id_producto[]" required>
-                        <option value="">Seleccione un producto</option>
-                        ${Array.from(document.querySelector('.producto-select-venta').options).map(option => 
-                            option.outerHTML
-                        ).join('')}
-                    </select>
-                </div>
-            </td>
-            <td>
-                <div class="input-group">
-                    <input type="number" class="form-control cantidad-input-venta" 
-                           name="cantidad[]" value="1" min="1" required>
-                    <span class="input-group-text stock-info"></span>
-                </div>
-            </td>
-            <td>
-                <input type="text" class="form-control precio-input-venta" 
-                       name="precio_unitario[]" value="0.00" readonly>
-            </td>
-            <td>
-                <span class="subtotal-venta">0.00</span>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-success btn-sm agregar-producto-venta">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <button type="button" class="btn btn-danger btn-sm remover-producto-venta">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </td>
-        `;
-        
-        container.appendChild(nuevaFila);
-        
-        // Configurar el buscador para la nueva fila
-        const nuevoBuscador = nuevaFila.querySelector('.producto-search');
-        configurarBuscadorProductos();
-        
-        // Configurar eventos para la nueva fila
-        configurarEventosProducto(nuevaFila);
-    }
-
-    // Configurar eventos para una fila de producto
-    function configurarEventosProducto(fila) {
-        const select = fila.querySelector('.producto-select-venta');
-        const cantidadInput = fila.querySelector('.cantidad-input-venta');
-        const precioInput = fila.querySelector('.precio-input-venta');
-        const subtotalSpan = fila.querySelector('.subtotal-venta');
-        const stockInfo = fila.querySelector('.stock-info');
-        
-        // Evento para cambio de producto
-        select.addEventListener('change', function() {
-            if (this.value) {
-                const option = this.options[this.selectedIndex];
-                const precio = parseFloat(option.getAttribute('data-precio'));
-                const stock = parseInt(option.getAttribute('data-stock'));
-                
-                precioInput.value = precio.toFixed(2);
-                stockInfo.textContent = `Stock: ${stock}`;
-                stockInfo.className = stock > 0 ? 'input-group-text text-success' : 'input-group-text text-danger';
-                
-                calcularSubtotal();
-            }
-        });
-        
-        // Evento para cambio de cantidad
-        cantidadInput.addEventListener('input', calcularSubtotal);
-        
-        function calcularSubtotal() {
-            const cantidad = parseInt(cantidadInput.value) || 0;
-            const precio = parseFloat(precioInput.value) || 0;
-            const subtotal = cantidad * precio;
-            subtotalSpan.textContent = subtotal.toFixed(2);
-            calcularTotalGeneral();
-        }
-    }
-
-    // Configurar eventos para botones de agregar/remover productos
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('agregar-producto-venta')) {
-            agregarFilaProducto();
-        } else if (e.target.classList.contains('remover-producto-venta')) {
-            const fila = e.target.closest('.producto-fila');
-            if (document.querySelectorAll('.producto-fila').length > 1) {
-                fila.remove();
-                calcularTotalGeneral();
-            }
-        }
-    });
-
-    // Función para calcular el total general
-    function calcularTotalGeneral() {
-        const subtotales = Array.from(document.querySelectorAll('.subtotal-venta'))
-            .map(span => parseFloat(span.textContent) || 0);
-        const total = subtotales.reduce((sum, subtotal) => sum + subtotal, 0);
-        
-        document.getElementById('total-general-venta').textContent = `$${total.toFixed(2)}`;
-        document.querySelector('input[name="precio_total"]').value = total.toFixed(2);
-    }
-
-    // Configurar eventos para la primera fila de producto
-    const primeraFila = document.querySelector('.producto-fila');
-    if (primeraFila) {
-        configurarEventosProducto(primeraFila);
-    }
-});
 </script>
 
 </body>

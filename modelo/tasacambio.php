@@ -62,6 +62,30 @@ class Tasacambio extends Conexion
             }
         }
 
+/*||||||||||||||||||||||||||||||| OBTENER TASA ACTUAL  |||||||||||||||||||||||||  05  |||||*/        
+        public function obtenerTasaActual() {
+            $conex = $this->getConex1();
+            try {
+                // Obtener la tasa más reciente activa
+                $sql = "SELECT tasa_bs, fecha, fuente 
+                        FROM tasa_dolar 
+                        WHERE estatus = 1 
+                        ORDER BY fecha DESC 
+                        LIMIT 1";
+                        
+                $stmt = $conex->prepare($sql);
+                $stmt->execute();
+                $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $conex = null;
+                return $resultado;
+            } catch (\PDOException $e) {
+                if ($conex) {
+                    $conex = null;
+                }
+                throw $e;
+            }
+        }
+
 /*||||||||||||||||||||||||||||||| ACTUALIZAR DATOS DEL CLIENTE  |||||||||||||||||||||||||  03  |||||*/    
    private function ejecutarMofidicacion($datos) {
     $conex = $this->getConex1();

@@ -180,7 +180,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const select = fila.querySelector('.producto-select-venta');
             const cantidad = fila.querySelector('.cantidad-input-venta');
             
-            if (!select.value) {
+            const valorSelect = obtenerValorSelect(select);
+            if (!valorSelect) {
                 productosConError.push(`Fila ${index + 1}: Seleccione un producto`);
             } else if (!cantidad.value || cantidad.value <= 0) {
                 productosConError.push(`Fila ${index + 1}: Ingrese una cantidad válida`);
@@ -242,9 +243,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const precio = fila.querySelector('.precio-input-venta');
             const subtotal = fila.querySelector('.subtotal-venta');
             
-            if (select.value && cantidad.value > 0) {
+            const valorSelect = obtenerValorSelect(select);
+            if (valorSelect && cantidad.value > 0) {
                 productos.push({
-                    nombre: select.options[select.selectedIndex].text,
+                    nombre: obtenerTextoSelect(select),
                     cantidad: cantidad.value,
                     precio: precio.value,
                     subtotal: subtotal.textContent
@@ -692,6 +694,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 contenedorProductos.appendChild(nuevaFila);
                 inicializarEventosFila(nuevaFila);
+                
+                // Inicializar Select2 en el nuevo select
+                const nuevoSelect = nuevaFila.querySelector('.producto-select-venta');
+                if (nuevoSelect) {
+                    setTimeout(() => {
+                        inicializarSelect2Productos();
+                    }, 50);
+                }
             }
             
             if (e.target.classList.contains('remover-producto-venta')) {
@@ -705,6 +715,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (filas.length > 1) {
+                    // Destruir Select2 antes de eliminar la fila
+                    const select = filaActual.querySelector('.producto-select-venta');
+                    if (select && $(select).hasClass('select2-hidden-accessible')) {
+                        $(select).select2('destroy');
+                    }
                     filaActual.remove();
                     actualizarTotalVenta();
                 } else {
@@ -713,9 +728,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Eventos para cambio de producto
+        // Eventos para cambio de producto (compatibilidad con Select2)
+        // Los eventos de Select2 se manejan en inicializarSelect2Productos()
+        // Este evento se mantiene para compatibilidad con selects sin Select2
         document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('producto-select-venta')) {
+            if (e.target.classList.contains('producto-select-venta') && !$(e.target).hasClass('select2-hidden-accessible')) {
                 const fila = e.target.closest('tr');
                 const option = e.target.options[e.target.selectedIndex];
                 
@@ -1610,23 +1627,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function obtenerTasaCambio() {
         try {
-            // console.log eliminado
+            // Intentar obtener la tasa desde la API primero
+            // Crear un AbortController para timeout de 5 segundos
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
             
-            // Llamada al API de dólar oficial del BCV
-            const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+            const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
             
             if (!response.ok) {
-                throw new Error('Error al obtener la tasa de cambio');
+                throw new Error('Error al obtener la tasa de cambio desde la API');
             }
             
             const data = await response.json();
             
             if (!data.promedio || data.promedio <= 0) {
-                throw new Error('No se pudo obtener una tasa de cambio válida');
+                throw new Error('No se pudo obtener una tasa de cambio válida desde la API');
             }
             
             const tasaCambio = parseFloat(data.promedio);
-            // console.log eliminado
             
             // Calcular montos en Bs basado en el total de productos
             actualizarMontosEnBs(tasaCambio);
@@ -1634,10 +1660,61 @@ document.addEventListener('DOMContentLoaded', function() {
             return tasaCambio;
             
         } catch (error) {
-            console.error('Error al obtener tasa de cambio:', error);
-            Swal.fire('Error', 'No se pudo obtener la tasa de cambio del dólar. Intente nuevamente.', 'error');
-            // No actualizar montos si falla el API
-            return null;
+            // Si falla la API, intentar obtener la tasa desde la base de datos
+            console.warn('Error al obtener tasa de cambio desde API, intentando desde base de datos:', error);
+            
+            try {
+                const formData = new FormData();
+                formData.append('obtener_tasa_actual', '1');
+                
+                const response = await fetch('?pagina=tasacambio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al obtener la tasa de cambio desde la base de datos');
+                }
+                
+                const data = await response.json();
+                
+                if (data.respuesta === 1 && data.tasa && data.tasa > 0) {
+                    const tasaCambio = parseFloat(data.tasa);
+                    
+                    // Mostrar mensaje informativo de que se está usando la tasa de la base de datos
+                    console.log(`Usando tasa de cambio de la base de datos: ${tasaCambio} (Fecha: ${data.fecha})`);
+                    
+                    // Mostrar notificación discreta (toast) indicando que se usa tasa de BD
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Tasa de cambio desde base de datos',
+                        text: `Se está usando la tasa guardada: ${tasaCambio.toFixed(2)} Bs (${data.fecha})`,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                    
+                    // Calcular montos en Bs basado en el total de productos
+                    actualizarMontosEnBs(tasaCambio);
+                    
+                    return tasaCambio;
+                } else {
+                    throw new Error(data.mensaje || 'No se pudo obtener una tasa de cambio válida desde la base de datos');
+                }
+                
+            } catch (dbError) {
+                console.error('Error al obtener tasa de cambio desde base de datos:', dbError);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tasa de cambio no disponible',
+                    text: 'No se pudo obtener la tasa de cambio ni desde la API ni desde la base de datos. Por favor, verifique su conexión o configure una tasa manualmente.',
+                    timer: 5000,
+                    showConfirmButton: true
+                });
+                return null;
+            }
         }
     }
 
@@ -2113,7 +2190,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 productos.forEach(fila => {
                     const select = fila.querySelector('.producto-select-venta');
                     const cantidad = fila.querySelector('.cantidad-input-venta');
-                    if (select && cantidad && select.value && cantidad.value > 0) {
+                    const valorSelect = select ? obtenerValorSelect(select) : null;
+                    if (select && cantidad && valorSelect && cantidad.value > 0) {
                         productosValidos++;
                     }
                 });
@@ -2179,10 +2257,93 @@ document.addEventListener('DOMContentLoaded', function() {
         // Actualizar botones de navegación
         actualizarBotonesNavegacion();
         
+        // Si es el paso 2, inicializar Select2 en los selects de productos
+        if (paso === 2) {
+            setTimeout(() => {
+                inicializarSelect2Productos();
+            }, 100);
+        }
+        
         // Si es el paso 4, llenar la previsualización
         if (paso === 4) {
             llenarPrevisualizacionResumen();
         }
+    }
+    
+    // Función auxiliar para obtener el valor del select (compatible con Select2)
+    function obtenerValorSelect(select) {
+        if ($(select).hasClass('select2-hidden-accessible')) {
+            return $(select).val();
+        }
+        return select.value;
+    }
+    
+    // Función auxiliar para obtener el texto del select (compatible con Select2)
+    function obtenerTextoSelect(select) {
+        if ($(select).hasClass('select2-hidden-accessible')) {
+            const selectedValue = $(select).val();
+            if (selectedValue) {
+                const option = $(select).find(`option[value="${selectedValue}"]`)[0];
+                return option ? option.textContent : '';
+            }
+            return '';
+        }
+        return select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
+    }
+    
+    // Función para inicializar Select2 en los selects de productos
+    function inicializarSelect2Productos() {
+        document.querySelectorAll('.producto-select-venta').forEach(select => {
+            // Verificar si Select2 ya está inicializado
+            if ($(select).hasClass('select2-hidden-accessible')) {
+                $(select).select2('destroy');
+            }
+            
+            // Inicializar Select2
+            $(select).select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Seleccione un producto',
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return "No se encontraron productos";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                }
+            });
+            
+            // Configurar evento de cambio para Select2
+            $(select).on('select2:select', function(e) {
+                const fila = $(this).closest('tr')[0];
+                const selectedValue = $(this).val();
+                const option = $(this).find(`option[value="${selectedValue}"]`)[0];
+                
+                if (option) {
+                    const precio = option.getAttribute('data-precio');
+                    const stock = option.getAttribute('data-stock');
+                    
+                    if (precio && stock !== null) {
+                        fila.querySelector('.precio-input-venta').value = precio;
+                        fila.querySelector('.cantidad-input-venta').setAttribute('data-stock', stock);
+                        fila.querySelector('.stock-info').textContent = `Stock: ${stock}`;
+                        calcularSubtotalVenta(fila);
+                    }
+                }
+            });
+            
+            // Configurar evento cuando se limpia la selección
+            $(select).on('select2:clear', function() {
+                const fila = $(this).closest('tr')[0];
+                fila.querySelector('.precio-input-venta').value = '0.00';
+                fila.querySelector('.cantidad-input-venta').removeAttribute('data-stock');
+                fila.querySelector('.stock-info').textContent = '';
+                fila.querySelector('.subtotal-venta').textContent = '0.00';
+                actualizarTotalVenta();
+            });
+        });
     }
 
     // Función para llenar la previsualización en el paso 4
@@ -2203,10 +2364,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const cantidad = fila.querySelector('.cantidad-input-venta');
             const precio = fila.querySelector('.precio-input-venta');
             const subtotal = fila.querySelector('.subtotal-venta');
-            if (select.value && cantidad.value > 0) {
+            const valorSelect = obtenerValorSelect(select);
+            if (valorSelect && cantidad.value > 0) {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="texto-secundario">${select.options[select.selectedIndex].text}</td>
+                    <td class="texto-secundario">${obtenerTextoSelect(select)}</td>
                     <td class="text-center texto-secundario">${cantidad.value}</td>
                     <td class="text-center texto-secundario">$${precio.value}</td>
                     <td class="text-center texto-secundario">$${subtotal.textContent}</td>
@@ -2425,10 +2587,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const cantidad = fila.querySelector('.cantidad-input-venta');
             const precio = fila.querySelector('.precio-input-venta');
             
-            if (select.value && cantidad.value > 0 && precio.value > 0) {
+            const valorSelect = obtenerValorSelect(select);
+            if (valorSelect && cantidad.value > 0 && precio.value > 0) {
                 productosValidos++;
                 totalProductos += parseInt(cantidad.value);
-            } else if (select.value || cantidad.value > 0 || precio.value > 0) {
+            } else if (valorSelect || cantidad.value > 0 || precio.value > 0) {
                 errores.push(`Fila ${index + 1}: Complete todos los datos del producto`);
             }
         });
