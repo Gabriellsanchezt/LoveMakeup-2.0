@@ -318,7 +318,7 @@
   </h4>
  
   <div class="d-flex gap-2">
-      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'registrar')): ?>
+      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'registrar')): ?>
   <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar">
     <span class="icon text-white">
       <i class="fas fa-file-medical"></i>
@@ -362,7 +362,7 @@
 
                     <td class="texto-secundario"><?php echo htmlspecialchars($dato['nombre']) ?></td>
                     <td class="texto-secundario"><?php echo htmlspecialchars($dato['descripcion']) ?></td>
-                    <td class="texto-secundario"><?php echo htmlspecialchars($dato['marca']) ?></td>
+                    <td class="texto-secundario"><?php echo htmlspecialchars($dato['nombre_marca']) ?></td>
                     <td class="texto-secundario"><?php echo htmlspecialchars($dato['precio_detal']) ?> <i class="fa-solid fa-dollar-sign"></i></td>
                     <td class="texto-secundario"><?php echo htmlspecialchars($dato['stock_disponible']) ?></td>
                     <td><img src="<?php echo htmlspecialchars($dato['imagen']) ?>" alt="Imagen del producto" width="60" height="60"></td>
@@ -370,14 +370,14 @@
                     <td>
                       <form method="POST" action="">
                       
-                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'editar')): ?>
+                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'editar')): ?>
                       <button type="button" class="btn btn-primary btn-s modificar" 
                           onclick="abrirModalModificar(this)" <?php echo ($dato['estatus'] == 2) ? 'disabled' : ''; ?>> 
                           <i class="fas fa-pencil-alt" title="Editar"></i>
                       </button>
                        <?php endif; ?>
                        
-                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'eliminar')): ?>
+                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'eliminar')): ?>
                         <button type="button" class="btn btn-danger btn-s eliminar"
                               onclick="eliminarproducto(<?php echo $dato['id_producto']; ?>)" <?php echo ($dato['estatus'] == 2) ? 'disabled' : ''; ?>>
                               <i class="fas fa-trash-alt" title="Eliminar"></i>
@@ -388,7 +388,7 @@
                           <i class="fa fa-eye"></i>
                         </button>
 
-                          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'especial')): ?>
+                          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'especial')): ?>
                             <button type="button" class="btn btn-warning text-light btn-desactivar" 
                                 onclick="cambiarEstatusProducto(<?php echo $dato['id_producto']; ?>, <?php echo $dato['estatus']; ?>)">
                                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -437,7 +437,12 @@
                 </div>
                 <div class="col-md-6">
                   <label for="marca" class="form-label">Marca del producto</label>
-                  <input class="form-control" type="text" id="marca" name="marca" placeholder="Ingrese la marca del producto" />
+                  <select class="form-select" name="marca" id="marca" required>
+                    <option disabled selected>Seleccione una Marca</option>
+                    <?php foreach ($marca as $mar) { ?>
+                      <option value="<?php echo htmlspecialchars($mar['id_marca']); ?>"> <?php echo htmlspecialchars($mar['nombre']); ?> </option>
+                    <?php } ?>
+                  </select>
                   <span id="smarca" class="error-message"></span>
                 </div>
               </div>
@@ -517,8 +522,9 @@
                       <strong class="texto-quinto">Click aquí para subir la foto del producto (Formato: .png,.jpg,.jpeg,.webp)</strong>
                       <br>
                       <img src="assets/img/logo.PNG" id="imagen" class="img-fluid rounded mt-3" style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                      <div id="preview" class="d-flex flex-wrap mt-2"></div>
                     </label>
-                    <input id="archivo" type="file" style="display:none" accept=".png,.jpg,.jpeg,.webp" name="imagenarchivo" />
+                   <input id="archivo" type="file" style="display:none" accept=".png,.jpg,.jpeg,.webp" name="imagenarchivo[]" multiple />
                   </div>
                 </div>
               </div>

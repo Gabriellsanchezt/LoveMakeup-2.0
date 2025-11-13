@@ -448,7 +448,6 @@ ALTER TABLE `pedido_detalles`
 --
 ALTER TABLE `producto`
   ADD PRIMARY KEY (`id_producto`),
-  ADD UNIQUE KEY `stock_disponible` (`stock_disponible`),
   ADD KEY `id_categoria` (`id_categoria`),
   ADD KEY `id_marca` (`id_marca`),
   ADD KEY `nombre` (`nombre`);

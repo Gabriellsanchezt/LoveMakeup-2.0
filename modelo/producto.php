@@ -13,126 +13,175 @@ class Producto extends Conexion {
     function __construct() {
         parent::__construct();
         $this->objcategoria = new Categoria();
+        $this->objmarca = new Marca();
     }
 
     public function procesarProducto($jsonDatos) {
-        $datos = json_decode($jsonDatos, true);
-        $operacion = $datos['operacion'];
-        $datosProcesar = $datos['datos'];
-        
-        try {
-            switch ($operacion) {
-                case 'registrar':
-                    if ($this->verificarProductoExistente($datosProcesar['nombre'], $datosProcesar['marca'])) {
-                        return ['respuesta' => 0, 'mensaje' => 'Ya existe un producto con el mismo nombre y marca'];
-                    }
-                    return $this->ejecutarRegistro($datosProcesar);
-                    
-                case 'actualizar':
-                    return $this->ejecutarActualizacion($datosProcesar);
-                    
-                case 'eliminar':
-                    return $this->ejecutarEliminacion($datosProcesar);
-                    
-                case 'cambiarEstatus':
-                    return $this->ejecutarCambioEstatus($datosProcesar);
-                    
-                default:
-                    return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
-            }
-        } catch (\Exception $e) {
-            return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
-        }
+    $datos = json_decode($jsonDatos, true);
+    $operacion = $datos['operacion'];
+    $datosProcesar = $datos['datos'];
+
+    // Si vienen imágenes como JSON, decodificarlas
+    if (isset($datosProcesar['imagenes']) && is_string($datosProcesar['imagenes'])) {
+        $datosProcesar['imagenes'] = json_decode($datosProcesar['imagenes'], true);
     }
 
-    private function verificarProductoExistente($nombre, $marca) {
-        $conex = $this->getConex1();
-        try {
-            $sql = "SELECT COUNT(*) FROM producto WHERE LOWER(nombre) = LOWER(:nombre) AND LOWER(marca) = LOWER(:marca) AND estatus = 1";
-            $stmt = $conex->prepare($sql);
-            $stmt->execute(['nombre' => $nombre, 'marca' => $marca]);
-            $resultado = $stmt->fetchColumn() > 0;
-            $conex = null;
-            return $resultado;
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex = null;
-            }
-            throw $e;
-        }
-    }
+    try {
+        switch ($operacion) {
+            case 'registrar':
+                if ($this->verificarProductoExistente($datosProcesar['nombre'], $datosProcesar['id_marca'])) {
+                    return ['respuesta' => 0, 'mensaje' => 'Ya existe un producto con el mismo nombre y marca'];
+                }
+                return $this->ejecutarRegistro($datosProcesar);
 
-    private function ejecutarRegistro($datos) {
-        $conex = $this->getConex1();
-        try {
-            $conex->beginTransaction();
-            
-            $sql = "INSERT INTO producto(nombre, descripcion, marca, cantidad_mayor, precio_mayor, precio_detal, 
-                    stock_disponible, stock_maximo, stock_minimo, imagen, id_categoria, estatus)
-                    VALUES (:nombre, :descripcion, :marca, :cantidad_mayor, :precio_mayor, :precio_detal, 
-                    0, :stock_maximo, :stock_minimo, :imagen, :id_categoria, 1)";
-            
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($datos);
-            
-            if ($resultado) {
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'incluir', 'mensaje' => 'Producto registrado exitosamente'];
-            }
-            
-            $conex->rollBack();
-            $conex = null;
-            return ['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'Error al registrar producto'];
-            
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
-            }
-            throw $e;
+            case 'actualizar':
+                return $this->ejecutarActualizacion($datosProcesar);
+
+            case 'eliminar':
+                return $this->ejecutarEliminacion($datosProcesar);
+
+            case 'cambiarEstatus':
+                return $this->ejecutarCambioEstatus($datosProcesar);
+
+            default:
+                return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
         }
+    } catch (\Exception $e) {
+        return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
     }
+}
+
+
+    private function verificarProductoExistente($nombre, $id_marca) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "SELECT COUNT(*) FROM producto 
+                WHERE LOWER(nombre) = LOWER(:nombre) 
+                AND id_marca = :id_marca 
+                AND estatus = 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute([
+            'nombre' => $nombre,
+            'id_marca' => $id_marca
+        ]);
+        $resultado = $stmt->fetchColumn() > 0;
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex = null;
+        }
+        throw $e;
+    }
+}
+
+
+   private function ejecutarRegistro($datos) {
+    $conex = $this->getConex1();
+    try {
+        $conex->beginTransaction();
+
+        // Guardar imágenes por separado
+        $imagenes = [];
+        if (isset($datos['imagenes']) && is_array($datos['imagenes'])) {
+            $imagenes = $datos['imagenes'];
+            unset($datos['imagenes']); // eliminar antes de pasar a PDO
+        }
+
+        $sql = "INSERT INTO producto(nombre, descripcion, id_marca, cantidad_mayor, precio_mayor, precio_detal, 
+                stock_disponible, stock_maximo, stock_minimo, id_categoria, estatus)
+                VALUES (:nombre, :descripcion, :id_marca, :cantidad_mayor, :precio_mayor, :precio_detal, 
+                0, :stock_maximo, :stock_minimo, :id_categoria, 1)";
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute($datos);
+        $idProducto = $conex->lastInsertId();
+
+        // Insertar imágenes
+        if (!empty($imagenes)) {
+            $sqlImg = "INSERT INTO producto_imagen(id_producto, url_imagen, tipo) VALUES(:id_producto, :url_imagen, :tipo)";
+            $stmtImg = $conex->prepare($sqlImg);
+
+            foreach ($imagenes as $indice => $rutaImagen) {
+                $tipo = $indice === 0 ? 'principal' : 'secundaria';
+                $stmtImg->execute([
+                    'id_producto' => $idProducto,
+                    'url_imagen' => $rutaImagen,
+                    'tipo' => $tipo
+                ]);
+            }
+        }
+
+        $conex->commit();
+        $conex = null;
+        return ['respuesta' => 1, 'accion' => 'incluir', 'mensaje' => 'Producto registrado exitosamente'];
+
+    } catch (\PDOException $e) {
+        if ($conex) $conex->rollBack();
+        throw $e;
+    }
+}
+
+
     
-    private function ejecutarActualizacion($datos) {
-        $conex = $this->getConex1();
-        try {
-            $conex->beginTransaction();
-            
-            $sql = "UPDATE producto SET 
-                    nombre = :nombre,
-                    descripcion = :descripcion,
-                    marca = :marca,
-                    cantidad_mayor = :cantidad_mayor,
-                    precio_mayor = :precio_mayor,
-                    precio_detal = :precio_detal,
-                    stock_maximo = :stock_maximo,
-                    stock_minimo = :stock_minimo,
-                    imagen = :imagen,
-                    id_categoria = :id_categoria
-                    WHERE id_producto = :id_producto";
-            
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($datos);
-            
-            if ($resultado) {
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'actualizar', 'mensaje' => 'Producto actualizado exitosamente'];
-            }
-            
-            $conex->rollBack(); 
-            $conex = null;
-            return ['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Error al actualizar producto'];
-            
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
-            }
-            throw $e;
+   private function ejecutarActualizacion($datos) {
+    $conex = $this->getConex1();
+    try {
+        $conex->beginTransaction();
+
+        // Guardar imágenes por separado
+        $imagenes = [];
+        if (isset($datos['imagenes']) && is_array($datos['imagenes'])) {
+            $imagenes = $datos['imagenes'];
+            unset($datos['imagenes']); // eliminar antes de pasar a PDO
         }
+
+        $sql = "UPDATE producto SET 
+                nombre = :nombre,
+                descripcion = :descripcion,
+                id_marca = :id_marca,
+                cantidad_mayor = :cantidad_mayor,
+                precio_mayor = :precio_mayor,
+                precio_detal = :precio_detal,
+                stock_maximo = :stock_maximo,
+                stock_minimo = :stock_minimo,
+                id_categoria = :id_categoria
+                WHERE id_producto = :id_producto";
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute($datos);
+
+        // Actualizar imágenes si vienen
+        if (!empty($imagenes)) {
+            // Eliminar imágenes existentes
+            $sqlDel = "DELETE FROM producto_imagen WHERE id_producto = :id_producto";
+            $stmtDel = $conex->prepare($sqlDel);
+            $stmtDel->execute(['id_producto' => $datos['id_producto']]);
+
+            // Insertar nuevas imágenes
+            $sqlImg = "INSERT INTO producto_imagen(id_producto, url_imagen, tipo) VALUES(:id_producto, :url_imagen, :tipo)";
+            $stmtImg = $conex->prepare($sqlImg);
+            foreach ($imagenes as $indice => $rutaImagen) {
+                $tipo = $indice === 0 ? 'principal' : 'secundaria';
+                $stmtImg->execute([
+                    'id_producto' => $datos['id_producto'],
+                    'url_imagen' => $rutaImagen,
+                    'tipo' => $tipo
+                ]);
+            }
+        }
+
+        $conex->commit();
+        $conex = null;
+        return ['respuesta' => 1, 'accion' => 'actualizar', 'mensaje' => 'Producto actualizado exitosamente'];
+
+    } catch (\PDOException $e) {
+        if ($conex) $conex->rollBack();
+        throw $e;
     }
+}
+
+
     
     private function ejecutarEliminacion($datos) {
         $conex = $this->getConex1();
@@ -209,25 +258,33 @@ class Producto extends Conexion {
     
 
     public function consultar() {
-        $conex = $this->getConex1();
-        try {
-            $sql = "SELECT p.*, c.nombre AS nombre_categoria 
-                    FROM producto p 
-                    INNER JOIN categoria c ON p.id_categoria = c.id_categoria 
-                    WHERE p.estatus IN (1,2)";
-            
-            $stmt = $conex->prepare($sql);
-            $stmt->execute();
-            $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $conex = $this->getConex1();
+    try {
+        $sql = "SELECT p.*, 
+                       c.nombre AS nombre_categoria,
+                       m.nombre AS nombre_marca,
+                       pi.url_imagen AS imagen
+                FROM producto p
+                INNER JOIN categoria c ON p.id_categoria = c.id_categoria
+                INNER JOIN marca m ON p.id_marca = m.id_marca
+                LEFT JOIN producto_imagen pi 
+                       ON p.id_producto = pi.id_producto AND pi.tipo = 'principal'
+                WHERE p.estatus IN (1,2)";
+        
+        $stmt = $conex->prepare($sql);
+        $stmt->execute();
+        $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) {
             $conex = null;
-            return $resultado;
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex = null;
-            }
-            throw $e;
         }
+        throw $e;
     }
+}
+
+
 
     public function MasVendidos() {
         $conex = $this->getConex1();
@@ -281,6 +338,9 @@ class Producto extends Conexion {
 
     public function obtenerCategoria() {
         return $this->objcategoria->consultar();
+    }
+    public function obtenerMarca() {
+        return $this->objmarca->consultar();
     }
 }
 

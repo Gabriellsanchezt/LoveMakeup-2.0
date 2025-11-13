@@ -22,35 +22,43 @@ $objproducto = new Producto();
 
 $registro = $objproducto->consultar();
 $categoria = $objproducto->obtenerCategoria();
+$marca = $objproducto->obtenerMarca();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['registrar'])) {
         if (!empty($_POST['nombre']) && !empty($_POST['descripcion']) && !empty($_POST['marca']) && !empty($_POST['cantidad_mayor']) && !empty($_POST['precio_mayor']) && !empty($_POST['precio_detal']) && !empty($_POST['stock_maximo']) && !empty($_POST['stock_minimo']) && !empty($_POST['categoria'])) {
             $rutaImagen = 'assets/img/logo.PNG';
-            
-            if (isset($_FILES['imagenarchivo']) && $_FILES['imagenarchivo']['error'] == 0) {
-                $nombreArchivo = $_FILES['imagenarchivo']['name'];
-                $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'];
-                $rutaDestino = 'assets/img/Imgproductos/' . $nombreArchivo;
-                move_uploaded_file($rutaTemporal, $rutaDestino);
-                $rutaImagen = $rutaDestino;
+            $imagenes = [];
+
+if (isset($_FILES['imagenarchivo'])) {
+    foreach ($_FILES['imagenarchivo']['name'] as $indice => $nombreArchivo) {
+        if ($_FILES['imagenarchivo']['error'][$indice] == 0) {
+            $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'][$indice];
+            $rutaDestino = 'assets/img/Imgproductos/' . $nombreArchivo;
+            move_uploaded_file($rutaTemporal, $rutaDestino);
+            $imagenes[] = $rutaDestino;
+        }
+    }
+}
+            if (!empty($imagenes)) {
+                $rutaImagen = $imagenes[0]; // Usar la primera imagen como principal
             }
 
             $datosProducto = [
-                'operacion' => 'registrar',
-                'datos' => [
-                    'nombre' => ucfirst(strtolower($_POST['nombre'])),
-                    'descripcion' => $_POST['descripcion'],
-                    'marca' => ucfirst(strtolower($_POST['marca'])),
-                    'cantidad_mayor' => $_POST['cantidad_mayor'],
-                    'precio_mayor' => $_POST['precio_mayor'],
-                    'precio_detal' => $_POST['precio_detal'],
-                    'stock_maximo' => $_POST['stock_maximo'],
-                    'stock_minimo' => $_POST['stock_minimo'],
-                    'imagen' => $rutaImagen,
-                    'id_categoria' => $_POST['categoria']
-                ]
-            ];
+    'operacion' => 'registrar',
+    'datos' => [
+        'nombre' => ucfirst(strtolower($_POST['nombre'])),
+        'descripcion' => $_POST['descripcion'],
+        'id_marca' => $_POST['marca'],
+        'cantidad_mayor' => $_POST['cantidad_mayor'],
+        'precio_mayor' => $_POST['precio_mayor'],
+        'precio_detal' => $_POST['precio_detal'],
+        'stock_maximo' => $_POST['stock_maximo'],
+        'stock_minimo' => $_POST['stock_minimo'],
+        'id_categoria' => $_POST['categoria'],
+        'imagenes' => $imagenes
+    ]
+];
 
             $resultadoRegistro = $objproducto->procesarProducto(json_encode($datosProducto));
 
@@ -59,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id_persona' => $_SESSION["id"],
                     'accion' => 'Registro de producto',
                     'descripcion' => 'Se registró el producto: ' . $datosProducto['datos']['nombre'] . ' ' . 
-                                    $datosProducto['datos']['marca']
+                                    $datosProducto['datos']['id_marca']
                 ];
                 $bitacoraObj = new Bitacora();
                 $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);
@@ -69,14 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else if(isset($_POST['actualizar'])) {
         $rutaImagen = $_POST['imagenActual'];
+        $imagenes = [];
             
-        if (isset($_FILES['imagenarchivo']) && $_FILES['imagenarchivo']['error'] == 0) {
-            $nombreArchivo = $_FILES['imagenarchivo']['name'];
-            $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'];
+        if (isset($_FILES['imagenarchivo'])) {
+    foreach ($_FILES['imagenarchivo']['name'] as $indice => $nombreArchivo) {
+        if ($_FILES['imagenarchivo']['error'][$indice] == 0) {
+            $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'][$indice];
             $rutaDestino = 'assets/img/Imgproductos/' . $nombreArchivo;
             move_uploaded_file($rutaTemporal, $rutaDestino);
-            $rutaImagen = $rutaDestino;
+            $imagenes[] = $rutaDestino;
         }
+    }
+}
+            if (!empty($imagenes)) {
+                $rutaImagen = $imagenes[0]; // Usar la primera imagen como principal
+            }   
 
         $datosProducto = [
             'operacion' => 'actualizar',
@@ -84,14 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'id_producto' => $_POST['id_producto'],
                 'nombre' => ucfirst(strtolower($_POST['nombre'])),
                 'descripcion' => $_POST['descripcion'],
-                'marca' => ucfirst(strtolower($_POST['marca'])),
+                'id_marca' => $_POST['marca'],
                 'cantidad_mayor' => $_POST['cantidad_mayor'],
                 'precio_mayor' => $_POST['precio_mayor'],
                 'precio_detal' => $_POST['precio_detal'],
                 'stock_maximo' => $_POST['stock_maximo'],
                 'stock_minimo' => $_POST['stock_minimo'],
-                'imagen' => $rutaImagen,
-                'id_categoria' => $_POST['categoria']
+                'id_categoria' => $_POST['categoria'],
+                'imagenes' => $imagenes
             ]
         ];
 
@@ -102,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'id_persona' => $_SESSION["id"],
                 'accion' => 'Modificación de producto',
                 'descripcion' => 'Se modificó el producto: ' . $datosProducto['datos']['nombre'] . ' ' . 
-                                $datosProducto['datos']['marca']
+                                $datosProducto['datos']['id_marca']
             ];
             $bitacoraObj = new Bitacora();
             $bitacoraObj->registrarOperacion($bitacora['accion'], 'producto', $bitacora);

@@ -37,6 +37,8 @@ $(document).ready(function () {
 $('#btnLimpiar').on("click", function () {
   $('#nombre, #descripcion, #marca, #cantidad_mayor, #precio_mayor, #precio_detal, #stock_maximo, #stock_minimo, #categoria').val('').removeClass('is-valid is-invalid');
   $('#imagen').attr("src", "assets/img/logo.PNG");
+  $('#preview').html('');
+   $('#archivo').val('');
 });
 
 
@@ -134,7 +136,16 @@ $(document).on('click', '.ver-detalles', function () {
     $('#id_producto').val(id_producto);
     $('#nombre').val(nombre);
     $('#descripcion').val(descripcion);
-    $('#marca').val(marca);
+
+    const marcaSelect = $("#marca option").filter(function () {
+    return $(this).text().trim() === marca;
+}).val();
+if (marcaSelect !== undefined) {
+    $('#marca').val(marcaSelect);
+} else {
+    $('#marca').val('');
+}
+
     $('#cantidad_mayor').val(cantidadMayor);
     $('#precio_mayor').val(precioMayor);
     $('#precio_detal').val(precioDetal);
@@ -322,29 +333,67 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
   
   $("#archivo").on("change", function () {
     mostrarImagen(this);
-  });
+});
   
   $("#imagen").on("error", function () {
     $(this).prop("src", "assets/img/logo.PNG");
   });
   
-  function mostrarImagen(f) {
-    var tamano = f.files[0].size;
-    var megas = parseInt(tamano / 1024);
-  
-    if (megas > 1024) {
-      muestraMensaje("error", 2000, "Error", "La imagen debe ser igual o menor a 1024 K");
-      $(f).val('');
-    } else {
-      if (f.files && f.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          $('#imagen').attr('src', e.target.result);
-        }
-        reader.readAsDataURL(f.files[0]);
+  function mostrarImagen(input) {
+  const preview = $('#preview');
+  const imagenPrincipal = $('#imagen'); // Logo principal grande
+  preview.html(''); // Limpiar previsualización anterior
+
+  if (input.files && input.files.length > 0) {
+    const archivos = Array.from(input.files);
+
+    // Si solo se selecciona una imagen
+    if (archivos.length === 1) {
+      const file = archivos[0];
+      const tamanoKB = parseInt(file.size / 1024);
+      if (tamanoKB > 1024) {
+        muestraMensaje("error", 2000, "Error", "La imagen debe ser igual o menor a 1024 K");
+        input.value = ""; // limpiar input
+        return;
       }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        imagenPrincipal.attr('src', e.target.result).show(); // mostrar logo principal
+        preview.html(''); // limpiar previews pequeñas
+      };
+      reader.readAsDataURL(file);
+    } 
+    // Si se seleccionan varias imágenes
+    else {
+      imagenPrincipal.hide(); // ocultar imagen principal
+      archivos.forEach(file => {
+        const tamanoKB = parseInt(file.size / 1024);
+        if (tamanoKB > 1024) {
+          muestraMensaje("error", 2000, "Error", "Cada imagen debe ser igual o menor a 1024 K");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = $('<img>')
+            .attr('src', e.target.result)
+            .addClass('img-thumbnail m-1')
+            .css({ 'width': '100px', 'height': '100px', 'object-fit': 'cover' });
+          preview.append(img);
+        };
+        reader.readAsDataURL(file);
+      });
     }
-  }	
+  } else {
+    // Si no hay imagen seleccionada, mostrar el logo por defecto
+    imagenPrincipal.attr('src', 'assets/img/logo.PNG').show();
+    preview.html('');
+  }
+}
+
+
+
 	$("#nombre").on("keypress",function(e){
 		validarkeypress(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]*$/,e);
 	});
@@ -352,15 +401,6 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
 	$("#nombre").on("keyup",function(){
 		validarkeyup(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]{3,30}$/,
 		$(this),$("#snombre"),"Solo letras  entre 3 y 30 caracteres");
-	});
-	
-	$("#marca").on("keypress",function(e){
-		validarkeypress(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]*$/,e);
-	});
-	
-	$("#marca").on("keyup",function(){
-		validarkeyup(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]{3,30}$/,
-		$(this),$("#smarca"),"Solo letras  entre 3 y 30 caracteres");
 	});
 	
 	$("#cantidad_mayor").on("keypress",function(e){
@@ -464,11 +504,10 @@ function validarenvio() {
       return false;
   }
   
-  else if (validarkeyup(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]{3,30}$/,
-      $("#marca"), $("#smarca"), "Solo letras entre 3 y 30 caracteres") == 0) {
-      muestraMensaje("error", 2000, "Error", "Datos incorrectos en campo marca");
-      return false;
-  }
+  else if ($("#marca").val() === null || $("#marca").val() === "" || $("#marca").val() === undefined) {
+    muestraMensaje("error", 2000, "Error", "Debes seleccionar una marca");
+    return false;
+}
 
   else if ($("#descripcion").val().trim().length === 0) {
       muestraMensaje("error", 2000, "Error", "La descripción no puede estar vacía");
