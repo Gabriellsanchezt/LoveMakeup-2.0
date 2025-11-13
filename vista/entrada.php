@@ -488,7 +488,15 @@
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label for="fecha_entrada" class="form-label">Fecha de entrada</label>
-                  <input type="date" class="form-control" id="fecha_entrada" name="fecha_entrada" value="<?php echo $compra['fecha_entrada']; ?>" required>
+                  <?php 
+                    $fecha_hoy = date('Y-m-d');
+                    $fecha_dos_dias_atras = date('Y-m-d', strtotime('-2 days'));
+                  ?>
+                  <input type="date" class="form-control" id="fecha_entrada" name="fecha_entrada" 
+                         value="<?php echo $compra['fecha_entrada']; ?>" 
+                         min="<?php echo $fecha_dos_dias_atras; ?>" 
+                         max="<?php echo $fecha_hoy; ?>" 
+                         required>
                 </div>
                 <div class="col-md-6">
                   <label for="id_proveedor" class="form-label">Proveedor</label>
@@ -590,7 +598,15 @@
             <div class="row mb-3">
               <div class="col-md-6">
                 <label for="fecha_entrada_reg" class="form-label">Fecha de Entrada</label>
-                <input type="date" class="form-control" id="fecha_entrada_reg" name="fecha_entrada" value="<?php echo date('Y-m-d'); ?>" required>
+                <?php 
+                  $fecha_hoy = date('Y-m-d');
+                  $fecha_dos_dias_atras = date('Y-m-d', strtotime('-2 days'));
+                ?>
+                <input type="date" class="form-control" id="fecha_entrada_reg" name="fecha_entrada" 
+                       value="<?php echo $fecha_hoy; ?>" 
+                       min="<?php echo $fecha_dos_dias_atras; ?>" 
+                       max="<?php echo $fecha_hoy; ?>" 
+                       required>
               </div>
               <div class="col-md-6">
                 <label for="id_proveedor_reg" class="form-label">Proveedor</label>

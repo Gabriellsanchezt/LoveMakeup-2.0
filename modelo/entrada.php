@@ -54,24 +54,81 @@ class Entrada extends Conexion {
         try {
             $conex->beginTransaction();
             
-            // Validación de datos
-            if (empty($datos['fecha_entrada']) || empty($datos['id_proveedor']) || empty($datos['producto'])) {
+            // Validación de datos básicos
+            if (empty($datos['fecha_entrada']) || empty($datos['id_proveedor']) || empty($datos['productos'])) {
                 throw new \Exception('Datos incompletos');
             }
             
-            // Validar stock máximo para cada producto
-            foreach ($datos['producto'] as $producto) {
-                $sql = "SELECT stock_disponible, stock_maximo FROM producto WHERE id_producto = :id_producto";
+            // Validar formato de fecha
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $datos['fecha_entrada'])) {
+                throw new \Exception('Formato de fecha inválido');
+            }
+            
+            // Validar que el proveedor exista y esté activo
+            $sql = "SELECT COUNT(*) FROM proveedor WHERE id_proveedor = :id_proveedor AND estatus = 1";
+            $stmt = $conex->prepare($sql);
+            $stmt->execute(['id_proveedor' => intval($datos['id_proveedor'])]);
+            if ($stmt->fetchColumn() == 0) {
+                throw new \Exception('El proveedor seleccionado no existe o está inactivo');
+            }
+            
+            // Validar que haya al menos un producto
+            if (!is_array($datos['productos']) || count($datos['productos']) == 0) {
+                throw new \Exception('Debe agregar al menos un producto');
+            }
+            
+            // Validar stock máximo y datos de productos
+            foreach ($datos['productos'] as $index => $producto) {
+                // Validar que el producto tenga los campos requeridos
+                if (!isset($producto['id_producto']) || !isset($producto['cantidad']) || 
+                    !isset($producto['precio_unitario']) || !isset($producto['precio_total'])) {
+                    throw new \Exception('Datos incompletos del producto en la posición ' . ($index + 1));
+                }
+                
+                // Validar tipos y valores
+                $id_producto = intval($producto['id_producto']);
+                $cantidad = intval($producto['cantidad']);
+                $precio_unitario = floatval($producto['precio_unitario']);
+                $precio_total = floatval($producto['precio_total']);
+                
+                if ($id_producto <= 0) {
+                    throw new \Exception('ID de producto inválido en la posición ' . ($index + 1));
+                }
+                
+                if ($cantidad <= 0) {
+                    throw new \Exception('La cantidad debe ser mayor a cero en la posición ' . ($index + 1));
+                }
+                
+                if ($precio_unitario < 0) {
+                    throw new \Exception('El precio unitario no puede ser negativo en la posición ' . ($index + 1));
+                }
+                
+                if ($precio_total < 0) {
+                    throw new \Exception('El precio total no puede ser negativo en la posición ' . ($index + 1));
+                }
+                
+                // Validar coherencia de precios (con tolerancia de 0.01 para errores de redondeo)
+                $precio_calculado = round($cantidad * $precio_unitario, 2);
+                $precio_total_redondeado = round($precio_total, 2);
+                if (abs($precio_calculado - $precio_total_redondeado) > 0.01) {
+                    throw new \Exception('El precio total no coincide con la cantidad por precio unitario en la posición ' . ($index + 1));
+                }
+                
+                // Validar que el producto exista y esté activo
+                $sql = "SELECT stock_disponible, stock_maximo FROM producto WHERE id_producto = :id_producto AND estatus = 1";
                 $stmt = $conex->prepare($sql);
-                $stmt->execute(['id_producto' => $producto['id_producto']]);
+                $stmt->execute(['id_producto' => $id_producto]);
                 $prod_info = $stmt->fetch(\PDO::FETCH_ASSOC);
                 
-                if ($prod_info) {
-                    $stockTotal = $prod_info['stock_disponible'] + $producto['cantidad'];
-                    if ($stockTotal > $prod_info['stock_maximo']) {
-                        throw new \Exception('La cantidad ingresada para el producto ID: ' . $producto['id_producto'] . 
-                                         ' superaría el stock máximo permitido (' . $prod_info['stock_maximo'] . ')');
-                    }
+                if (!$prod_info) {
+                    throw new \Exception('El producto ID ' . $id_producto . ' no existe o está inactivo');
+                }
+                
+                // Validar stock máximo
+                $stockTotal = $prod_info['stock_disponible'] + $cantidad;
+                if ($stockTotal > $prod_info['stock_maximo']) {
+                    throw new \Exception('La cantidad ingresada para el producto ID: ' . $id_producto . 
+                                     ' superaría el stock máximo permitido (' . $prod_info['stock_maximo'] . ')');
                 }
             }
             
@@ -84,26 +141,18 @@ class Entrada extends Conexion {
             ]);
             $id_compra = $conex->lastInsertId();
             
-            // Insertar detalles
-            foreach ($datos['producto'] as $producto) {
-                // Verificar producto
-                $sql = "SELECT COUNT(*) FROM producto WHERE id_producto = :id_producto AND estatus = 1";
-                $stmt = $conex->prepare($sql);
-                $stmt->execute(['id_producto' => $producto['id_producto']]);
-                if ($stmt->fetchColumn() == 0) {
-                    throw new \Exception('Producto no encontrado: ' . $producto['id_producto']);
-                }
-                
+            // Insertar detalles (ya validados arriba)
+            foreach ($datos['productos'] as $producto) {
                 // Insertar detalle
                 $sql = "INSERT INTO compra_detalles(cantidad, precio_total, precio_unitario, id_compra, id_producto) 
                        VALUES (:cantidad, :precio_total, :precio_unitario, :id_compra, :id_producto)";
                 $stmt = $conex->prepare($sql);
                 $stmt->execute([
-                    'cantidad' => $producto['cantidad'],
-                    'precio_total' => $producto['precio_total'],
-                    'precio_unitario' => $producto['precio_unitario'],
+                    'cantidad' => intval($producto['cantidad']),
+                    'precio_total' => floatval($producto['precio_total']),
+                    'precio_unitario' => floatval($producto['precio_unitario']),
                     'id_compra' => $id_compra,
-                    'id_producto' => $producto['id_producto']
+                    'id_producto' => intval($producto['id_producto'])
                 ]);
                 
                 // Actualizar stock
@@ -111,8 +160,8 @@ class Entrada extends Conexion {
                        WHERE id_producto = :id_producto";
                 $stmt = $conex->prepare($sql);
                 $stmt->execute([
-                    'cantidad' => $producto['cantidad'],
-                    'id_producto' => $producto['id_producto']
+                    'cantidad' => intval($producto['cantidad']),
+                    'id_producto' => intval($producto['id_producto'])
                 ]);
             }
             
@@ -135,34 +184,102 @@ class Entrada extends Conexion {
         try {
             $conex->beginTransaction();
             
+            // Validación de datos básicos
+            if (empty($datos['id_compra']) || empty($datos['fecha_entrada']) || empty($datos['id_proveedor']) || empty($datos['productos'])) {
+                throw new \Exception('Datos incompletos');
+            }
+            
+            // Validar ID de compra
+            $id_compra = intval($datos['id_compra']);
+            if ($id_compra <= 0) {
+                throw new \Exception('ID de compra inválido');
+            }
+            
             // Verificar que existe la compra
             $sql = "SELECT COUNT(*) FROM compra WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             if ($stmt->fetchColumn() == 0) {
                 throw new \Exception('La compra no existe');
             }
             
-            // Validar stock máximo para cada producto
-            foreach ($datos['producto'] as $producto) {
+            // Validar formato de fecha
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $datos['fecha_entrada'])) {
+                throw new \Exception('Formato de fecha inválido');
+            }
+            
+            // Validar que el proveedor exista y esté activo
+            $sql = "SELECT COUNT(*) FROM proveedor WHERE id_proveedor = :id_proveedor AND estatus = 1";
+            $stmt = $conex->prepare($sql);
+            $stmt->execute(['id_proveedor' => intval($datos['id_proveedor'])]);
+            if ($stmt->fetchColumn() == 0) {
+                throw new \Exception('El proveedor seleccionado no existe o está inactivo');
+            }
+            
+            // Validar que haya al menos un producto
+            if (!is_array($datos['productos']) || count($datos['productos']) == 0) {
+                throw new \Exception('Debe agregar al menos un producto');
+            }
+            
+            // Validar stock máximo y datos de productos
+            foreach ($datos['productos'] as $index => $producto) {
+                // Validar que el producto tenga los campos requeridos
+                if (!isset($producto['id_producto']) || !isset($producto['cantidad']) || 
+                    !isset($producto['precio_unitario']) || !isset($producto['precio_total'])) {
+                    throw new \Exception('Datos incompletos del producto en la posición ' . ($index + 1));
+                }
+                
+                // Validar tipos y valores
+                $id_producto = intval($producto['id_producto']);
+                $cantidad = intval($producto['cantidad']);
+                $precio_unitario = floatval($producto['precio_unitario']);
+                $precio_total = floatval($producto['precio_total']);
+                
+                if ($id_producto <= 0) {
+                    throw new \Exception('ID de producto inválido en la posición ' . ($index + 1));
+                }
+                
+                if ($cantidad <= 0) {
+                    throw new \Exception('La cantidad debe ser mayor a cero en la posición ' . ($index + 1));
+                }
+                
+                if ($precio_unitario < 0) {
+                    throw new \Exception('El precio unitario no puede ser negativo en la posición ' . ($index + 1));
+                }
+                
+                if ($precio_total < 0) {
+                    throw new \Exception('El precio total no puede ser negativo en la posición ' . ($index + 1));
+                }
+                
+                // Validar coherencia de precios
+                $precio_calculado = round($cantidad * $precio_unitario, 2);
+                $precio_total_redondeado = round($precio_total, 2);
+                if (abs($precio_calculado - $precio_total_redondeado) > 0.01) {
+                    throw new \Exception('El precio total no coincide con la cantidad por precio unitario en la posición ' . ($index + 1));
+                }
+                
+                // Validar que el producto exista y esté activo
                 $sql = "SELECT p.stock_disponible, p.stock_maximo, COALESCE(cd.cantidad, 0) as cantidad_actual 
                        FROM producto p 
                        LEFT JOIN compra_detalles cd ON cd.id_producto = p.id_producto 
                        AND cd.id_compra = :id_compra 
-                       WHERE p.id_producto = :id_producto";
+                       WHERE p.id_producto = :id_producto AND p.estatus = 1";
                 $stmt = $conex->prepare($sql);
                 $stmt->execute([
-                    'id_compra' => $datos['id_compra'],
-                    'id_producto' => $producto['id_producto']
+                    'id_compra' => $id_compra,
+                    'id_producto' => $id_producto
                 ]);
                 $prod_info = $stmt->fetch(\PDO::FETCH_ASSOC);
                 
-                if ($prod_info) {
-                    $stockTotal = ($prod_info['stock_disponible'] - $prod_info['cantidad_actual']) + $producto['cantidad'];
-                    if ($stockTotal > $prod_info['stock_maximo']) {
-                        throw new \Exception('La cantidad ingresada para el producto ID: ' . $producto['id_producto'] . 
-                                         ' superaría el stock máximo permitido (' . $prod_info['stock_maximo'] . ')');
-                    }
+                if (!$prod_info) {
+                    throw new \Exception('El producto ID ' . $id_producto . ' no existe o está inactivo');
+                }
+                
+                // Validar stock máximo
+                $stockTotal = ($prod_info['stock_disponible'] - $prod_info['cantidad_actual']) + $cantidad;
+                if ($stockTotal > $prod_info['stock_maximo']) {
+                    throw new \Exception('La cantidad ingresada para el producto ID: ' . $id_producto . 
+                                     ' superaría el stock máximo permitido (' . $prod_info['stock_maximo'] . ')');
                 }
             }
             
@@ -198,26 +315,18 @@ class Entrada extends Conexion {
             $stmt = $conex->prepare($sql);
             $stmt->execute(['id_compra' => $datos['id_compra']]);
             
-            // Insertar nuevos detalles
-            foreach ($datos['producto'] as $producto) {
-                // Verificar producto
-                $sql = "SELECT COUNT(*) FROM producto WHERE id_producto = :id_producto AND estatus = 1";
-                $stmt = $conex->prepare($sql);
-                $stmt->execute(['id_producto' => $producto['id_producto']]);
-                if ($stmt->fetchColumn() == 0) {
-                    throw new \Exception('Producto no encontrado: ' . $producto['id_producto']);
-                }
-                
+            // Insertar nuevos detalles (ya validados arriba)
+            foreach ($datos['productos'] as $producto) {
                 // Insertar detalle
                 $sql = "INSERT INTO compra_detalles(cantidad, precio_total, precio_unitario, id_compra, id_producto) 
                        VALUES (:cantidad, :precio_total, :precio_unitario, :id_compra, :id_producto)";
                 $stmt = $conex->prepare($sql);
                 $stmt->execute([
-                    'cantidad' => $producto['cantidad'],
-                    'precio_total' => $producto['precio_total'],
-                    'precio_unitario' => $producto['precio_unitario'],
-                    'id_compra' => $datos['id_compra'],
-                    'id_producto' => $producto['id_producto']
+                    'cantidad' => intval($producto['cantidad']),
+                    'precio_total' => floatval($producto['precio_total']),
+                    'precio_unitario' => floatval($producto['precio_unitario']),
+                    'id_compra' => $id_compra,
+                    'id_producto' => intval($producto['id_producto'])
                 ]);
                 
                 // Actualizar stock
@@ -225,8 +334,8 @@ class Entrada extends Conexion {
                        WHERE id_producto = :id_producto";
                 $stmt = $conex->prepare($sql);
                 $stmt->execute([
-                    'cantidad' => $producto['cantidad'],
-                    'id_producto' => $producto['id_producto']
+                    'cantidad' => intval($producto['cantidad']),
+                    'id_producto' => intval($producto['id_producto'])
                 ]);
             }
             
@@ -248,10 +357,20 @@ class Entrada extends Conexion {
         try {
             $conex->beginTransaction();
             
+            // Validar ID de compra
+            if (empty($datos['id_compra'])) {
+                throw new \Exception('ID de compra no proporcionado');
+            }
+            
+            $id_compra = intval($datos['id_compra']);
+            if ($id_compra <= 0) {
+                throw new \Exception('ID de compra inválido');
+            }
+            
             // Verificar que existe la compra
             $sql = "SELECT COUNT(*) FROM compra WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             if ($stmt->fetchColumn() == 0) {
                 throw new \Exception('La compra no existe');
             }
@@ -259,19 +378,22 @@ class Entrada extends Conexion {
             // Obtener detalles para ajustar stock
             $sql = "SELECT id_producto, cantidad FROM compra_detalles WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             $detalles = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
-            // Verificar stock disponible
+            // Verificar stock disponible antes de restar
             foreach ($detalles as $detalle) {
                 $sql = "SELECT stock_disponible FROM producto WHERE id_producto = :id_producto";
                 $stmt = $conex->prepare($sql);
                 $stmt->execute(['id_producto' => $detalle['id_producto']]);
                 $stock_actual = $stmt->fetchColumn();
                 
-                if ($stock_actual < $detalle['cantidad']) {
+                // Validar que el stock actual sea suficiente para restar la cantidad de la compra
+                // Esto evita que el stock quede negativo
+                if ($stock_actual === false || $stock_actual < $detalle['cantidad']) {
                     throw new \Exception('No se puede eliminar la compra porque el producto ID: ' . $detalle['id_producto'] . 
-                                     ' no tiene suficiente stock disponible');
+                                     ' no tiene suficiente stock disponible. Stock actual: ' . ($stock_actual !== false ? $stock_actual : 0) . 
+                                     ', cantidad a restar: ' . $detalle['cantidad']);
                 }
             }
             
@@ -289,12 +411,12 @@ class Entrada extends Conexion {
             // Eliminar detalles
             $sql = "DELETE FROM compra_detalles WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             
             // Eliminar cabecera
             $sql = "DELETE FROM compra WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             
             $conex->commit();
             $conex = null;
@@ -333,13 +455,24 @@ class Entrada extends Conexion {
     private function ejecutarConsultaDetalles($datos) {
         $conex = $this->getConex1();
         try {
+            // Validar que se proporcione el ID de compra
+            if (empty($datos['id_compra'])) {
+                throw new \Exception('ID de compra no proporcionado');
+            }
+            
+            $id_compra = intval($datos['id_compra']);
+            if ($id_compra <= 0) {
+                throw new \Exception('ID de compra inválido');
+            }
+            
             $sql = "SELECT cd.id_detalle_compra, cd.cantidad, cd.precio_total, cd.precio_unitario, 
-                   p.id_producto, p.nombre as producto_nombre, p.marca 
+                   p.id_producto, p.nombre as producto_nombre, m.nombre as marca 
                    FROM compra_detalles cd 
                    JOIN producto p ON cd.id_producto = p.id_producto 
+                   LEFT JOIN marca m ON p.id_marca = m.id_marca
                    WHERE cd.id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex = null;
             return ['respuesta' => 1, 'datos' => $resultado];
@@ -354,7 +487,10 @@ class Entrada extends Conexion {
     private function ejecutarConsultaProductos() {
         $conex = $this->getConex1();
         try {
-            $sql = "SELECT id_producto, nombre, marca, stock_disponible FROM producto WHERE estatus = 1";
+            $sql = "SELECT p.id_producto, p.nombre, m.nombre as marca, p.stock_disponible 
+                   FROM producto p 
+                   LEFT JOIN marca m ON p.id_marca = m.id_marca 
+                   WHERE p.estatus = 1";
             $stmt = $conex->prepare($sql);
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
