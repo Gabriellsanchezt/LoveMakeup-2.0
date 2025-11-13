@@ -454,30 +454,33 @@
                 </tr>
               </thead>
               <tbody>
-                <?php 
-                // Debug temporal - remover en producción
-                if (!isset($ventas)) {
-                    error_log("Variable ventas no está definida en la vista");
-                    echo "<!-- DEBUG: Variable ventas no está definida -->";
-                } else {
-                    error_log("Variable ventas está definida. Cantidad: " . count($ventas));
-                    // Debug visual temporal - remover en producción
-                    if (count($ventas) > 0) {
-                        echo "<!-- DEBUG: Se encontraron " . count($ventas) . " ventas -->";
-                    } else {
-                        echo "<!-- DEBUG: Array ventas está vacío -->";
-                    }
-                }
-                ?>
-                <?php if(isset($ventas) && !empty($ventas)): ?>
+                <?php if(isset($ventas) && !empty($ventas) && is_array($ventas)): ?>
                   <?php foreach($ventas as $venta): ?>
+                    <?php
+                    // Asegurar que $venta sea un array
+                    if (!is_array($venta)) {
+                        continue;
+                    }
+                    // Validar y formatear fecha de manera segura
+                    $fecha_formateada = 'N/A';
+                    if (isset($venta['fecha']) && !empty($venta['fecha'])) {
+                        $timestamp = strtotime($venta['fecha']);
+                        if ($timestamp !== false) {
+                            $fecha_formateada = date('d/m/Y', $timestamp);
+                        }
+                    }
+                    // Validar que todos los campos necesarios existan
+                    $cliente = isset($venta['cliente']) ? htmlspecialchars($venta['cliente'], ENT_QUOTES, 'UTF-8') : 'Sin cliente';
+                    $precio_total = isset($venta['precio_total']) && is_numeric($venta['precio_total']) ? floatval($venta['precio_total']) : 0;
+                    $id_pedido = isset($venta['id_pedido']) ? intval($venta['id_pedido']) : 0;
+                    ?>
                     <tr>
-                      <td class="texto-secundario"><?php echo htmlspecialchars($venta['cliente'] ?? 'Sin cliente'); ?></td>
-                      <td class="texto-secundario"><?php echo isset($venta['fecha']) ? date('d/m/Y', strtotime($venta['fecha'])) : 'N/A'; ?></td>
-                      <td class="texto-secundario"><?php echo '$' . number_format($venta['precio_total'] ?? 0, 2); ?></td>
+                      <td class="texto-secundario"><?php echo $cliente; ?></td>
+                      <td class="texto-secundario"><?php echo $fecha_formateada; ?></td>
+                      <td class="texto-secundario"><?php echo '$' . number_format($precio_total, 2); ?></td>
                       <td class="text-center">
-                        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'especial')): ?>
-                          <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#verDetallesModal<?php echo $venta['id_pedido'] ?? ''; ?>">
+                        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'especial') && $id_pedido > 0): ?>
+                          <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#verDetallesModal<?php echo $id_pedido; ?>">
                             <i class="fas fa-eye" title="Ver Detalles"></i>
                           </button>
                         <?php else: ?>
@@ -486,10 +489,6 @@
                       </td>
                     </tr>
                   <?php endforeach; ?>
-                <?php else: ?>
-                  <tr>
-                    <td colspan="4" class="text-center texto-secundario">No hay ventas registradas</td>
-                  </tr>
                 <?php endif; ?>
               </tbody>
           </table> <!-- Fin tabla--> 
