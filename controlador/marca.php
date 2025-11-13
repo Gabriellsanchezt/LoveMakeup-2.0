@@ -93,7 +93,7 @@ if (isset($_POST['eliminar'])) {
     echo json_encode($res);
     exit;
 
-} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 'ver')) {
+} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'ver')) {
          $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Acceso a Módulo',
