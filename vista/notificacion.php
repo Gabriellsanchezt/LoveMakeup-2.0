@@ -187,70 +187,63 @@
 
 <tbody>
   
-  <?php if (empty($notificaciones)): ?>
-    <tr>
-      <td colspan="5" class="text-center texto-secundario py-3">
-        <?= $nivel === 2
-            ? 'Esperando nuevas notificaciones.'
-            : 'No hay notificaciones registradas.'; ?>
-      </td>
-    </tr>
-  
-  <?php else: foreach ($notificaciones as $n): ?>
-    <tr id="notif-<?= $n['id_notificacion'] ?>">
-      <td>
-        <p class="text-sm texto-secundario font-weight-normal mb-0">
-          <?= htmlspecialchars($n['titulo']) ?>
-        </p>
-      </td>
-      <td>
-        <p class="text-sm texto-secundario font-weight-normal mb-0">
-          <?= htmlspecialchars($n['mensaje']) ?>
-        </p>
-      </td>
-      <td class="text-sm texto-secundario mb-0">
-        <?php switch ((int)$n['estado']):
-          case 1: ?>
-            <span class="text-danger text-sm">No leída</span>
-          <?php break;
-          case 2: ?>
-            <span class="text-secondary text-sm">Leída</span>
-          <?php break;
-          case 3: ?>
-            <span class="text-success text-sm">
-              <?= $nivel === 3 ? 'Leída y entregada' : 'Entregada' ?>
-            </span>
-          <?php break;
-        endswitch; ?>
-      </td>
-      <td class="text-sm mb-0 ">
-        <span class="text-secondary text-sm texto-secundario">
-          <?= date('d-m-Y g:i a', strtotime($n['fecha'])) ?>
-        </span>
-      </td>
-      <td class="text-center">
-        <?php if ($nivel === 3 && in_array((int)$n['estado'], [1, 4])): ?>
-          <button
-            type="button"
-            class="btn btn-info btn-sm btn-action"
-            data-id="<?= $n['id_notificacion'] ?>"
-            data-accion="marcarLeida"
-            title="Marcar como leída">
-            <i class="fa-solid fa-envelope-open"></i>
-          </button>
-        <?php elseif ($nivel === 2 && (int)$n['estado'] === 1): ?>
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm btn-action"
-            data-id="<?= $n['id_notificacion'] ?>"
-            data-accion="marcarLeidaAsesora"
-            title="Leer (solo para mí)">
-            <i class="fa-solid fa-envelope-open"></i>
-          </button>
-        <?php endif; ?>
-      </td>
-    </tr>
-  <?php endforeach; endif; ?>
+  <?php if (!empty($notificaciones)): ?>
+    <?php foreach ($notificaciones as $n): ?>
+      <tr id="notif-<?= $n['id_notificacion'] ?>">
+        <td>
+          <p class="text-sm texto-secundario font-weight-normal mb-0">
+            <?= htmlspecialchars($n['titulo']) ?>
+          </p>
+        </td>
+        <td>
+          <p class="text-sm texto-secundario font-weight-normal mb-0">
+            <?= htmlspecialchars($n['mensaje']) ?>
+          </p>
+        </td>
+        <td class="text-sm texto-secundario mb-0">
+          <?php switch ((int)$n['estado']):
+            case 1: ?>
+              <span class="text-danger text-sm">No leída</span>
+            <?php break;
+            case 2: ?>
+              <span class="text-secondary text-sm">Leída</span>
+            <?php break;
+            case 3: ?>
+              <span class="text-success text-sm">
+                <?= $nivel === 3 ? 'Leída y entregada' : 'Entregada' ?>
+              </span>
+            <?php break;
+          endswitch; ?>
+        </td>
+        <td class="text-sm mb-0 ">
+          <span class="text-secondary text-sm texto-secundario">
+            <?= date('d-m-Y g:i a', strtotime($n['fecha'])) ?>
+          </span>
+        </td>
+        <td class="text-center">
+          <?php if ($nivel === 3 && in_array((int)$n['estado'], [1, 4])): ?>
+            <button
+              type="button"
+              class="btn btn-info btn-sm btn-action"
+              data-id="<?= $n['id_notificacion'] ?>"
+              data-accion="marcarLeida"
+              title="Marcar como leída">
+              <i class="fa-solid fa-envelope-open"></i>
+            </button>
+          <?php elseif ($nivel === 2 && (int)$n['estado'] === 1): ?>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm btn-action"
+              data-id="<?= $n['id_notificacion'] ?>"
+              data-accion="marcarLeidaAsesora"
+              title="Leer (solo para mí)">
+              <i class="fa-solid fa-envelope-open"></i>
+            </button>
+          <?php endif; ?>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  <?php endif; ?>
 
   </tbody>
   </table>
