@@ -46,7 +46,7 @@
                   <i class="fa-solid fa-user-group mr-2" style="color: #f6c5b4;"></i> Tipo Usuario
                 </h4>
                 <div class="d-flex align-items-center gap-2">
-                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'registrar')): ?>
+                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'registrar')): ?>
                   <button type="button"
                           class="btn btn-success"
                           data-bs-toggle="modal"
@@ -126,7 +126,7 @@
                             <i class="fas fa-eye" title="Ver Detalles"></i>
                           </button>
                           
-                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'editar')): ?>
+                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'editar')): ?>
                           <button type="button"
                                   class="btn btn-primary btn-sm me-1 modificar"
                                   title="Editar tipo de usuario"
@@ -140,7 +140,7 @@
                           </button>
                           <?php endif; ?>
                           
-                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'eliminar')): ?>
+                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'eliminar')): ?>
                           <button type="button"
                                   class="btn btn-danger btn-sm eliminar"
                                   title="Eliminar tipo de usuario"

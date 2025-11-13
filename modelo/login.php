@@ -58,8 +58,12 @@ class Login extends Conexion {
                 case 'validar':
                     return $this->obtenerPersonaPorCedula($datosProcesar);
 
-                case 'activocliente':
-                    return $this->activocliente($datosProcesar);
+                case 'dolar':
+
+                     if ($this->verificarFechaNoExiste($datosProcesar['fecha'])) {
+                         return $this->ejecutarRegistro($datosProcesar);
+                    }
+                    return null;
                     
                 case 'activousuaio':
                     return $this->activousuario($datosProcesar);
@@ -266,5 +270,78 @@ class Login extends Conexion {
             throw $e;
         }
     }
+
+
+    public function consultaTasa($fecha) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "SELECT tasa_bs FROM tasa_dolar WHERE fecha = :fecha LIMIT 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['fecha' => $fecha]);
+
+        $resultado = $stmt->fetchColumn();
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex = null;
+        }
+        throw $e;
+    }
+}
+
+
+    private function verificarFechaNoExiste($fecha) {
+    $conex = $this->getConex1();
+    try {
+        $conex->beginTransaction();
+
+        $sql = "SELECT COUNT(*) FROM tasa_dolar WHERE fecha = :fecha";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['fecha' => $fecha]);
+
+        $noExiste = $stmt->fetchColumn() == 0;
+
+        $conex->commit();
+        $conex = null;
+        return $noExiste;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
+
+    private function ejecutarRegistro($datos) {
+    $conex = $this->getConex1();
+  
+    try {
+        $conex->beginTransaction();
+
+        $sql = "INSERT tasa_dolar (fecha, tasa_bs, fuente, estatus)
+                         VALUES (:fecha,:tasa,:fuente, 1)";
+
+        $parametros = [
+            'tasa' => $datos['tasa'],
+            'fuente' => $datos['fuente'],
+            'fecha' => $datos['fecha']
+        ];
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute($parametros);
+
+        $conex->commit();
+        $conex = null;
+        return ['respuesta' => 1, 'accion' => 'sincronizar'];
+
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex->rollBack();
+            $conex = null;
+        }
+        return ['respuesta' => 0, 'text' => $e->getMessage()];
+    }
+}
+
+
 
 }

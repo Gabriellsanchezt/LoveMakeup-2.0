@@ -39,7 +39,7 @@
             </h4>
 
             <div class="d-flex align-items-center gap-2"> 
-                <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(6, 'registrar')): ?>
+                <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'registrar')): ?>
               <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar" title="(CONTROL + ALT + N) Registrar proveedor">
                 <span class="icon text-white">
                   <i class="fas fa-file-medical me-2"></i>
@@ -88,7 +88,7 @@
                         <div><?php echo $dato['telefono']; ?></div>
                       </td>
                       <td class="text-center">
-                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(6, 'ver')): ?>
+                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'ver')): ?>
                           <button type="button"
                                   class="btn btn-info btn-sm me-1"
                                   data-bs-toggle="modal"
@@ -97,14 +97,14 @@
                           </button>
                         <?php endif; ?>
 
-                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(6, 'editar')): ?>
+                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'editar')): ?>
                           <button type="button" class="btn btn-primary btn-sm modificar" 
                                   onclick="abrirModalModificar(<?php echo $dato['id_proveedor']; ?>)" title="Editar datos del proveedor"> 
                             <i class="fas fa-pencil-alt" title="Editar"> </i> 
                           </button>
                         <?php endif; ?>
 
-                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(6, 'eliminar')): ?>
+                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'eliminar')): ?>
                           <button type="button" class="btn btn-danger btn-sm eliminar" 
                                   onclick="eliminarProveedor(<?php echo $dato['id_proveedor']; ?>)" title="Eliminar proveedor">
                             <i class="fas fa-trash-alt" title="Eliminar"> </i>
