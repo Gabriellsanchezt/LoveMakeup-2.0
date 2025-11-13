@@ -111,17 +111,7 @@ if (data.success && row) {
     // 3) si ya no hay ninguna fila
     const tbody = document.querySelector('#myTable tbody');
     if (tbody && tbody.children.length === 0) {
-      const nivel = document.getElementById('myTable').dataset.nivel;
-      const msg = nivel === '2'
-        ? 'Esperando nuevas notificaciones.'
-        : 'No hay notificaciones registradas.';
-      const tr  = document.createElement('tr');
-      tr.innerHTML = `
-        <td colspan="5" class="text-center py-3">
-          ${msg}
-        </td>
-      `;
-      tbody.appendChild(tr);
+      $('#myTable').DataTable().clear().draw();
     }
   }
 }
