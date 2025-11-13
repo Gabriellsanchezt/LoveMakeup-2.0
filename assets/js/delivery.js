@@ -320,41 +320,62 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(el => {
 // Ayuda interactiva
 $('#btnAyuda').on('click', function() {
   const DriverClass = window.driver.js.driver;
+  
+  // Crear array de pasos
+  const steps = [];
+  
+  // Verificar y agregar pasos solo si los elementos existen en la vista
+  if (document.querySelector('.table-color')) {
+    steps.push({
+      element: '.table-color',
+      popover: { title: 'Tabla de Deliveries', description: 'Aquí ves la lista de deliveries registrados.', side: 'top' }
+    });
+  }
+  
+  if (document.querySelector('#btnAbrirRegistrar')) {
+    steps.push({
+      element: '#btnAbrirRegistrar',
+      popover: { title: 'Registrar Delivery', description: 'Abre el modal para registrar un nuevo delivery.', side: 'bottom' }
+    });
+  }
+  
+  if (document.querySelector('button[data-bs-target^="#verDetallesModal"]')) {
+    steps.push({
+      element: 'button[data-bs-target^="#verDetallesModal"]',
+      popover: {
+        title: 'Ver Detalles',
+        description: 'Haz clic aquí para observar toda la información del delivery.',
+        side: 'left'
+      }
+    });
+  }
+  
+  if (document.querySelector('.modificar')) {
+    steps.push({
+      element: '.modificar',
+      popover: { title: 'Editar Delivery', description: 'Haz clic aquí para modificar los datos de un delivery.', side: 'left' }
+    });
+  }
+  
+  if (document.querySelector('.eliminar')) {
+    steps.push({
+      element: '.eliminar',
+      popover: { title: 'Eliminar Delivery', description: 'Elimina un delivery de la lista.', side: 'left' }
+    });
+  }
+  
+  // Agregar el paso final
+  steps.push({
+    popover: { title: '¡Eso es todo!', description: 'Ahora ya sabes cómo funciona este módulo.' }
+  });
+
   const driverObj = new DriverClass({
     nextBtnText: 'Siguiente',
     prevBtnText: 'Anterior',
     doneBtnText: 'Listo',
     popoverClass: 'driverjs-theme',
     closeBtn: false,
-    steps: [
-      {
-        element: '.table-color',
-        popover: { title: 'Tabla de Deliveries', description: 'Aquí ves la lista de deliveries registrados.', side: 'top' }
-      },
-      {
-        element: '#btnAbrirRegistrar',
-        popover: { title: 'Registrar Delivery', description: 'Abre el modal para registrar un nuevo delivery.', side: 'bottom' }
-      },
-      {
-        element: 'button[data-bs-target^="#verDetallesModal"]',
-        popover: {
-          title: 'Ver Detalles',
-          description: 'Haz clic aquí para observar toda la información del delivery.',
-          side: 'left'
-        }
-      },
-      {
-        element: '.modificar',
-        popover: { title: 'Editar Delivery', description: 'Haz clic aquí para modificar los datos de un delivery.', side: 'left' }
-      },
-      {
-        element: '.eliminar',
-        popover: { title: 'Eliminar Delivery', description: 'Elimina un delivery de la lista.', side: 'left' }
-      },
-      {
-        popover: { title: '¡Eso es todo!', description: 'Ahora ya sabes cómo funciona este módulo.' }
-      }
-    ]
+    steps
   });
   driverObj.drive();
 });
