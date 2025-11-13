@@ -5,7 +5,36 @@ function mostrarMensaje(icono, tiempo, titulo, mensaje) {
 $(function(){
 
   // —— 1) DataTables ——  
-  $('#myTable').DataTable();
+  // Check if DataTable is already initialized to prevent reinitialization error
+  if (!$.fn.DataTable.isDataTable('#myTable')) {
+    $('#myTable').DataTable({
+      order: [],
+      "language": {
+        "sProcessing": "Procesando...",
+        "sLengthMenu": "Mostrar _MENU_ registros",
+        "sZeroRecords": "No se encontraron resultados",
+        "sEmptyTable": "Ningún dato disponible en esta tabla",
+        "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+        "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+        "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+        "sInfoPostFix": "",
+        "sSearch": "Buscador:",
+        "sUrl": "",
+        "sInfoThousands": ",",
+        "sLoadingRecords": "Cargando...",
+        "oPaginate": {
+          "sFirst": "Primero",
+          "sLast": "Último",
+          "sNext": "Siguiente",
+          "sPrevious": "Anterior"
+        },
+        "oAria": {
+          "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+          "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+        }
+      }
+    });
+  }
 
   // ————————————————————————————
   // Helpers (idénticos al módulo proveedor)
@@ -99,27 +128,33 @@ $(function(){
     const $estatus = $('#estatus');
 
     if (!$nombre.val().trim()) {
-      $nombre.addClass('is-invalid');
-      $('#snombre').text('Este campo es obligatorio');
-      esValido = false;
+        $nombre.addClass('is-invalid');
+        $('#snombre').text('Este campo es obligatorio');
+        esValido = false;
     } else if (!validarkeyup(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]{3,80}$/, $nombre, $('#snombre'), 'Solo letras entre 3 y 80 caracteres')) {
-      esValido = false;
+        esValido = false;
     }
 
-    if (!$tipo.val().trim()) {
-      $tipo.addClass('is-invalid');
-      $('#stipo').text('Este campo es obligatorio');
-      esValido = false;
-    } else if (!validarkeyup(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]{3,80}$/, $tipo, $('#stipo'), 'Solo letras entre 3 y 80 caracteres')) {
-      esValido = false;
+    if (!$tipo.val()) {
+        $tipo.addClass('is-invalid');
+        $('#stipo').text('Seleccione un tipo de vehículo');
+        esValido = false;
+    } else {
+        $tipo.removeClass('is-invalid').addClass('is-valid');
+        $('#stipo').text('');
     }
 
     if (!$contacto.val().trim()) {
-      $contacto.addClass('is-invalid');
-      $('#scontacto').text('Este campo es obligatorio');
-      esValido = false;
-    } else if (!validarkeyup(/^[A-Za-z0-9\s\#\-\.,]{3,100}$/, $contacto, $('#scontacto'), 'Entre 3 y 100 caracteres. Se permiten números y los símbolos # - . ,')) {
-      esValido = false;
+        $contacto.addClass('is-invalid');
+        $('#scontacto').text('Este campo es obligatorio');
+        esValido = false;
+    } else if (!/^[0-9]{4}[-]{1}[0-9]{7}$/.test($contacto.val())) {
+        $contacto.addClass('is-invalid');
+        $('#scontacto').text('El formato debe ser 0414-0000000');
+        esValido = false;
+    } else {
+        $contacto.removeClass('is-invalid').addClass('is-valid');
+        $('#scontacto').text('');
     }
 
     if (!$estatus.val()) {
@@ -193,22 +228,56 @@ $("#tipo").on("keyup", function() {
     validarkeyup(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]{3,80}$/, $(this), $("#stipo"), "Solo letras entre 3 y 80 caracteres");
 });
 
-$("#contacto").on("keypress", function(e) {
-    validarkeypress(/^[a-zA-Z0-9\s\#\-\.,]*$/, e);
-});
-$("#contacto").on("keyup", function() {
-    validarkeyup(/^[A-Za-z0-9\s\#\-\.,]{3,100}$/, $(this), $("#scontacto"), "Entre 3 y 100 caracteres. Se permiten números y los símbolos # - . ,");
+$("#contacto").on("keypress", function (e) {
+    validarkeypress(/^[0-9-\-]*$/, e);
 });
 
-$("#estatus").on("change", function () {
+$("#contacto").on("keyup", function () {
+    validarCampo($(this),/^[0-9]{4}[-]{1}[0-9]{7}$/,
+    $("#scontacto"), "El formato debe ser 0414-0000000");
+});
+
+$("#contacto").on("input", function () {
+    var input = $(this).val().replace(/[^0-9]/g, '');
+    if (input.length > 4) {
+        input = input.substring(0, 4) + '-' + input.substring(4, 11);
+    }
+    $(this).val(input);
+});
+
+$("#tipo").on("change", function () {
   if (!$(this).val()) {
     $(this).removeClass('is-valid').addClass('is-invalid');
-    $('#sestatus').text('Seleccione un estatus');
+    $('#stipo').text('Seleccione un tipo de vehículo');
   } else {
     $(this).removeClass('is-invalid').addClass('is-valid');
-    $('#sestatus').text('');
+    $('#stipo').text('');
   }
 });
+
+function validarCampo(campo, regex, textoError, mensaje) {
+  const valor = campo.val();
+
+  if (campo.is("select")) {
+   
+    if (valor === "") {
+      campo.removeClass("is-valid").addClass("is-invalid");
+      textoError.text(mensaje);
+    } else {
+      campo.removeClass("is-invalid").addClass("is-valid");
+      textoError.text("");
+    }
+  } else {
+   
+    if (regex.test(valor)) {
+      campo.removeClass("is-invalid").addClass("is-valid");
+      textoError.text("");
+    } else {
+      campo.removeClass("is-valid").addClass("is-invalid");
+      textoError.text(mensaje);
+    }
+  }
+}
 
 // Función para validar por keypress - permite solo caracteres que pasen la regex
 function validarkeypress(er, e) {
@@ -221,21 +290,21 @@ function validarkeypress(er, e) {
 
 // Función para validar por keyup - muestra mensaje y retorna 1 si válido, 0 si no
 function validarkeyup(er, etiqueta, etiquetamensaje, mensaje) {
-    let valor = etiqueta.val();
-    if (valor.trim() === '') {
-        etiqueta.removeClass('is-valid').addClass('is-invalid');
-        etiquetamensaje.text("Este campo es obligatorio");
-        return 0;
-    }
-    if (er.test(valor)) {
-        etiquetamensaje.text('');
-        etiqueta.removeClass('is-invalid').addClass('is-valid');
-        return 1;
-    } else {
-        etiquetamensaje.text(mensaje);
-        etiqueta.removeClass('is-valid').addClass('is-invalid');
-        return 0;
-    }
+  let valor = etiqueta.val();
+  if (valor.trim() === '') {
+      etiqueta.removeClass('is-valid').addClass('is-invalid');
+      etiquetamensaje.text("Este campo es obligatorio");
+      return 0;
+  }
+  if (er.test(valor)) {
+      etiquetamensaje.text('');
+      etiqueta.removeClass('is-invalid').addClass('is-valid');
+      return 1;
+  } else {
+      etiquetamensaje.text(mensaje);
+      etiqueta.removeClass('is-valid').addClass('is-invalid');
+      return 0;
+  }
 }
 
 // 7) Toggle collapse icons
@@ -291,5 +360,3 @@ $('#btnAyuda').on('click', function() {
 });
 
 });
-
-
