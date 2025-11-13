@@ -839,7 +839,9 @@ public static function graficaVentaTop5(): array
        WHERE
          (pe.tipo = 1 AND pe.estatus = '1')      
          OR
-         (pe.tipo = 2 AND pe.estatus IN ('2','3','4','5'))  
+         (pe.tipo = 2 AND pe.estatus IN ('2','3','4','5'))
+         OR
+         (pe.tipo = 3 AND pe.estatus IN ('2','3','4','5'))
     GROUP BY pr.id_producto
     ORDER BY total DESC
        LIMIT 5
