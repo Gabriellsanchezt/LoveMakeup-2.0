@@ -17,6 +17,30 @@
     <link rel="stylesheet" href="assets/css/login.css" />
     <script src="assets/js/loader.js"></script>
 
+    <script>
+      async function obtenerTasaDolarApi() {
+    try {
+        const respuesta = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+
+        const datos = await respuesta.json();
+        const tasaBCV = datos.promedio.toFixed(2); // Redondea la tasa a 2 decimales
+
+
+        document.getElementById("tasabcv").value = tasaBCV;
+       
+
+    } catch (error) {
+   
+        document.getElementById("tasabcv").value = "0";
+    
+    }
+}
+
+document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
+    </script>
   </head>
   <body>
   <?php
@@ -89,7 +113,8 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
                     </div>
                     -->
                 </div>
-                
+                  <input type="hidden" name="tasa" id="tasabcv">
+                <input type="hidden" name="fecha" id="fecha">
  
                 <div class="d-sm-flex mb-4 justify-content-md-end">
                   
@@ -131,7 +156,7 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
                 
                <label class="labelform text-g"> <i class="fa-solid fa-id-card tex-i"></i> Introducir el Nro. de Cedula</label>
 
-
+              
         
 
               <div class="mb-1 ">
@@ -142,6 +167,8 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
                     <option value="J"> Juridico </option>
                   </select>
                   <span id="textodocumento" class="text-danger"></span>
+                       <input type="hidden" name="tasa" id="tasabcv">
+                <input type="hidden" name="fecha" id="fecha">
               </div>
 
             <div class="mb-5 ">
@@ -269,9 +296,11 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
   </div>
 </div>
 
-  
+   <script src="assets/js/libreria/moment.js"></script>
   <script src="assets/js/catalago/js/bootstrap.min.js"></script>
   <script src="assets/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/login.js"></script>
+ 
+
   </body>
 </html>

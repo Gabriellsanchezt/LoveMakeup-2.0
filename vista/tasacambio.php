@@ -7,6 +7,31 @@
   <link rel="stylesheet" href="assets/css/formulario.css">
   <title> Tasa de Cambio | LoveMakeup  </title> 
 
+  <script>
+    async function obtenerTasaDolarApi() {
+    try {
+        const respuesta = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+
+        const datos = await respuesta.json();
+        const tasaBCV = datos.promedio.toFixed(2); // Redondea la tasa a 2 decimales
+
+        document.getElementById("bcv").textContent =  tasaBCV + " Bs";
+        document.getElementById("tasabcv").value = tasaBCV;
+       
+
+    } catch (error) {
+        document.getElementById("bcv").textContent = "Error al cargar la tasa";
+        document.getElementById("tasabcv").value = "0";
+    
+    }
+}
+
+document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
+  </script>
+
 </head>
  
 <body class="g-sidenav-show bg-gray-100">
@@ -66,15 +91,21 @@
       <div class="card" style="background-color: #fce4ec;">
         <div class="card-body">
           <h5 class="card-title">Tasa del Dolar (Guardada)</h5>
-          <h4 class="card-subtitle mb-2 text-dark">Bs. 200.55</h4>
+          <h4 class="card-subtitle mb-2 text-dark" id="tasaBD"> </h4>
           <p class="card-text">Actualmente estás es la tasa de cambio de USD a Bolívares (Bs) guardada en nuestra base de datos. puedes modificarla manualmente en cualquier momento según tu preferencia o la tasa vigente.</p>
-          <label for="">Modificarla manualmente la tasa del $ a Bs</label>
-          <div class="input-group">
-          <input type="text" class="form-control mb-2" placeholder="100.50">
-        <button class="btn btn-primary btn-sm">Registrar</button>
-        </div>
-          
-
+             <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
+          <form action="?pagina=tasacambio" method="POST" autocomplete="off" id="for_modificar">
+            <label for="">Modificarla manualmente la tasa del $ a Bs</label>
+            <div class="input-group">
+            <input type="text" class="form-control mb-2" name="tasa" id="tasa" placeholder="100.50">
+            <input type="hidden" name="fuente" id="fuente_1" value="Manualmente">
+              <input type="hidden" name="fecha" id="fecha_1">
+            <button type="button" name="modificar" id="modificar" class="btn btn-success">Modificar Tasa</button>
+    
+          </div>
+            <span id="textotasa" class="error-message"></span>
+        </form>
+    <?php endif; ?>
           
         </div>
       </div>
@@ -85,9 +116,17 @@
       <div class="card" style="background-color: #e3f2fd;">
         <div class="card-body">
           <h5 class="card-title">Tasa del Dolar (Actual - Via Internet) </h5>
-         <h4 class="card-subtitle mb-2 text-dark">Bs. 200.55</h4>
+         <h4 class="card-subtitle mb-2 text-dark" id="bcv"></h4>
           <p class="card-text">Estás utilizando la tasa de cambio USD a Bs obtenida automáticamente desde internet. Si lo prefieres, puedes sincronizar esta tasa y actualizar la que está guardada en la base de datos.</p>
-          <button class="btn btn-info btn-sm">Sincronizar y Actualizar</button>
+<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
+          <form action="?pagina=tasacambio" method="POST" id="for_sincronizar">
+               <input type="hidden" name="fecha" id="fecha_2">
+                <input type="hidden" name="tasa" id="tasabcv">
+                <input type="hidden" name="fuente" value="Via Internet">
+               <button type="button" class="btn btn-primary" name="sincronizar" id="sincronizar">Sincronizar y Actualizar</button>
+           </form>
+              <span id="textotasabcv" class="error-message"></span>
+               <?php endif; ?>
         </div>
       </div>
     </div>
@@ -96,21 +135,31 @@
   <!-- Fila 2: Tabla -->
   <div class="row">
     <div class="col-12 mb-5">
-      <table class="table table-bordered table-striped w-100">
-        <thead class="table-light">
+      <table class="table table-m table-hover w-100">
+        <thead class="table-color">
           <tr>
-            <th>FECHA</th>
-            <th>TASA BS</th>
-            <th>FUENTE</th>
+            <th class="text-white text-center">FECHA</th>
+            <th class="text-white text-center">TASA BS</th>
+            <th class="text-white text-center">FUENTE</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>1</td><td>Registro A</td><td>Activo</td></tr>
-          <tr><td>2</td><td>Registro B</td><td>Inactivo</td></tr>
-          <tr><td>3</td><td>Registro C</td><td>Activo</td></tr>
-          <tr><td>4</td><td>Registro D</td><td>Inactivo</td></tr>
-          <tr><td>5</td><td>Registro E</td><td>Activo</td></tr>
+          <?php 
+           foreach ($registro as $dato) {
+          ?>
+           <tr 
+              data-fecha="<?php echo date("Y-m-d", strtotime($dato['fecha'])); ?>" 
+              data-tasa="<?php echo $dato['tasa_bs']; ?>"
+            >
+            <td class="text-center text-dark"><i class="fa-solid fa-calendar-days me-2"></i><?php echo date("d/m/Y", strtotime($dato['fecha'])); ?></td>
+            <td class="text-center text-dark">  <span class="badge badge-pill badge-lg bg-primary fs-6"><?php echo ' Bs. '.$dato['tasa_bs']; ?></span></td>
+            <td class="text-center text-dark"><?php echo $dato['fuente']; ?></td>
+          </tr>
+         
         </tbody>
+        <?php 
+           }
+          ?>
       </table>
     </div>
   </div>
@@ -133,7 +182,35 @@
 <!-- php barra de navegacion-->
 <?php include 'complementos/footer.php' ?>
 <!-- para el datatable-->
-<script src="assets/js/demo/datatables-demo.js"></script>
+
+<script src="assets/js/libreria/moment.js"></script>
+<script src="assets/js/tasacambio.js"></script>
+<script>
+ $(document).ready(function () {
+  let hoy = moment().format("YYYY-MM-DD");
+  let ayer = moment().subtract(1, "days").format("YYYY-MM-DD");
+  let tasaEncontrada = null;
+
+  $("tbody tr").each(function () {
+    let fecha = $(this).data("fecha");
+    let tasa = $(this).data("tasa");
+
+    if (fecha === hoy && !tasaEncontrada) {
+      tasaEncontrada = tasa;
+    } else if (fecha === ayer && !tasaEncontrada) {
+      tasaEncontrada = tasa;
+    }
+  });
+
+  if (tasaEncontrada) {
+    $("#tasaBD").text("Bs. " + parseFloat(tasaEncontrada).toFixed(2));
+  } else {
+    $("#tasaBD").text("Bs. No disponible");
+  }
+});
+
+</script>
+
 
 </body>
 

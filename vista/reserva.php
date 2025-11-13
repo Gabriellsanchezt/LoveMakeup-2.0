@@ -15,7 +15,7 @@
   .driver-popover.driverjs-theme button {
     flex: 1;
     text-align: center;
-    background-color: #000;
+    background-color: #1111;
     color: #fff;
     border: 2px solid #000;
     font-size: 14px;

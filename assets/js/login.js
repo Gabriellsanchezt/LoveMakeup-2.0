@@ -324,7 +324,7 @@ $(document).ready(function() {
     });
     
 });
-
+document.getElementById('fecha').value = moment().format('YYYY-MM-DD');
 // AJAX
 function muestraMensaje(icono, tiempo, titulo, mensaje) {
   Swal.fire({

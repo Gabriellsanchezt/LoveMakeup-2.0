@@ -43,7 +43,7 @@
                 </h4>
  
                 <div class="d-flex gap-2">
-                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 'registrar')): ?>
+                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'registrar')): ?>
                   <button id="btnAbrirRegistrar" class="btn btn-success" title="(CONTROL + ALT + N) Registrar marca">
                     <span class="icon text-white">
                       <i class="fas fa-file-medical me-2"></i>
@@ -59,7 +59,7 @@
                   </button>
               </div>
 
-              </div>
+              </div> 
 
               <div class="table-responsive">
                 <table class="table table-m table-hover" id="myTable" width="100%" cellspacing="0">
@@ -88,13 +88,13 @@
 
                         <td class="text-center">
                           <div class="d-flex justify-content-center gap-2">
-                              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 'editar')): ?>
+                              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'editar')): ?>
                              <button class="btn btn-primary btn-sm btnModif" title="Editar datos de la marca">
                               <i class="fas fa-pencil-alt"></i>
                              </button>
                               <?php endif; ?>
 
-                              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 'eliminar')): ?>
+                              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'eliminar')): ?>
                              <button class="btn btn-danger btn-sm btnElim" title="Eliminar marca">
                               <i class="fas fa-trash-alt"></i>
                              </button>

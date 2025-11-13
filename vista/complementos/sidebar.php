@@ -6,7 +6,7 @@
         <img src="assets/img/icono.png" width="30px" height="30px" class="navbar-brand-img h-100" alt="main_logo">
         <span class="ms-1 font-weight-bold texto-secundario">Love Makeup C.A</span>
       </a>
-      <p class="text-center text-black m-0" id="bcv" style="font-size: 14px;"></p>
+      <p class="text-center text-black m-0" id="tasas" style="font-size: 14px;">Tasa del dia <?php  echo $_SESSION["tasa"];?> Bs </p>
 
 
     </div>
@@ -254,5 +254,5 @@
       
     </ul>
     </div> 
-    <script src="assets/js/Tasa.js"></script>
+
   </aside>

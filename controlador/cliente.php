@@ -1,6 +1,6 @@
 <?php  
 
-use LoveMakeup\Proyecto\Modelo\Cliente;
+use LoveMakeup\Proyecto\Modelo\Cliente; 
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 
 session_start();

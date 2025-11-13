@@ -8,7 +8,9 @@ session_start();
 $objlogin = new Login();
 
 if (isset($_POST['ingresar'])) {
-   
+   $dolar = $_POST['tasa'];
+   $fecha = $_POST['fecha'];
+
     $datosLogin = [
         'operacion' => 'verificar',
         'datos' => [
@@ -31,20 +33,37 @@ if (isset($_POST['ingresar'])) {
     }
 
     if ((int)$resultado->estatus === 1) {
+
+        
         $_SESSION["id"] = $resultado->cedula;
 
         $id_persona = $_SESSION["id"]; 
         $resultadopermiso = $objlogin->consultar($id_persona);
         $_SESSION["permisos"] = $resultadopermiso;
 
+     
         $_SESSION["nombre"] = $resultado->nombre;
         $_SESSION["apellido"] = $resultado->apellido;
-        $_SESSION["nivel_rol"] = isset($resultado->nivel) ? $resultado->nivel : 1;
-        $_SESSION['nombre_usuario'] = isset($resultado->nombre_usuario) ? $resultado->nombre_usuario : 'Cliente';
-        $_SESSION["cedula"] = $resultado->cedula;
+        $_SESSION["nivel_rol"] = $resultado->nivel;
+        $_SESSION['nombre_usuario'] = $resultado->nombre_rol;
         $_SESSION["telefono"] = $resultado->telefono;
         $_SESSION["correo"] = $resultado->correo;
-        $_SESSION["estatus"] = $resultado->estatus;
+
+        if($dolar >= 1){
+              $datosLogin = [
+                'operacion' => 'dolar',
+                'datos' => [
+                    'fecha' => $_POST['fecha'],
+                    'tasa' => $_POST['tasa'],
+                    'fuente' => 'Automatico'
+                ]
+                ];
+
+                $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
+        }
+
+         $resultadotasa = $objlogin->consultaTasa($fecha);
+        $_SESSION["tasa"] = $resultadotasa;
 
         if ($_SESSION["nivel_rol"] == 1) {
 
@@ -55,6 +74,7 @@ if (isset($_POST['ingresar'])) {
           
             echo json_encode(['respuesta' => 2, 'accion' => 'ingresar']);
             exit;
+
         } else {
             echo json_encode([
                 'respuesta' => 0,
