@@ -2,6 +2,7 @@
 
 use LoveMakeup\Proyecto\Modelo\Entrada;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
+use LoveMakeup\Proyecto\Config\Conexion;
 
 session_start();
 if (empty($_SESSION["id"])) {
@@ -451,7 +452,7 @@ function generarGrafico() {
 
         // Si hay datos, procedemos con la consulta normal
         $SQL = "SELECT 
-                    DISTINCT p.nombre as nombre_producto,
+                    p.nombre as nombre_producto,
                     COALESCE(SUM(cd.cantidad), 0) as total_comprado 
                 FROM producto p 
                 INNER JOIN compra_detalles cd ON p.id_producto = cd.id_producto 
