@@ -55,7 +55,7 @@ class Reservas extends Conexion {
                 $stmtStock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }
 
-            $sqlEliminar = "UPDATE pedido SET estado = 0 WHERE id_pedido = ?";
+            $sqlEliminar = "UPDATE pedido SET estatus = '0' WHERE id_pedido = ?";
             $stmtEliminar = $conex->prepare($sqlEliminar);
             $stmtEliminar->execute([$id]);
 
@@ -68,7 +68,7 @@ class Reservas extends Conexion {
     }
 
     private function cambiarEstadoReserva($datos) {
-        $sql = "UPDATE pedido SET estado = ? WHERE id_pedido = ?";
+        $sql = "UPDATE pedido SET estatus = ? WHERE id_pedido = ?";
         $stmt = $this->getconex1()->prepare($sql);
         if ($stmt->execute([$datos['estado'], $datos['id_pedido']])) {
             return ['respuesta' => 1, 'msg' => 'Estado actualizado'];
@@ -78,27 +78,56 @@ class Reservas extends Conexion {
     }
 
     public function consultarReservasCompletas() {
-        $sql = "SELECT 
-                    p.id_pedido,
-                    p.tipo,
-                    p.fecha,
-                    p.estado,
-                    p.precio_total_bs,
-                    p.id_pago,
-                    p.id_persona,
-                    cli.nombre,
-                    cli.apellido,
-                    dp.banco,
-                    dp.imagen
-                FROM pedido p
-                LEFT JOIN cliente cli ON p.id_persona = cli.id_persona
-                LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
-                WHERE p.tipo = 3
-                ORDER BY p.fecha DESC";
+        // Intentar primero con la tabla cliente (si existe)
+        try {
+            $sql = "SELECT 
+                        p.id_pedido,
+                        p.tipo,
+                        p.fecha,
+                        p.estatus as estado,
+                        p.precio_total_bs,
+                        p.id_pago,
+                        p.id_usuario as id_persona,
+                        cli.nombre,
+                        cli.apellido,
+                        rp.banco_emisor as banco,
+                        cp.imagen
+                    FROM pedido p
+                    LEFT JOIN cliente cli ON p.id_usuario = cli.id_persona
+                    LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                    LEFT JOIN referencia_pago rp ON dp.id_pago = rp.id_pago
+                    LEFT JOIN comprobante_pago cp ON dp.id_pago = cp.id_pago
+                    WHERE p.tipo = '3'
+                    ORDER BY p.fecha DESC";
 
-        $stmt = $this->getconex1()->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $stmt = $this->getconex1()->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            // Si falla, intentar sin JOIN a cliente (solo datos del pedido)
+            $sql = "SELECT 
+                        p.id_pedido,
+                        p.tipo,
+                        p.fecha,
+                        p.estatus as estado,
+                        p.precio_total_bs,
+                        p.id_pago,
+                        p.id_usuario as id_persona,
+                        NULL as nombre,
+                        NULL as apellido,
+                        rp.banco_emisor as banco,
+                        cp.imagen
+                    FROM pedido p
+                    LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                    LEFT JOIN referencia_pago rp ON dp.id_pago = rp.id_pago
+                    LEFT JOIN comprobante_pago cp ON dp.id_pago = cp.id_pago
+                    WHERE p.tipo = '3'
+                    ORDER BY p.fecha DESC";
+
+            $stmt = $this->getconex1()->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
     }
 
     public function consultarDetallesReserva($id_pedido) {
@@ -124,14 +153,20 @@ class Reservas extends Conexion {
     }
 
     private function consultarPersonas() {
-        $sql = "SELECT id_persona, nombre, apellido FROM cliente";
-        $stmt = $this->getconex1()->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        // Intentar primero con la tabla cliente (si existe)
+        try {
+            $sql = "SELECT id_persona, nombre, apellido FROM cliente WHERE estatus = 1";
+            $stmt = $this->getconex1()->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            // Si falla, devolver array vacío
+            return [];
+        }
     }
 
     private function consultarProductos() {
-        $sql = "SELECT id_producto, nombre, stock_disponible, precio FROM producto WHERE activo = 1";
+        $sql = "SELECT id_producto, nombre, stock_disponible, precio_detal as precio FROM producto WHERE estatus = 1";
         $stmt = $this->getconex1()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
