@@ -5,26 +5,6 @@
   <title>Notificaciones | LoveMakeup</title>
   
   <style>
-    /* Compacta padding en celdas */
-    .table-compact th,
-    .table-compact td {
-      padding: .4rem .6rem;
-      vertical-align: middle;
-    }
-    /* Título cabecera */
-    .card-header.d-flex h6 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    /* Pegar columnas Estado (3) y Fecha (4) a la izquierda */
-    .table-compact th:nth-child(3),
-    .table-compact td:nth-child(3),
-    .table-compact th:nth-child(4),
-    .table-compact td:nth-child(4) {
-      padding-left: 0;
-    }
-    
     /* Estilos para el buscador */
     .dataTables_wrapper {
       margin: 15px;
@@ -68,54 +48,30 @@
       color: #6c757d;
     }
     
-    /* Estilos para la tabla de notificaciones */
-    .table-compact {
-      border-collapse: separate;
-      border-spacing: 0;
-      border-radius: 0.5rem;
-      overflow: hidden;
-      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    /* Estilos para la tabla de notificaciones - igual que otros módulos */
+    #myTable {
+      width: 100%;
     }
     
-    .table-compact thead th {
-      background-color: #e9ecef;
-      border-top: none;
-      border-bottom: 1px solid #dee2e6;
-      color: #495057;
+    #myTable thead.table-color th {
+      background-color: #d67888;
+      color: #ffffff;
       font-weight: 600;
+      text-align: center;
+      vertical-align: middle;
     }
     
-    .table-compact th:first-child {
-      border-top-left-radius: 0.5rem;
-    }
-    
-    .table-compact th:last-child {
-      border-top-right-radius: 0.5rem;
-    }
-    
-    .table-compact tr:last-child td:first-child {
-      border-bottom-left-radius: 0.5rem;
-    }
-    
-    .table-compact tr:last-child td:last-child {
-      border-bottom-right-radius: 0.5rem;
-    }
-    
-    .table-compact td, .table-compact th {
-      border-top: 1px solid #dee2e6;
-    }
-    
-    .table-compact tr:first-child td {
-      border-top: none;
-    }
-    
-    /* Estilo para las filas de la tabla */
-    .table-compact tbody tr {
+    #myTable tbody tr {
       transition: all 0.2s ease-in-out;
     }
     
-    .table-compact tbody tr:hover {
+    #myTable tbody tr:hover {
       background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    #myTable tbody td {
+      text-align: center;
+      vertical-align: middle;
     }
   </style>
 </head>
@@ -164,24 +120,14 @@
 
         <div class="card-body p-0">
           <div class="table-responsive p-3">
-            <table class="table table-m table-sm table-compact mb-0" id="myTable" data-page="notificaciones" data-nivel="<?= $nivel ?>">
-              <thead class="bg-light">
+            <table class="table table-bordered table-hover mb-0" id="myTable" data-page="notificaciones" data-nivel="<?= $nivel ?>">
+              <thead class="table-color">
                 <tr>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                    Título
-                  </th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                    Mensaje
-                  </th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                    Estado
-                  </th>
-                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                    Fecha
-                  </th>
-                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                    Acciones
-                  </th>
+                  <th class="text-white">Título</th>
+                  <th class="text-white">Mensaje</th>
+                  <th class="text-white">Estado</th>
+                  <th class="text-white">Fecha</th>
+                  <th class="text-center text-white">Acciones</th>
                 </tr>
               </thead>
 
@@ -191,36 +137,36 @@
     <?php foreach ($notificaciones as $n): ?>
       <tr id="notif-<?= $n['id_notificacion'] ?>">
         <td>
-          <p class="text-sm texto-secundario font-weight-normal mb-0">
+          <p class="text-sm font-weight-normal mb-0">
             <?= htmlspecialchars($n['titulo']) ?>
           </p>
         </td>
         <td>
-          <p class="text-sm texto-secundario font-weight-normal mb-0">
+          <p class="text-sm font-weight-normal mb-0">
             <?= htmlspecialchars($n['mensaje']) ?>
           </p>
         </td>
-        <td class="text-sm texto-secundario mb-0">
+        <td>
           <?php switch ((int)$n['estado']):
             case 1: ?>
-              <span class="text-danger text-sm">No leída</span>
+              <span class="badge bg-danger">No leída</span>
             <?php break;
             case 2: ?>
-              <span class="text-secondary text-sm">Leída</span>
+              <span class="badge bg-secondary">Leída</span>
             <?php break;
             case 3: ?>
-              <span class="text-success text-sm">
+              <span class="badge bg-success">
                 <?= $nivel === 3 ? 'Leída y entregada' : 'Entregada' ?>
               </span>
             <?php break;
           endswitch; ?>
         </td>
-        <td class="text-sm mb-0 ">
-          <span class="text-secondary text-sm texto-secundario">
+        <td>
+          <span class="text-sm">
             <?= date('d-m-Y g:i a', strtotime($n['fecha'])) ?>
           </span>
         </td>
-        <td class="text-center">
+        <td>
           <?php if ($nivel === 3 && in_array((int)$n['estado'], [1, 4])): ?>
             <button
               type="button"
