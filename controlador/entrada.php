@@ -33,61 +33,74 @@ function sanitizar($dato) {
 
 // Procesar el registro de una nueva compra
 if (isset($_POST['registrar_compra'])) {
-    if (!empty($_POST['fecha_entrada']) && !empty($_POST['id_proveedor']) && isset($_POST['id_producto']) && is_array($_POST['id_producto'])) {
-        $productos = [];
-        for ($i = 0; $i < count($_POST['id_producto']); $i++) {
-            if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
-                $productos[] = array(
-                    'id_producto' => intval($_POST['id_producto'][$i]),
-                    'cantidad' => intval($_POST['cantidad'][$i]),
-                    'precio_unitario' => floatval($_POST['precio_unitario'][$i]),
-                    'precio_total' => floatval($_POST['precio_total'][$i])
-                );
-            }
-        }
-
-        $datosCompra = [
-            'operacion' => 'registrar',
-            'datos' => [
-                'fecha_entrada' => $_POST['fecha_entrada'],
-                'id_proveedor' => intval($_POST['id_proveedor']),
-                'productos' => $productos
-            ]
-        ];
-
-        $resultadoRegistro = $entrada->procesarCompra(json_encode($datosCompra));
-
-        if ($resultadoRegistro['respuesta'] == 1) {
-            $bitacora = [
-                'id_persona' => $_SESSION["id"],
-                'accion' => 'Registro de compra',
-                'descripcion' => 'Se registró la compra ID: ' . $resultadoRegistro['id_compra']
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bitacora['accion'], 'entrada', $bitacora);
-        }
-
+    // Validar que los campos requeridos estén presentes
+    if (empty($_POST['fecha_entrada']) || empty($_POST['id_proveedor']) || 
+        !isset($_POST['id_producto']) || !is_array($_POST['id_producto'])) {
+        $mensaje_error = 'Datos incompletos. Por favor, complete todos los campos requeridos.';
         if (esAjax()) {
             header('Content-Type: application/json');
-            echo json_encode($resultadoRegistro);
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
             exit;
         } else {
-            $_SESSION['message'] = [
-                'title' => ($resultadoRegistro['respuesta'] == 1) ? '¡Éxito!' : 'Error',
-                'text' => $resultadoRegistro['mensaje'],
-                'icon' => ($resultadoRegistro['respuesta'] == 1) ? 'success' : 'error'
-            ];
-            
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
             header("Location: ?pagina=entrada");
             exit;
         }
     }
-}
-
-// Procesar la modificación de una compra
-if (isset($_POST['modificar_compra'])) {
+    
+    // Validar que la fecha esté dentro del rango permitido (hoy y 2 días anteriores)
+    $fecha_entrada = trim($_POST['fecha_entrada']);
+    $fecha_hoy = date('Y-m-d');
+    $fecha_dos_dias_atras = date('Y-m-d', strtotime('-2 days'));
+    
+    if ($fecha_entrada < $fecha_dos_dias_atras || $fecha_entrada > $fecha_hoy) {
+        $mensaje_error = 'La fecha de entrada solo puede ser el día de hoy o los dos días anteriores.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar ID de proveedor
+    $id_proveedor = intval($_POST['id_proveedor']);
+    if ($id_proveedor <= 0) {
+        $mensaje_error = 'Proveedor inválido.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar que los arrays tengan la misma longitud
+    $count_productos = count($_POST['id_producto']);
+    if (!isset($_POST['cantidad']) || !is_array($_POST['cantidad']) || count($_POST['cantidad']) != $count_productos ||
+        !isset($_POST['precio_unitario']) || !is_array($_POST['precio_unitario']) || count($_POST['precio_unitario']) != $count_productos ||
+        !isset($_POST['precio_total']) || !is_array($_POST['precio_total']) || count($_POST['precio_total']) != $count_productos) {
+        $mensaje_error = 'Los datos de productos están incompletos o inconsistentes.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Procesar productos
     $productos = [];
-    for ($i = 0; $i < count($_POST['id_producto']); $i++) {
+    for ($i = 0; $i < $count_productos; $i++) {
         if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
             $productos[] = array(
                 'id_producto' => intval($_POST['id_producto'][$i]),
@@ -97,13 +110,173 @@ if (isset($_POST['modificar_compra'])) {
             );
         }
     }
+    
+    // Validar que haya al menos un producto válido
+    if (count($productos) == 0) {
+        $mensaje_error = 'Debe agregar al menos un producto con cantidad mayor a cero.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+
+    $datosCompra = [
+        'operacion' => 'registrar',
+        'datos' => [
+            'fecha_entrada' => $fecha_entrada,
+            'id_proveedor' => $id_proveedor,
+            'productos' => $productos
+        ]
+    ];
+
+    $resultadoRegistro = $entrada->procesarCompra(json_encode($datosCompra));
+
+    if ($resultadoRegistro['respuesta'] == 1) {
+        $bitacora = [
+            'id_persona' => $_SESSION["id"],
+            'accion' => 'Registro de compra',
+            'descripcion' => 'Se registró la compra ID: ' . $resultadoRegistro['id_compra']
+        ];
+        $bitacoraObj = new Bitacora();
+        $bitacoraObj->registrarOperacion($bitacora['accion'], 'entrada', $bitacora);
+    }
+
+    if (esAjax()) {
+        header('Content-Type: application/json');
+        echo json_encode($resultadoRegistro);
+        exit;
+    } else {
+        $_SESSION['message'] = [
+            'title' => ($resultadoRegistro['respuesta'] == 1) ? '¡Éxito!' : 'Error',
+            'text' => $resultadoRegistro['mensaje'],
+            'icon' => ($resultadoRegistro['respuesta'] == 1) ? 'success' : 'error'
+        ];
+        
+        header("Location: ?pagina=entrada");
+        exit;
+    }
+}
+
+// Procesar la modificación de una compra
+if (isset($_POST['modificar_compra'])) {
+    // Validar que los campos requeridos estén presentes
+    if (empty($_POST['id_compra']) || empty($_POST['fecha_entrada']) || empty($_POST['id_proveedor']) || 
+        !isset($_POST['id_producto']) || !is_array($_POST['id_producto'])) {
+        $mensaje_error = 'Datos incompletos. Por favor, complete todos los campos requeridos.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar ID de compra
+    $id_compra = intval($_POST['id_compra']);
+    if ($id_compra <= 0) {
+        $mensaje_error = 'ID de compra inválido.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar que la fecha esté dentro del rango permitido (hoy y 2 días anteriores)
+    $fecha_entrada = trim($_POST['fecha_entrada']);
+    $fecha_hoy = date('Y-m-d');
+    $fecha_dos_dias_atras = date('Y-m-d', strtotime('-2 days'));
+    
+    if ($fecha_entrada < $fecha_dos_dias_atras || $fecha_entrada > $fecha_hoy) {
+        $mensaje_error = 'La fecha de entrada solo puede ser el día de hoy o los dos días anteriores.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar ID de proveedor
+    $id_proveedor = intval($_POST['id_proveedor']);
+    if ($id_proveedor <= 0) {
+        $mensaje_error = 'Proveedor inválido.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar que los arrays tengan la misma longitud
+    $count_productos = count($_POST['id_producto']);
+    if (!isset($_POST['cantidad']) || !is_array($_POST['cantidad']) || count($_POST['cantidad']) != $count_productos ||
+        !isset($_POST['precio_unitario']) || !is_array($_POST['precio_unitario']) || count($_POST['precio_unitario']) != $count_productos ||
+        !isset($_POST['precio_total']) || !is_array($_POST['precio_total']) || count($_POST['precio_total']) != $count_productos) {
+        $mensaje_error = 'Los datos de productos están incompletos o inconsistentes.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Procesar productos
+    $productos = [];
+    for ($i = 0; $i < $count_productos; $i++) {
+        if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
+            $productos[] = array(
+                'id_producto' => intval($_POST['id_producto'][$i]),
+                'cantidad' => intval($_POST['cantidad'][$i]),
+                'precio_unitario' => floatval($_POST['precio_unitario'][$i]),
+                'precio_total' => floatval($_POST['precio_total'][$i])
+            );
+        }
+    }
+    
+    // Validar que haya al menos un producto válido
+    if (count($productos) == 0) {
+        $mensaje_error = 'Debe agregar al menos un producto con cantidad mayor a cero.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
 
     $datosCompra = [
         'operacion' => 'actualizar',
         'datos' => [
-            'id_compra' => intval($_POST['id_compra']),
-            'fecha_entrada' => $_POST['fecha_entrada'],
-            'id_proveedor' => intval($_POST['id_proveedor']),
+            'id_compra' => $id_compra,
+            'fecha_entrada' => $fecha_entrada,
+            'id_proveedor' => $id_proveedor,
             'productos' => $productos
         ]
     ];
@@ -137,10 +310,38 @@ if (isset($_POST['modificar_compra'])) {
 
 // Procesar la eliminación de una compra
 if (isset($_POST['eliminar_compra'])) {
+    // Validar ID de compra
+    if (empty($_POST['id_compra'])) {
+        $mensaje_error = 'ID de compra no proporcionado.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    $id_compra = intval($_POST['id_compra']);
+    if ($id_compra <= 0) {
+        $mensaje_error = 'ID de compra inválido.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
     $datosCompra = [
         'operacion' => 'eliminar',
         'datos' => [
-            'id_compra' => intval($_POST['id_compra'])
+            'id_compra' => $id_compra
         ]
     ];
 
@@ -173,7 +374,7 @@ if (isset($_POST['eliminar_compra'])) {
 
 // Consultar datos para la vista
 $resultadoCompras = $entrada->procesarCompra(json_encode(['operacion' => 'consultar']));
-$compras = $resultadoCompras['datos'];
+$compras = isset($resultadoCompras['datos']) ? $resultadoCompras['datos'] : [];
 
 // Si hay un ID en la URL, consultamos los detalles de esa compra
 $detalles_compra = [];
@@ -182,15 +383,15 @@ if (isset($_GET['id'])) {
         'operacion' => 'consultarDetalles',
         'datos' => ['id_compra' => intval($_GET['id'])]
     ]));
-    $detalles_compra = $resultadoDetalles['datos'];
+    $detalles_compra = isset($resultadoDetalles['datos']) ? $resultadoDetalles['datos'] : [];
 }
 
 // Obtener la lista de productos y proveedores para los formularios
 $resultadoProductos = $entrada->procesarCompra(json_encode(['operacion' => 'consultarProductos']));
-$productos_lista = $resultadoProductos['datos'];
+$productos_lista = isset($resultadoProductos['datos']) ? $resultadoProductos['datos'] : [];
 
 $resultadoProveedores = $entrada->procesarCompra(json_encode(['operacion' => 'consultarProveedores']));
-$proveedores = $resultadoProveedores['datos'];
+$proveedores = isset($resultadoProveedores['datos']) ? $resultadoProveedores['datos'] : [];
 
 if(isset($_POST['generar'])){
     // Eliminado: $entrada->generarPDF();
@@ -252,7 +453,7 @@ function generarGrafico() {
         $SQL = "SELECT 
                     DISTINCT p.nombre as nombre_producto,
                     COALESCE(SUM(cd.cantidad), 0) as total_comprado 
-                FROM productos p 
+                FROM producto p 
                 INNER JOIN compra_detalles cd ON p.id_producto = cd.id_producto 
                 INNER JOIN compra c ON cd.id_compra = c.id_compra 
                 WHERE p.estatus = 1 

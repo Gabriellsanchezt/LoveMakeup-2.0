@@ -248,14 +248,14 @@ class Bitacora extends Conexion {
                 $detalle .= " [" . ucfirst($modulo) . "]";
             }
 
-            $registro = "INSERT INTO bitacora (accion, fecha_hora, descripcion, id_persona) 
-                        VALUES (:accion, :fecha_hora, :descripcion, :id_persona)";
+            $registro = "INSERT INTO bitacora (accion, fecha_hora, descripcion, cedula) 
+                        VALUES (:accion, :fecha_hora, :descripcion, :cedula)";
             
             $stmt = $this->conex2->prepare($registro);
             $stmt->bindParam(':accion', $accion);
             $stmt->bindParam(':fecha_hora', $fecha);
             $stmt->bindParam(':descripcion', $detalle);
-            $stmt->bindParam(':id_persona', $_SESSION['id']);
+            $stmt->bindParam(':cedula', $_SESSION['id']);
             
             $result = $stmt->execute();
             
@@ -272,8 +272,9 @@ class Bitacora extends Conexion {
     public function consultar(){
         $registro = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario
                      FROM bitacora b
-                     INNER JOIN usuario p ON b.id_persona = p.id_persona
-                     INNER JOIN rol_usuario ru ON p.id_rol = ru.id_rol
+                     INNER JOIN persona p ON b.cedula = p.cedula
+                     INNER JOIN usuario u ON p.cedula = u.cedula
+                     INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
                      ORDER BY b.fecha_hora DESC";
         $consulta = $this->conex2->prepare($registro);
         $resul = $consulta->execute();
@@ -296,8 +297,9 @@ class Bitacora extends Conexion {
             $query = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario,
                             DATE_FORMAT(b.fecha_hora, '%d/%m/%Y %H:%i:%s') as fecha_hora
                      FROM bitacora b
-                     INNER JOIN usuario p ON b.id_persona = p.id_persona
-                     INNER JOIN rol_usuario ru ON p.id_rol = ru.id_rol
+                     INNER JOIN persona p ON b.cedula = p.cedula
+                     INNER JOIN usuario u ON p.cedula = u.cedula
+                     INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
                      WHERE b.id_bitacora = :id_bitacora";
             
             $stmt = $this->conex2->prepare($query);
