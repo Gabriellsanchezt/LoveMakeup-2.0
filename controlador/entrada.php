@@ -173,7 +173,7 @@ if (isset($_POST['eliminar_compra'])) {
 
 // Consultar datos para la vista
 $resultadoCompras = $entrada->procesarCompra(json_encode(['operacion' => 'consultar']));
-$compras = $resultadoCompras['datos'];
+$compras = isset($resultadoCompras['datos']) ? $resultadoCompras['datos'] : [];
 
 // Si hay un ID en la URL, consultamos los detalles de esa compra
 $detalles_compra = [];
@@ -182,15 +182,15 @@ if (isset($_GET['id'])) {
         'operacion' => 'consultarDetalles',
         'datos' => ['id_compra' => intval($_GET['id'])]
     ]));
-    $detalles_compra = $resultadoDetalles['datos'];
+    $detalles_compra = isset($resultadoDetalles['datos']) ? $resultadoDetalles['datos'] : [];
 }
 
 // Obtener la lista de productos y proveedores para los formularios
 $resultadoProductos = $entrada->procesarCompra(json_encode(['operacion' => 'consultarProductos']));
-$productos_lista = $resultadoProductos['datos'];
+$productos_lista = isset($resultadoProductos['datos']) ? $resultadoProductos['datos'] : [];
 
 $resultadoProveedores = $entrada->procesarCompra(json_encode(['operacion' => 'consultarProveedores']));
-$proveedores = $resultadoProveedores['datos'];
+$proveedores = isset($resultadoProveedores['datos']) ? $resultadoProveedores['datos'] : [];
 
 if(isset($_POST['generar'])){
     // Eliminado: $entrada->generarPDF();

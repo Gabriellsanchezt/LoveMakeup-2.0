@@ -88,11 +88,21 @@ document.addEventListener('DOMContentLoaded', function() {
       const cantidad = fila.querySelector('.cantidad-input');
       const precio = fila.querySelector('.precio-input');
       
-      if (productoSelect && productoSelect.value) {
+      // Obtener el valor del select (compatible con Select2)
+      let productoValue = null;
+      if (productoSelect) {
+        if ($(productoSelect).hasClass('select2-hidden-accessible')) {
+          productoValue = $(productoSelect).val();
+        } else {
+          productoValue = productoSelect.value;
+        }
+      }
+      
+      if (productoSelect && productoValue) {
         // Obtener el stock máximo del option seleccionado
-        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-        const stockMaximo = selectedOption.getAttribute('data-stock-maximo');
-        const stockActual = selectedOption.getAttribute('data-stock-actual');
+        const selectedOption = productoSelect.querySelector(`option[value="${productoValue}"]`);
+        const stockMaximo = selectedOption ? selectedOption.getAttribute('data-stock-maximo') : null;
+        const stockActual = selectedOption ? selectedOption.getAttribute('data-stock-actual') : null;
         
         if (!cantidad || !cantidad.value || parseFloat(cantidad.value) <= 0) {
           muestraMensaje("warning", 3000, "Cantidad inválida", "La cantidad debe ser mayor a cero");
@@ -144,14 +154,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    // Clonamos el template de opciones de productos
-    const productoSelect = document.querySelector('.producto-select');
+    // Obtener las opciones del primer select existente
+    const productoSelect = container.querySelector('.producto-select');
     if (!productoSelect) return;
     
-    let productosOptions = productoSelect.innerHTML;
-    // Forzar que la opción 'Seleccione un producto' esté seleccionada
-    productosOptions = productosOptions.replace(/<option([^>]*)selected([^>]*)>/gi, '<option$1$2>');
-    productosOptions = productosOptions.replace(/<option([^>]*)value=""([^>]*)>/i, '<option$1value="" selected$2>');
+    // Obtener las opciones del select original (sin Select2)
+    const selectOriginal = productoSelect.tagName === 'SELECT' ? productoSelect : $(productoSelect).data('select2')?.$element[0];
+    if (!selectOriginal) return;
+    
+    let productosOptions = '<option value=""></option>';
+    Array.from(selectOriginal.options).forEach(option => {
+      if (option.value !== '') {
+        const stockActual = option.getAttribute('data-stock-actual') || '';
+        productosOptions += `<option value="${option.value}" data-stock-actual="${stockActual}">${option.text}</option>`;
+      }
+    });
     
     // Crear nueva fila
     const nuevaFila = document.createElement('div');
@@ -186,6 +203,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Agregar la fila al contenedor
     container.appendChild(nuevaFila);
     
+    // Inicializar Select2 en el nuevo select
+    const nuevoSelect = nuevaFila.querySelector('.producto-select');
+    $(nuevoSelect).select2({
+      theme: 'bootstrap-5',
+      placeholder: 'Seleccione un producto',
+      allowClear: true,
+      width: '100%',
+      language: {
+        noResults: function() {
+          return "No se encontraron productos";
+        },
+        searching: function() {
+          return "Buscando...";
+        }
+      }
+    });
+    
     // Configurar eventos para la nueva fila
     configurarEventosFilaProducto(nuevaFila);
   }
@@ -212,6 +246,11 @@ document.addEventListener('DOMContentLoaded', function() {
               cancelButtonText: 'Cancelar'
             }).then((result) => {
               if (result.isConfirmed) {
+                // Destruir Select2 antes de eliminar la fila
+                const select = fila.querySelector('.producto-select');
+                if (select && $(select).hasClass('select2-hidden-accessible')) {
+                  $(select).select2('destroy');
+                }
                 fila.remove();
               }
             });
@@ -279,6 +318,11 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: 'Cancelar'
           }).then((result) => {
             if (result.isConfirmed) {
+              // Destruir Select2 antes de eliminar la fila
+              const select = fila.querySelector('.producto-select');
+              if (select && $(select).hasClass('select2-hidden-accessible')) {
+                $(select).select2('destroy');
+              }
               fila.remove();
             }
           });
