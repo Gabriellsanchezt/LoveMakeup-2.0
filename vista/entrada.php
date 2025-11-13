@@ -293,38 +293,52 @@
                 <?php if(isset($compras) && !empty($compras)): ?>
                   <?php foreach($compras as $compra): ?>
                     <?php 
+                    // Validar que la compra tenga los datos necesarios
+                    if (!isset($compra['id_compra']) || !isset($compra['fecha_entrada']) || !isset($compra['proveedor_nombre'])) {
+                        continue; // Saltar esta fila si faltan datos
+                    }
+                    
                     // Obtener el primer producto de la compra para mostrar en la tabla principal
                     $resultadoDetalles = $entrada->procesarCompra(json_encode([
                         'operacion' => 'consultarDetalles',
                         'datos' => ['id_compra' => $compra['id_compra']]
                     ]));
-                    $detalles_producto = $resultadoDetalles['datos'];
-                    $primer_producto = !empty($detalles_producto) ? $detalles_producto[0]['producto_nombre'] : 'Sin productos';
+                    $detalles_producto = isset($resultadoDetalles['datos']) ? $resultadoDetalles['datos'] : [];
+                    $primer_producto = !empty($detalles_producto) && isset($detalles_producto[0]['producto_nombre']) 
+                        ? htmlspecialchars($detalles_producto[0]['producto_nombre'], ENT_QUOTES, 'UTF-8') 
+                        : 'Sin productos';
+                    // Formatear fecha (extraer solo la parte de fecha si tiene hora)
+                    $fecha_entrada_raw = $compra['fecha_entrada'];
+                    if (!empty($fecha_entrada_raw)) {
+                        if (strlen($fecha_entrada_raw) > 10 && strpos($fecha_entrada_raw, ' ') !== false) {
+                            $fecha_solo = substr($fecha_entrada_raw, 0, 10);
+                            $fecha_formateada = date('d/m/Y', strtotime($fecha_solo));
+                        } else {
+                            $fecha_formateada = date('d/m/Y', strtotime($fecha_entrada_raw));
+                        }
+                    } else {
+                        $fecha_formateada = 'N/A';
+                    }
+                    $proveedor_nombre = isset($compra['proveedor_nombre']) 
+                        ? htmlspecialchars($compra['proveedor_nombre'], ENT_QUOTES, 'UTF-8') 
+                        : 'N/A';
                     ?>
                     <tr>
                       <td class="texto-secundario"><?php echo $primer_producto; ?></td>
-                      <td class="texto-secundario"><?php echo date('d/m/Y', strtotime($compra['fecha_entrada'])); ?></td>
-                      <td class="texto-secundario"><?php echo $compra['proveedor_nombre']; ?></td>
+                      <td class="texto-secundario"><?php echo $fecha_formateada; ?></td>
+                      <td class="texto-secundario"><?php echo $proveedor_nombre; ?></td>
                       <td class="text-center">
-                        
                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 'editar')): ?>
                         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editarModal<?php echo $compra['id_compra']; ?>">
                           <i class="fas fa-pencil-alt" title="Editar"></i>
                         </button>
-                          <?php endif; ?>
-
-                       
+                         <?php endif; ?>
                         <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#verDetallesModal<?php echo $compra['id_compra']; ?>">
                           <i class="fas fa-eye" title="Ver detalles"></i>
                         </button>
-                          
                       </td>
                     </tr>
                   <?php endforeach; ?>
-                <?php else: ?>
-                  <tr>
-                    <td colspan="4" class="text-center">No hay compras registradas</td>
-                  </tr>
                 <?php endif; ?>
               </tbody>
           </table> <!-- Fin tabla--> 
@@ -365,10 +379,31 @@
                     <div class="card-body">
                       <div class="row">
                         <div class="col-md-6">
-                          <strong>Fecha de Entrada:</strong> <?php echo date('d/m/Y', strtotime($compra['fecha_entrada'])); ?>
+                          <strong>Fecha de Entrada:</strong> 
+                          <?php 
+                            $fecha_entrada = $compra['fecha_entrada'];
+                            // Si la fecha tiene hora, extraer solo la fecha
+                            if (strlen($fecha_entrada) > 10 && strpos($fecha_entrada, ' ') !== false) {
+                                $fecha_solo = substr($fecha_entrada, 0, 10);
+                                echo date('d/m/Y', strtotime($fecha_solo));
+                            } else {
+                                echo date('d/m/Y', strtotime($fecha_entrada));
+                            }
+                          ?>
                         </div>
                         <div class="col-md-6">
-                          <strong>Hora de Entrada:</strong> <?php echo date('H:i:s', strtotime($compra['fecha_entrada'])); ?>
+                          <strong>Hora de Entrada:</strong> 
+                          <?php 
+                            $fecha_entrada = $compra['fecha_entrada'];
+                            // Si la fecha tiene hora, mostrarla; si no, mostrar hora actual del registro
+                            if (strlen($fecha_entrada) > 10 && strpos($fecha_entrada, ' ') !== false) {
+                                $hora = substr($fecha_entrada, 11);
+                                echo $hora;
+                            } else {
+                                // Si no tiene hora guardada, mostrar 00:00:00 o la hora actual
+                                echo '00:00:00';
+                            }
+                          ?>
                         </div>
                       </div>
                     </div>

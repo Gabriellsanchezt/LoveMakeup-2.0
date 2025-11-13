@@ -424,7 +424,7 @@
            
        <!-- Button que abre el Modal N1 Registro -->
        <div class="d-flex gap-2"> 
-          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'registrar')): ?>
+          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'registrar')): ?>
           <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registroModal">
             <span class="icon text-white">
             <i class="fas fa-file-medical"></i>

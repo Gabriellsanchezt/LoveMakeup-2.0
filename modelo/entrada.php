@@ -132,11 +132,16 @@ class Entrada extends Conexion {
                 }
             }
             
-            // Insertar cabecera
+            // Insertar cabecera con fecha y hora actual
+            // Combinar la fecha seleccionada con la hora actual
+            $fecha_entrada = $datos['fecha_entrada'];
+            $hora_actual = date('H:i:s');
+            $fecha_hora_entrada = $fecha_entrada . ' ' . $hora_actual;
+            
             $sql = "INSERT INTO compra(fecha_entrada, id_proveedor) VALUES (:fecha_entrada, :id_proveedor)";
             $stmt = $conex->prepare($sql);
             $stmt->execute([
-                'fecha_entrada' => $datos['fecha_entrada'],
+                'fecha_entrada' => $fecha_hora_entrada,
                 'id_proveedor' => $datos['id_proveedor']
             ]);
             $id_compra = $conex->lastInsertId();
@@ -283,20 +288,38 @@ class Entrada extends Conexion {
                 }
             }
             
-            // Actualizar cabecera
+            // Actualizar cabecera - mantener la hora original si existe, o agregar hora actual
+            // Primero obtener la fecha/hora actual de la compra
+            $sql_select = "SELECT fecha_entrada FROM compra WHERE id_compra = :id_compra";
+            $stmt_select = $conex->prepare($sql_select);
+            $stmt_select->execute(['id_compra' => $id_compra]);
+            $fecha_actual = $stmt_select->fetchColumn();
+            
+            // Si la fecha actual tiene hora, mantenerla; si no, agregar hora actual
+            $fecha_entrada = $datos['fecha_entrada'];
+            if ($fecha_actual && strlen($fecha_actual) > 10 && strpos($fecha_actual, ' ') !== false) {
+                // Ya tiene hora, mantenerla
+                $hora_existente = substr($fecha_actual, 11);
+                $fecha_hora_entrada = $fecha_entrada . ' ' . $hora_existente;
+            } else {
+                // No tiene hora, agregar hora actual
+                $hora_actual = date('H:i:s');
+                $fecha_hora_entrada = $fecha_entrada . ' ' . $hora_actual;
+            }
+            
             $sql = "UPDATE compra SET fecha_entrada = :fecha_entrada, id_proveedor = :id_proveedor 
                    WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
             $stmt->execute([
-                'fecha_entrada' => $datos['fecha_entrada'],
+                'fecha_entrada' => $fecha_hora_entrada,
                 'id_proveedor' => $datos['id_proveedor'],
-                'id_compra' => $datos['id_compra']
+                'id_compra' => $id_compra
             ]);
             
             // Obtener detalles actuales para ajustar stock
             $sql = "SELECT id_producto, cantidad FROM compra_detalles WHERE id_compra = :id_compra";
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_compra' => $datos['id_compra']]);
+            $stmt->execute(['id_compra' => $id_compra]);
             $detalles_actuales = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             
             // Restar stock actual

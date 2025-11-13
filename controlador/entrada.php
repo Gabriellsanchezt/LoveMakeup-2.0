@@ -125,41 +125,40 @@ if (isset($_POST['registrar_compra'])) {
         }
     }
 
-        $datosCompra = [
-            'operacion' => 'registrar',
-            'datos' => [
-                'fecha_entrada' => $fecha_entrada,
-                'id_proveedor' => $id_proveedor,
-                'productos' => $productos
-            ]
+    $datosCompra = [
+        'operacion' => 'registrar',
+        'datos' => [
+            'fecha_entrada' => $fecha_entrada,
+            'id_proveedor' => $id_proveedor,
+            'productos' => $productos
+        ]
+    ];
+
+    $resultadoRegistro = $entrada->procesarCompra(json_encode($datosCompra));
+
+    if ($resultadoRegistro['respuesta'] == 1) {
+        $bitacora = [
+            'id_persona' => $_SESSION["id"],
+            'accion' => 'Registro de compra',
+            'descripcion' => 'Se registró la compra ID: ' . $resultadoRegistro['id_compra']
         ];
+        $bitacoraObj = new Bitacora();
+        $bitacoraObj->registrarOperacion($bitacora['accion'], 'entrada', $bitacora);
+    }
 
-        $resultadoRegistro = $entrada->procesarCompra(json_encode($datosCompra));
-
-        if ($resultadoRegistro['respuesta'] == 1) {
-            $bitacora = [
-                'id_persona' => $_SESSION["id"],
-                'accion' => 'Registro de compra',
-                'descripcion' => 'Se registró la compra ID: ' . $resultadoRegistro['id_compra']
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bitacora['accion'], 'entrada', $bitacora);
-        }
-
-        if (esAjax()) {
-            header('Content-Type: application/json');
-            echo json_encode($resultadoRegistro);
-            exit;
-        } else {
-            $_SESSION['message'] = [
-                'title' => ($resultadoRegistro['respuesta'] == 1) ? '¡Éxito!' : 'Error',
-                'text' => $resultadoRegistro['mensaje'],
-                'icon' => ($resultadoRegistro['respuesta'] == 1) ? 'success' : 'error'
-            ];
-            
-            header("Location: ?pagina=entrada");
-            exit;
-        }
+    if (esAjax()) {
+        header('Content-Type: application/json');
+        echo json_encode($resultadoRegistro);
+        exit;
+    } else {
+        $_SESSION['message'] = [
+            'title' => ($resultadoRegistro['respuesta'] == 1) ? '¡Éxito!' : 'Error',
+            'text' => $resultadoRegistro['mensaje'],
+            'icon' => ($resultadoRegistro['respuesta'] == 1) ? 'success' : 'error'
+        ];
+        
+        header("Location: ?pagina=entrada");
+        exit;
     }
 }
 
