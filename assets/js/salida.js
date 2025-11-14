@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const textoActual = $boton.html();
         $boton.data('texto-original', textoActual); // Guarda el texto original
         $boton.prop('disabled', true);
-        $boton.html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${texto}`);
+        $boton.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + texto);
     }
 
     function desactivarLoaderBoton(idBoton) {
@@ -127,6 +127,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (camposCliente) {
                 camposCliente.style.display = 'none';
             }
+        });
+        
+        // Inicializar Select2 cuando se muestra el modal
+        registroModal.addEventListener('shown.bs.modal', function() {
+            // Si ya estamos en el paso 2, inicializar Select2
+            if (pasoActual === 2) {
+                setTimeout(() => {
+                    inicializarSelect2Productos();
+                }, 100);
+            }
+        });
+        
+        // Destruir Select2 al cerrar el modal para evitar problemas
+        registroModal.addEventListener('hidden.bs.modal', function() {
+            $('.producto-select-venta').select2('destroy');
         });
     }
 
@@ -669,15 +684,92 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('agregar-producto-venta')) {
                 const fila = e.target.closest('tr');
+                
+                // Obtener el select original para preservar las opciones
+                const selectOriginal = fila.querySelector('.producto-select-venta');
+                if (!selectOriginal) return;
+                
+                // Obtener el select real (sin Select2) si está inicializado
+                let selectReal = selectOriginal;
+                if (typeof $ !== 'undefined' && $(selectOriginal).hasClass('select2-hidden-accessible')) {
+                    // Si Select2 está inicializado, obtener el elemento original
+                    const select2Data = $(selectOriginal).data('select2');
+                    if (select2Data && select2Data.$element && select2Data.$element[0]) {
+                        selectReal = select2Data.$element[0];
+                    }
+                }
+                
+                // Preservar las opciones del select original
+                let productosOptions = '<option value="">Seleccione un producto</option>';
+                if (selectReal && selectReal.options && selectReal.options.length > 0) {
+                    Array.from(selectReal.options).forEach(option => {
+                        if (option.value !== '') {
+                            const precio = option.getAttribute('data-precio') || '';
+                            const stock = option.getAttribute('data-stock') || '';
+                            const marca = option.getAttribute('data-marca') || '';
+                            const searchText = option.getAttribute('data-search-text') || '';
+                            productosOptions += `<option value="${option.value}" 
+                                data-precio="${precio}" 
+                                data-stock="${stock}" 
+                                data-marca="${marca}" 
+                                data-search-text="${searchText}">${option.text}</option>`;
+                        }
+                    });
+                } else {
+                    // Si no hay opciones, usar la primera fila del contenedor como referencia
+                    const primeraFila = contenedorProductos.querySelector('tr.producto-fila:first-child');
+                    if (primeraFila) {
+                        const primerSelect = primeraFila.querySelector('.producto-select-venta');
+                        if (primerSelect && primerSelect.options) {
+                            Array.from(primerSelect.options).forEach(option => {
+                                if (option.value !== '') {
+                                    const precio = option.getAttribute('data-precio') || '';
+                                    const stock = option.getAttribute('data-stock') || '';
+                                    const marca = option.getAttribute('data-marca') || '';
+                                    const searchText = option.getAttribute('data-search-text') || '';
+                                    productosOptions += `<option value="${option.value}" 
+                                        data-precio="${precio}" 
+                                        data-stock="${stock}" 
+                                        data-marca="${marca}" 
+                                        data-search-text="${searchText}">${option.text}</option>`;
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                // Clonar la fila
                 const nuevaFila = fila.cloneNode(true);
                 
+                // Reemplazar el select clonado con uno nuevo que tenga todas las opciones
+                const nuevoSelect = nuevaFila.querySelector('.producto-select-venta');
+                if (nuevoSelect) {
+                    nuevoSelect.innerHTML = productosOptions;
+                }
+                
                 // Limpiar valores de la nueva fila
-                nuevaFila.querySelector('.producto-select-venta').value = '';
+                if (nuevoSelect) {
+                    nuevoSelect.value = '';
+                }
                 nuevaFila.querySelector('.cantidad-input-venta').value = '1';
                 nuevaFila.querySelector('.precio-input-venta').value = '0.00';
                 nuevaFila.querySelector('.subtotal-venta').textContent = '0.00';
                 nuevaFila.querySelector('.subtotal-venta').classList.add('texto-secundario');
                 nuevaFila.querySelector('.stock-info').textContent = '';
+                const marcaSpan = nuevaFila.querySelector('.marca-producto-venta');
+                if (marcaSpan) {
+                    marcaSpan.textContent = 'no seleccionado';
+                    // Asegurar que la celda de marca esté centrada
+                    if (marcaSpan.parentElement) {
+                        marcaSpan.parentElement.classList.add('text-center');
+                    }
+                }
+                
+                // Asegurar que la celda de subtotal esté centrada
+                const subtotalSpan = nuevaFila.querySelector('.subtotal-venta');
+                if (subtotalSpan && subtotalSpan.parentElement) {
+                    subtotalSpan.parentElement.classList.add('text-center');
+                }
                 
                 // Obtener el contenedor de botones
                 const contenedorBotones = nuevaFila.querySelector('td:last-child');
@@ -696,11 +788,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 inicializarEventosFila(nuevaFila);
                 
                 // Inicializar Select2 en el nuevo select
-                const nuevoSelect = nuevaFila.querySelector('.producto-select-venta');
-                if (nuevoSelect) {
+                const nuevoSelectParaInit = nuevaFila.querySelector('.producto-select-venta');
+                if (nuevoSelectParaInit) {
                     setTimeout(() => {
-                        inicializarSelect2Productos();
-                    }, 50);
+                        // Inicializar solo el nuevo select
+                        if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+                            try {
+                                $(nuevoSelectParaInit).select2({
+                                    theme: 'bootstrap-5',
+                                    placeholder: 'Seleccione un producto',
+                                    allowClear: true,
+                                    width: '100%',
+                                    language: {
+                                        noResults: function() {
+                                            return "No se encontraron productos";
+                                        },
+                                        searching: function() {
+                                            return "Buscando...";
+                                        }
+                                    }
+                                });
+                                
+                                // Configurar evento de cambio para Select2
+                                $(nuevoSelectParaInit).on('select2:select', function(e) {
+                                    const filaSelect = $(this).closest('tr')[0];
+                                    const selectedValue = $(this).val();
+                                    const option = $(this).find('option[value="' + selectedValue + '"]')[0];
+                                    
+                                    if (option) {
+                                        const precio = option.getAttribute('data-precio');
+                                        const stock = option.getAttribute('data-stock');
+                                        const marca = option.getAttribute('data-marca');
+                                        
+                                        if (precio && stock !== null) {
+                                            filaSelect.querySelector('.precio-input-venta').value = precio;
+                                            filaSelect.querySelector('.cantidad-input-venta').setAttribute('data-stock', stock);
+                                            filaSelect.querySelector('.stock-info').textContent = 'Stock: ' + stock;
+                                            if (marca) {
+                                                filaSelect.querySelector('.marca-producto-venta').textContent = marca;
+                                            }
+                                            calcularSubtotalVenta(filaSelect);
+                                        }
+                                    }
+                                });
+                                
+                                // Configurar evento cuando se limpia la selección
+                                $(nuevoSelectParaInit).on('select2:clear', function() {
+                                    const filaClear = $(this).closest('tr')[0];
+                                    filaClear.querySelector('.precio-input-venta').value = '0.00';
+                                    filaClear.querySelector('.cantidad-input-venta').removeAttribute('data-stock');
+                                    filaClear.querySelector('.stock-info').textContent = '';
+                                    filaClear.querySelector('.marca-producto-venta').textContent = 'no seleccionado';
+                                    filaClear.querySelector('.subtotal-venta').textContent = '0.00';
+                                    actualizarTotalVenta();
+                                });
+                            } catch (error) {
+                                console.error('Error al inicializar Select2 en nueva fila:', error);
+                            }
+                        }
+                    }, 100);
                 }
             }
             
@@ -739,15 +885,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (option.value) {
                     const precio = option.getAttribute('data-precio');
                     const stock = option.getAttribute('data-stock');
+                    const marca = option.getAttribute('data-marca');
                     
                     fila.querySelector('.precio-input-venta').value = precio;
                     fila.querySelector('.cantidad-input-venta').setAttribute('data-stock', stock);
                     fila.querySelector('.stock-info').textContent = `Stock: ${stock}`;
+                    if (marca) {
+                        fila.querySelector('.marca-producto-venta').textContent = marca;
+                    }
                     
                     calcularSubtotalVenta(fila);
                 } else {
                     fila.querySelector('.precio-input-venta').value = '0.00';
                     fila.querySelector('.cantidad-input-venta').removeAttribute('data-stock');
+                    fila.querySelector('.marca-producto-venta').textContent = 'no seleccionado';
                     fila.querySelector('.stock-info').textContent = '';
                     fila.querySelector('.subtotal-venta').textContent = '0.00';
                     actualizarTotalVenta();
@@ -785,8 +936,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (select.value) {
             const option = select.options[select.selectedIndex];
             const stock = option.getAttribute('data-stock');
+            const marca = option.getAttribute('data-marca');
             cantidad.setAttribute('data-stock', stock);
             fila.querySelector('.stock-info').textContent = `Stock: ${stock}`;
+            if (marca) {
+                const marcaSpan = fila.querySelector('.marca-producto-venta');
+                if (marcaSpan) {
+                    marcaSpan.textContent = marca;
+                }
+            }
         }
     }
 
@@ -1510,7 +1668,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const saldoDisponible = totalVenta - totalPagado;
                 
                 if (montoActual > saldoDisponible) {
-                    Swal.fire('Advertencia', `El monto excede el saldo disponible ($${saldoDisponible.toFixed(2)})`, 'warning');
+                    Swal.fire('Advertencia', 'El monto excede el saldo disponible ($' + saldoDisponible.toFixed(2) + ')', 'warning');
                     this.value = saldoDisponible.toFixed(2);
                 }
                 
@@ -2109,6 +2267,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 step.classList.add('active');
             }
         }
+        
+        // Actualizar barra de progreso rosa
+        actualizarBarraProgreso(pasoActual);
+    }
+    
+    // Función para actualizar la barra de progreso
+    function actualizarBarraProgreso(paso) {
+        const progressBar = document.getElementById('progress-bar-pasos');
+        if (!progressBar) return;
+        
+        // Calcular la posición exacta de cada paso
+        const progressSteps = document.querySelector('.progress-steps');
+        if (!progressSteps) {
+            // Fallback a porcentajes si no se encuentra el contenedor
+            const porcentajes = { 1: 25, 2: 50, 3: 75, 4: 100 };
+            progressBar.style.width = (porcentajes[paso] || 0) + '%';
+            return;
+        }
+        
+        // Obtener el paso correspondiente
+        const pasoElement = document.getElementById(`step-${getNombrePaso(paso)}`);
+        if (!pasoElement) return;
+        
+        // Calcular la posición del centro del paso
+        const pasoRect = pasoElement.getBoundingClientRect();
+        const stepsRect = progressSteps.getBoundingClientRect();
+        
+        // Calcular la distancia desde el inicio hasta el centro del paso actual
+        const distanciaDesdeInicio = pasoRect.left + (pasoRect.width / 2) - stepsRect.left - 40;
+        
+        // Asegurar que el ancho sea al menos el mínimo
+        const anchoMinimo = 0;
+        const anchoMaximo = progressSteps.offsetWidth - 80;
+        
+        // Establecer el ancho de la barra
+        const ancho = Math.max(anchoMinimo, Math.min(distanciaDesdeInicio, anchoMaximo));
+        progressBar.style.width = ancho + 'px';
     }
 
     // Función para obtener el nombre del paso
@@ -2187,14 +2382,27 @@ document.addEventListener('DOMContentLoaded', function() {
             case 2: // Productos
                 const productos = document.querySelectorAll('#productos-container-venta tr.producto-fila');
                 let productosValidos = 0;
+                
+                if (productos.length === 0) {
+                    return false;
+                }
+                
                 productos.forEach(fila => {
                     const select = fila.querySelector('.producto-select-venta');
                     const cantidad = fila.querySelector('.cantidad-input-venta');
-                    const valorSelect = select ? obtenerValorSelect(select) : null;
-                    if (select && cantidad && valorSelect && cantidad.value > 0) {
+                    
+                    if (!select || !cantidad) {
+                        return;
+                    }
+                    
+                    const valorSelect = obtenerValorSelect(select);
+                    const cantidadValor = parseFloat(cantidad.value) || 0;
+                    
+                    if (valorSelect && valorSelect !== '' && cantidadValor > 0) {
                         productosValidos++;
                     }
                 });
+                
                 return productosValidos > 0;
             case 3: // Pago
                 const metodosPago = document.querySelectorAll('.metodo-pago-select');
@@ -2254,14 +2462,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Actualizar indicador de pasos
         actualizarPasos(paso);
         
+        // Actualizar barra de progreso con un pequeño delay para asegurar que el DOM esté actualizado
+        setTimeout(() => {
+            actualizarBarraProgreso(paso);
+        }, 50);
+        
         // Actualizar botones de navegación
         actualizarBotonesNavegacion();
         
         // Si es el paso 2, inicializar Select2 en los selects de productos
         if (paso === 2) {
+            // Esperar a que el contenido sea visible antes de inicializar Select2
             setTimeout(() => {
                 inicializarSelect2Productos();
-            }, 100);
+            }, 300);
         }
         
         // Si es el paso 4, llenar la previsualización
@@ -2272,10 +2486,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función auxiliar para obtener el valor del select (compatible con Select2)
     function obtenerValorSelect(select) {
-        if ($(select).hasClass('select2-hidden-accessible')) {
-            return $(select).val();
+        if (!select) {
+            return null;
         }
-        return select.value;
+        
+        // Verificar si jQuery está disponible y si Select2 está inicializado
+        if (typeof $ !== 'undefined' && $(select).hasClass('select2-hidden-accessible')) {
+            const valor = $(select).val();
+            return valor && valor !== '' ? valor : null;
+        }
+        
+        // Si no está con Select2, usar el valor nativo
+        const valor = select.value;
+        return valor && valor !== '' ? valor : null;
     }
     
     // Función auxiliar para obtener el texto del select (compatible con Select2)
@@ -2293,42 +2516,68 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función para inicializar Select2 en los selects de productos
     function inicializarSelect2Productos() {
+        // Verificar que jQuery esté disponible
+        if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+            console.error('jQuery o Select2 no están disponibles');
+            return;
+        }
+        
         document.querySelectorAll('.producto-select-venta').forEach(select => {
+            // Verificar que el elemento sea visible antes de inicializar
+            const fila = select.closest('tr');
+            if (fila && fila.offsetParent === null) {
+                // El elemento no es visible, intentar más tarde
+                return;
+            }
+            
+            // Verificar que el select tenga opciones antes de inicializar
+            if (!select.options || select.options.length <= 1) {
+                // Continuar para permitir que Select2 se inicialice y muestre el placeholder
+            }
+            
             // Verificar si Select2 ya está inicializado
             if ($(select).hasClass('select2-hidden-accessible')) {
                 $(select).select2('destroy');
             }
             
             // Inicializar Select2
-            $(select).select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Seleccione un producto',
-                allowClear: true,
-                width: '100%',
-                language: {
-                    noResults: function() {
-                        return "No se encontraron productos";
-                    },
-                    searching: function() {
-                        return "Buscando...";
+            try {
+                $(select).select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Seleccione un producto',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function() {
+                            return "No se encontraron productos";
+                        },
+                        searching: function() {
+                            return "Buscando...";
+                        }
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('Error al inicializar Select2:', error);
+            }
             
             // Configurar evento de cambio para Select2
             $(select).on('select2:select', function(e) {
                 const fila = $(this).closest('tr')[0];
                 const selectedValue = $(this).val();
-                const option = $(this).find(`option[value="${selectedValue}"]`)[0];
+                const option = $(this).find('option[value="' + selectedValue + '"]')[0];
                 
                 if (option) {
                     const precio = option.getAttribute('data-precio');
                     const stock = option.getAttribute('data-stock');
+                    const marca = option.getAttribute('data-marca');
                     
                     if (precio && stock !== null) {
                         fila.querySelector('.precio-input-venta').value = precio;
                         fila.querySelector('.cantidad-input-venta').setAttribute('data-stock', stock);
                         fila.querySelector('.stock-info').textContent = `Stock: ${stock}`;
+                        if (marca) {
+                            fila.querySelector('.marca-producto-venta').textContent = marca;
+                        }
                         calcularSubtotalVenta(fila);
                     }
                 }
@@ -2340,6 +2589,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fila.querySelector('.precio-input-venta').value = '0.00';
                 fila.querySelector('.cantidad-input-venta').removeAttribute('data-stock');
                 fila.querySelector('.stock-info').textContent = '';
+                fila.querySelector('.marca-producto-venta').textContent = 'no seleccionado';
                 fila.querySelector('.subtotal-venta').textContent = '0.00';
                 actualizarTotalVenta();
             });
@@ -2531,6 +2781,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Inicializar el primer paso
         mostrarPaso(1);
+        
+        // Inicializar barra de progreso con un pequeño delay para asegurar que el DOM esté listo
+        setTimeout(() => {
+            actualizarBarraProgreso(1);
+        }, 100);
+        
+        // Actualizar barra de progreso cuando se redimensiona la ventana
+        window.addEventListener('resize', () => {
+            actualizarBarraProgreso(pasoActual);
+        });
         
         // Forzar actualización de validación inicial
         setTimeout(() => {

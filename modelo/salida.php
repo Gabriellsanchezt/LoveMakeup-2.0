@@ -63,6 +63,12 @@ class Salida extends Conexion {
                 'id_usuario' => $datos['id_persona'] // id_persona del cliente se mapea a id_usuario
             ]);
             $id_pedido = $conex->lastInsertId();
+            
+            // Insertar registro en la tabla venta con fecha y hora
+            $sql_venta = "INSERT INTO venta(id_pedido, fecha_confirmacion) VALUES (:id_pedido, NOW())";
+            $stmt_venta = $conex->prepare($sql_venta);
+            $stmt_venta->execute(['id_pedido' => $id_pedido]);
+            
             // Insertar detalles
             foreach ($datos['detalles'] as $detalle) {
                 // Validar datos del detalle
@@ -227,17 +233,33 @@ class Salida extends Conexion {
     public function consultarVentas() {
         $conex = $this->getConex1();
         try {
-            // Consulta que filtra por tipo = 1 y estatus = 2 (ventas completadas)
-            // Muestra estatus 1 o 2 para incluir ventas antiguas y nuevas
-            // Usa id_usuario en lugar de id_persona y estatus en lugar de estado
-            $sql = "SELECT p.id_pedido, 
-                    COALESCE(CONCAT(per.nombre, ' ', per.apellido), 'Sin cliente') as cliente, 
-                    COALESCE(p.fecha, NOW()) as fecha, 
-                    p.estatus as estado, 
-                    COALESCE(p.precio_total_usd, 0) as precio_total
-                    FROM pedido p 
-                    LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
-                    LEFT JOIN persona per ON u.cedula = per.cedula
+            // Consulta para ventas PRESENCIALES usando la tabla venta con relaciones relevantes
+            // Relaciones incluidas (solo para venta presencial):
+            // venta -> pedido (FK: id_pedido)
+            // pedido -> detalle_pago (FK: id_pago) -> metodo_pago (FK: id_metodopago) - Métodos de pago
+            // NOTA: Datos de usuario y persona se obtienen por separado ya que están en otra base de datos
+            // NO incluye: direccion, metodo_entrega, delivery, tracking (solo para pedidos web)
+            $sql = "SELECT v.id_venta,
+                    v.id_pedido,
+                    v.fecha_confirmacion,
+                    p.tipo,
+                    p.fecha,
+                    p.estatus as estado,
+                    p.precio_total_usd,
+                    p.precio_total_bs,
+                    p.id_usuario,
+                    p.id_pago,
+                    dp.id_pago as id_detalle_pago,
+                    dp.monto,
+                    dp.monto_usd,
+                    mp.id_metodopago,
+                    mp.nombre as metodo_pago_nombre,
+                    mp.descripcion as metodo_pago_descripcion,
+                    mp.requiere_banco
+                    FROM venta v
+                    INNER JOIN pedido p ON v.id_pedido = p.id_pedido
+                    LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                    LEFT JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
                     WHERE CAST(p.tipo AS CHAR) = '1' 
                     AND (CAST(p.estatus AS CHAR) = '1' OR CAST(p.estatus AS CHAR) = '2')
                     ORDER BY p.id_pedido DESC";
@@ -246,6 +268,60 @@ class Salida extends Conexion {
             $stmt = $conex->prepare($sql);
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            // Obtener datos de cliente desde la otra base de datos si es necesario
+            if (!empty($resultado)) {
+                $conex2 = $this->getConex2();
+                foreach ($resultado as &$venta) {
+                    if (!empty($venta['id_usuario'])) {
+                        try {
+                            $sqlCliente = "SELECT u.id_usuario, per.cedula, per.nombre, per.apellido, per.telefono, per.correo, u.estatus as estatus_usuario
+                                          FROM usuario u
+                                          INNER JOIN persona per ON u.cedula = per.cedula
+                                          WHERE u.id_usuario = :id_usuario AND u.estatus = 1";
+                            $stmtCliente = $conex2->prepare($sqlCliente);
+                            $stmtCliente->execute(['id_usuario' => $venta['id_usuario']]);
+                            $cliente = $stmtCliente->fetch(\PDO::FETCH_ASSOC);
+                            
+                            if ($cliente) {
+                                $venta['cliente'] = $cliente['nombre'] . ' ' . $cliente['apellido'];
+                                $venta['cedula'] = $cliente['cedula'];
+                                $venta['nombre_cliente'] = $cliente['nombre'];
+                                $venta['apellido_cliente'] = $cliente['apellido'];
+                                $venta['telefono'] = $cliente['telefono'];
+                                $venta['correo'] = $cliente['correo'];
+                                $venta['estatus_usuario'] = $cliente['estatus_usuario'];
+                            } else {
+                                $venta['cliente'] = 'Sin cliente';
+                                $venta['cedula'] = null;
+                                $venta['nombre_cliente'] = null;
+                                $venta['apellido_cliente'] = null;
+                                $venta['telefono'] = null;
+                                $venta['correo'] = null;
+                                $venta['estatus_usuario'] = null;
+                            }
+                        } catch (\PDOException $e) {
+                            // Si falla la consulta del cliente, dejar valores por defecto
+                            $venta['cliente'] = 'Sin cliente';
+                            $venta['cedula'] = null;
+                            $venta['nombre_cliente'] = null;
+                            $venta['apellido_cliente'] = null;
+                            $venta['telefono'] = null;
+                            $venta['correo'] = null;
+                            $venta['estatus_usuario'] = null;
+                        }
+                    } else {
+                        $venta['cliente'] = 'Sin cliente';
+                        $venta['cedula'] = null;
+                        $venta['nombre_cliente'] = null;
+                        $venta['apellido_cliente'] = null;
+                        $venta['telefono'] = null;
+                        $venta['correo'] = null;
+                        $venta['estatus_usuario'] = null;
+                    }
+                }
+                unset($venta); // Liberar referencia
+            }
             
             error_log("Resultados encontrados: " . count($resultado));
             if (count($resultado) > 0) {
@@ -270,7 +346,7 @@ class Salida extends Conexion {
             throw new \Exception('Cédula no proporcionada');
         }
 
-        $conex = $this->getConex1();
+        $conex = $this->getConex2();
         try {
             // Consultar desde usuario y persona según la nueva estructura de BD
             $sql = "SELECT u.id_usuario as id_persona, per.cedula, per.nombre, per.apellido, per.correo, per.telefono 
@@ -315,28 +391,55 @@ class Salida extends Conexion {
             throw new \Exception('Formato de correo no válido');
         }
 
-        // Verificar si la cédula ya existe
-        if ($this->existeCedula($datos)) {
-            throw new \Exception('La cédula ya está registrada');
-        }
-
-        $conex = $this->getConex1();
+        $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
             
-            // Insertar en persona primero
-            $sql_persona = "INSERT INTO persona (cedula, nombre, apellido, telefono, correo) 
-                           VALUES (:cedula, :nombre, :apellido, :telefono, :correo)";
-            $stmt_persona = $conex->prepare($sql_persona);
-            $stmt_persona->execute([
-                'cedula' => $datos['cedula'],
-                'nombre' => $datos['nombre'],
-                'apellido' => $datos['apellido'],
-                'telefono' => $datos['telefono'],
-                'correo' => $datos['correo']
-            ]);
+            // Verificar si la cédula ya existe en persona
+            $sql_verificar_persona = "SELECT cedula FROM persona WHERE cedula = :cedula";
+            $stmt_verificar_persona = $conex->prepare($sql_verificar_persona);
+            $stmt_verificar_persona->execute(['cedula' => $datos['cedula']]);
+            $persona_existe = $stmt_verificar_persona->fetch();
             
-            // Insertar en usuario con rol de cliente (id_rol = 1)
+            // Verificar si ya tiene usuario con rol de cliente (id_rol = 1)
+            $sql_verificar_cliente = "SELECT id_usuario FROM usuario WHERE cedula = :cedula AND id_rol = 1 AND estatus = 1";
+            $stmt_verificar_cliente = $conex->prepare($sql_verificar_cliente);
+            $stmt_verificar_cliente->execute(['cedula' => $datos['cedula']]);
+            $cliente_existe = $stmt_verificar_cliente->fetch();
+            
+            // Si ya tiene rol de cliente, lanzar error
+            if ($cliente_existe) {
+                throw new \Exception('La cédula ya está registrada como cliente');
+            }
+            
+            // Si la persona no existe, insertar en persona
+            if (!$persona_existe) {
+                $sql_persona = "INSERT INTO persona (cedula, nombre, apellido, telefono, correo, tipo_documento) 
+                               VALUES (:cedula, :nombre, :apellido, :telefono, :correo, 'V')";
+                $stmt_persona = $conex->prepare($sql_persona);
+                $stmt_persona->execute([
+                    'cedula' => $datos['cedula'],
+                    'nombre' => $datos['nombre'],
+                    'apellido' => $datos['apellido'],
+                    'telefono' => $datos['telefono'],
+                    'correo' => $datos['correo']
+                ]);
+            } else {
+                // Si la persona existe, actualizar sus datos
+                $sql_actualizar_persona = "UPDATE persona SET nombre = :nombre, apellido = :apellido, 
+                                          telefono = :telefono, correo = :correo 
+                                          WHERE cedula = :cedula";
+                $stmt_actualizar_persona = $conex->prepare($sql_actualizar_persona);
+                $stmt_actualizar_persona->execute([
+                    'cedula' => $datos['cedula'],
+                    'nombre' => $datos['nombre'],
+                    'apellido' => $datos['apellido'],
+                    'telefono' => $datos['telefono'],
+                    'correo' => $datos['correo']
+                ]);
+            }
+            
+            // 2. Insertar en usuario con rol de cliente (id_rol = 1)
             $sql_usuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol) 
                            VALUES (:cedula, '', 1, 1)";
             $stmt_usuario = $conex->prepare($sql_usuario);
@@ -360,7 +463,7 @@ class Salida extends Conexion {
             throw new \Exception('Cédula no proporcionada');
         }
 
-        $conex = $this->getConex1();
+        $conex = $this->getConex2();
         try {
             // Verificar si la cédula existe en persona
             $sql = "SELECT cedula FROM persona WHERE cedula = :cedula";
@@ -402,26 +505,65 @@ class Salida extends Conexion {
         $conex = $this->getConex1();
         try {
             // Hacer JOIN con marca para obtener el nombre de la marca
-            // Solo mostrar productos activos con stock disponible mayor a 0
-            $sql = "SELECT p.id_producto, p.nombre, p.descripcion, 
+            // Solo mostrar productos activos con stock disponible mayor o igual a 1
+            $sql = "SELECT p.id_producto, 
+                           p.nombre, 
+                           p.descripcion, 
                            COALESCE(m.nombre, 'Sin marca') as marca, 
                            p.precio_detal, 
                            COALESCE(p.stock_disponible, 0) as stock_disponible 
-                     FROM producto p
-                     LEFT JOIN marca m ON p.id_marca = m.id_marca
-                     WHERE p.estatus = 1 AND COALESCE(p.stock_disponible, 0) > 0
-                     ORDER BY p.nombre ASC";
+                    FROM producto p
+                    LEFT JOIN marca m ON p.id_marca = m.id_marca
+                    WHERE p.estatus = 1 
+                      AND COALESCE(p.stock_disponible, 0) >= 1
+                    ORDER BY p.nombre ASC";
             
             $stmt = $conex->prepare($sql);
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            // Cerrar conexión
             $conex = null;
+            
+            // Asegurar que siempre devolvamos un array
+            if (!is_array($resultado)) {
+                return [];
+            }
+            
+            // Validar que los resultados tengan la estructura esperada
+            foreach ($resultado as &$producto) {
+                if (!isset($producto['id_producto'])) {
+                    continue;
+                }
+                // Asegurar que todos los campos necesarios existan
+                if (!isset($producto['nombre'])) {
+                    $producto['nombre'] = '';
+                }
+                if (!isset($producto['marca'])) {
+                    $producto['marca'] = 'Sin marca';
+                }
+                if (!isset($producto['precio_detal'])) {
+                    $producto['precio_detal'] = 0;
+                }
+                if (!isset($producto['stock_disponible'])) {
+                    $producto['stock_disponible'] = 0;
+                }
+            }
+            unset($producto);
+            
             return $resultado;
         } catch (\PDOException $e) {
             if ($conex) {
                 $conex = null;
             }
-            throw $e;
+            // Devolver array vacío en caso de error
+            return [];
+        } catch (\Exception $e) {
+            if ($conex) {
+                $conex = null;
+            }
+            // Devolver array vacío en caso de cualquier otro error
+            return [];
         }
     }
 
@@ -453,10 +595,27 @@ class Salida extends Conexion {
 
         $conex = $this->getConex1();
         try {
-            $sql = "SELECT pd.cantidad, pd.precio_unitario, p.nombre as nombre_producto 
-                     FROM pedido_detalles pd 
-                     JOIN producto p ON pd.id_producto = p.id_producto 
-                     WHERE pd.id_pedido = :id_pedido";
+            // Consulta completa de detalles con todas las relaciones incluyendo marca
+            $sql = "SELECT pd.id_detalle,
+                    pd.id_pedido,
+                    pd.id_producto,
+                    pd.cantidad,
+                    pd.precio_unitario,
+                    (pd.cantidad * pd.precio_unitario) as precio_total,
+                    p.nombre as nombre_producto,
+                    p.descripcion as descripcion_producto,
+                    p.precio_detal,
+                    p.stock_disponible,
+                    COALESCE(m.nombre, 'Sin marca') as marca,
+                    m.id_marca,
+                    c.id_categoria,
+                    c.nombre as categoria_nombre
+                    FROM pedido_detalles pd 
+                    INNER JOIN producto p ON pd.id_producto = p.id_producto
+                    LEFT JOIN marca m ON p.id_marca = m.id_marca
+                    LEFT JOIN categoria c ON p.id_categoria = c.id_categoria
+                    WHERE pd.id_pedido = :id_pedido
+                    ORDER BY pd.id_detalle ASC";
             
             $stmt = $conex->prepare($sql);
             $stmt->execute(['id_pedido' => $id_pedido]);
@@ -476,24 +635,35 @@ class Salida extends Conexion {
             throw new \Exception('ID de pedido no válido');
         }
 
-        $conex = $this->getConex1();
+        $conex1 = $this->getConex1();
+        $conex2 = $this->getConex2();
         try {
-            // Usa id_usuario en lugar de id_persona y relaciona con persona a través de usuario
-            $sql = "SELECT per.cedula, per.nombre, per.apellido, per.telefono, per.correo 
-                     FROM pedido p 
-                     JOIN usuario u ON p.id_usuario = u.id_usuario
-                     JOIN persona per ON u.cedula = per.cedula
-                     WHERE p.id_pedido = :id_pedido";
+            // Primero obtener el id_usuario desde pedido (base de datos 1)
+            $sql_pedido = "SELECT id_usuario FROM pedido WHERE id_pedido = :id_pedido";
+            $stmt_pedido = $conex1->prepare($sql_pedido);
+            $stmt_pedido->execute(['id_pedido' => $id_pedido]);
+            $pedido = $stmt_pedido->fetch(\PDO::FETCH_ASSOC);
             
-            $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_pedido' => $id_pedido]);
+            if (!$pedido || empty($pedido['id_usuario'])) {
+                return null;
+            }
+            
+            // Luego obtener los datos del cliente desde usuario y persona (base de datos 2)
+            $sql = "SELECT per.cedula, per.nombre, per.apellido, per.telefono, per.correo 
+                     FROM usuario u 
+                     JOIN persona per ON u.cedula = per.cedula
+                     WHERE u.id_usuario = :id_usuario AND u.estatus = 1";
+            
+            $stmt = $conex2->prepare($sql);
+            $stmt->execute(['id_usuario' => $pedido['id_usuario']]);
             $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
-            $conex = null;
+            
+            $conex1 = null;
+            $conex2 = null;
             return $resultado;
         } catch (\PDOException $e) {
-            if ($conex) {
-                $conex = null;
-            }
+            if ($conex1) $conex1 = null;
+            if ($conex2) $conex2 = null;
             throw $e;
         }
     }
@@ -550,14 +720,15 @@ class Salida extends Conexion {
             throw new \Exception('No hay producto en la venta');
         }
 
-        $conex = $this->getConex1();
+        $conex1 = $this->getConex1();
+        $conex2 = $this->getConex2();
         try {
-            $conex->beginTransaction();
+            $conex1->beginTransaction();
             
-            // Verificar que el usuario/cliente existe
+            // Verificar que el usuario/cliente existe en la base de datos correcta
             // id_persona se mapea a id_usuario en la tabla pedido
             $sql_verificar_usuario = "SELECT id_usuario FROM usuario WHERE id_usuario = ? AND estatus = 1";
-            $stmt_verificar_usuario = $conex->prepare($sql_verificar_usuario);
+            $stmt_verificar_usuario = $conex2->prepare($sql_verificar_usuario);
             $stmt_verificar_usuario->execute([$datos['id_persona']]);
             
             if (!$stmt_verificar_usuario->fetch()) {
@@ -577,11 +748,17 @@ class Salida extends Conexion {
             error_log("SQL para insertar pedido: " . $sql);
             error_log("Parámetros del pedido: " . json_encode($params));
             
-            $stmt = $conex->prepare($sql);
+            $stmt = $conex1->prepare($sql);
             $stmt->execute($params);
-            $id_pedido = $conex->lastInsertId();
+            $id_pedido = $conex1->lastInsertId();
             
             error_log("ID del pedido insertado: " . $id_pedido);
+            
+            // Insertar registro en la tabla venta con fecha y hora
+            $sql_venta = "INSERT INTO venta(id_pedido, fecha_confirmacion) VALUES (?, NOW())";
+            $stmt_venta = $conex1->prepare($sql_venta);
+            $stmt_venta->execute([$id_pedido]);
+            error_log("Registro insertado en tabla venta para pedido ID: " . $id_pedido . " con fecha y hora: " . date('Y-m-d H:i:s'));
 
             // Procesar detalles de producto
             foreach ($datos['detalles'] as $detalle) {
@@ -598,7 +775,7 @@ class Salida extends Conexion {
 
                 // Verificar que el producto existe y tiene stock
                 $sql_verificar_producto = "SELECT stock_disponible, nombre FROM producto WHERE id_producto = ? AND estatus = 1";
-                $stmt_verificar_producto = $conex->prepare($sql_verificar_producto);
+                $stmt_verificar_producto = $conex1->prepare($sql_verificar_producto);
                 $stmt_verificar_producto->execute([$detalle['id_producto']]);
                 $producto = $stmt_verificar_producto->fetch(\PDO::FETCH_ASSOC);
                 
@@ -622,35 +799,28 @@ class Salida extends Conexion {
                 error_log("SQL para insertar detalle: " . $sql_det);
                 error_log("Parámetros del detalle: " . json_encode($params_det));
                 
-                $stmt_det = $conex->prepare($sql_det);
+                $stmt_det = $conex1->prepare($sql_det);
                 $stmt_det->execute($params_det);
                 
                 error_log("Detalle insertado para producto ID: " . $detalle['id_producto']);
 
                 // Actualizar stock
                 $sql_stock = "UPDATE producto SET stock_disponible = stock_disponible - ? WHERE id_producto = ?";
-                $stmt_stock = $conex->prepare($sql_stock);
+                $stmt_stock = $conex1->prepare($sql_stock);
                 $stmt_stock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }
 
             // Registrar métodos de pago si existen
+            $id_pago = null;
             if (isset($datos['metodos_pago']) && !empty($datos['metodos_pago'])) {
-                $this->registrarMetodosPagoVenta($id_pedido, $datos['metodos_pago'], $conex);
+                $id_pago = $this->registrarMetodosPagoVenta($id_pedido, $datos['metodos_pago'], $conex1);
             }
             
             // Actualizar el pedido con el ID del pago si se registraron métodos de pago
-            if (!empty($datos['metodos_pago'])) {
-                // Obtener el ID del primer detalle de pago insertado
-                $sql_get_pago = "SELECT id_pago FROM detalle_pago WHERE id_pedido = ? ORDER BY id_pago ASC LIMIT 1";
-                $stmt_get_pago = $conex->prepare($sql_get_pago);
-                $stmt_get_pago->execute([$id_pedido]);
-                $id_pago = $stmt_get_pago->fetchColumn();
-                
-                if ($id_pago) {
-                    $sql_update_pedido = "UPDATE pedido SET id_pago = ? WHERE id_pedido = ?";
-                    $stmt_update = $conex->prepare($sql_update_pedido);
-                    $stmt_update->execute([$id_pago, $id_pedido]);
-                }
+            if ($id_pago) {
+                $sql_update_pedido = "UPDATE pedido SET id_pago = ? WHERE id_pedido = ?";
+                $stmt_update = $conex1->prepare($sql_update_pedido);
+                $stmt_update->execute([$id_pago, $id_pedido]);
             }
 
             // Bitácora
@@ -662,8 +832,9 @@ class Salida extends Conexion {
             $this->registrarBitacora(json_encode($bitacora));
             
             error_log("Commit de la transacción exitoso");
-            $conex->commit();
-            $conex = null;
+            $conex1->commit();
+            $conex1 = null;
+            $conex2 = null;
             
             $respuesta_final = ['respuesta' => 1, 'id_pedido' => $id_pedido];
             error_log("Respuesta final del modelo: " . json_encode($respuesta_final));
@@ -673,9 +844,12 @@ class Salida extends Conexion {
             error_log("Error en registro de venta: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
+            if ($conex1) {
+                $conex1->rollBack();
+                $conex1 = null;
+            }
+            if ($conex2) {
+                $conex2 = null;
             }
             
             $respuesta_error = ['respuesta' => 0, 'mensaje' => $e->getMessage()];
@@ -687,6 +861,8 @@ class Salida extends Conexion {
 
     // Método para registrar los métodos de pago de una venta
     private function registrarMetodosPagoVenta($id_pedido, $metodos_pago, $conex) {
+        $id_pago_principal = null;
+        
         foreach ($metodos_pago as $metodo) {
             // Validar datos del método de pago
             if (!isset($metodo['id_metodopago']) || $metodo['id_metodopago'] <= 0) {
@@ -697,26 +873,46 @@ class Salida extends Conexion {
                 throw new \Exception('Monto USD no válido para método de pago');
             }
 
-            // Insertar método de pago usando la tabla detalle_pago existente
-            $sql = "INSERT INTO detalle_pago (
-                id_pedido, id_metodopago, monto_usd, monto, 
-                referencia_bancaria, telefono_emisor, banco_destino, banco
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            // 1. Insertar en detalle_pago (sin id_pedido, esa relación es al revés)
+            $sql = "INSERT INTO detalle_pago (id_metodopago, monto_usd, monto) VALUES (?, ?, ?)";
             
             $params = [
-                $id_pedido,
                 $metodo['id_metodopago'],
                 $metodo['monto_usd'],
-                $metodo['monto_bs'] ?? 0.00,
-                $metodo['referencia'] ?? null,
-                $metodo['telefono_emisor'] ?? null,
-                $metodo['banco_receptor'] ?? null,
-                $metodo['banco_emisor'] ?? null
+                $metodo['monto_bs'] ?? 0.00
             ];
             
             $stmt = $conex->prepare($sql);
             $stmt->execute($params);
+            $id_pago = $conex->lastInsertId();
+            
+            // Guardar el primer id_pago para asociarlo al pedido
+            if ($id_pago_principal === null) {
+                $id_pago_principal = $id_pago;
+            }
+            
+            // 2. Si hay datos de referencia bancaria, insertar en referencia_pago
+            if (!empty($metodo['referencia']) || !empty($metodo['telefono_emisor']) || 
+                !empty($metodo['banco_receptor']) || !empty($metodo['banco_emisor'])) {
+                $sql_referencia = "INSERT INTO referencia_pago (
+                    id_pago, banco_emisor, banco_receptor, referencia, telefono_emisor
+                ) VALUES (?, ?, ?, ?, ?)";
+                
+                $params_referencia = [
+                    $id_pago,
+                    $metodo['banco_emisor'] ?? null,
+                    $metodo['banco_receptor'] ?? null,
+                    $metodo['referencia'] ?? null,
+                    $metodo['telefono_emisor'] ?? null
+                ];
+                
+                $stmt_referencia = $conex->prepare($sql_referencia);
+                $stmt_referencia->execute($params_referencia);
+            }
         }
+        
+        // Retornar el id_pago principal para asociarlo al pedido
+        return $id_pago_principal;
     }
 
     public function actualizarVentaPublico($datos) {
@@ -807,7 +1003,7 @@ class Salida extends Conexion {
         return $this->consultarClientePrivado($datos);
     }
     private function consultarClientePrivado($datos) {
-        $conex = $this->getConex1();
+        $conex = $this->getConex2();
         try {
             // Consultar desde usuario y persona según la nueva estructura de BD
             $sql = "SELECT u.id_usuario as id_persona, per.cedula, per.nombre, per.apellido, per.correo, per.telefono 
@@ -856,32 +1052,53 @@ class Salida extends Conexion {
             throw new \Exception('Formato de correo no válido');
         }
 
-        $conex = $this->getConex1();
+        $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
             
             // Verificar si la cédula ya existe en persona
-            $sql_verificar = "SELECT cedula FROM persona WHERE cedula = ?";
-            $stmt_verificar = $conex->prepare($sql_verificar);
-            $stmt_verificar->execute([$datos['cedula']]);
+            $sql_verificar_persona = "SELECT cedula FROM persona WHERE cedula = ?";
+            $stmt_verificar_persona = $conex->prepare($sql_verificar_persona);
+            $stmt_verificar_persona->execute([$datos['cedula']]);
+            $persona_existe = $stmt_verificar_persona->fetch();
             
-            if ($stmt_verificar->fetch()) {
-                throw new \Exception('La cédula ya está registrada');
+            // Verificar si ya tiene usuario con rol de cliente (id_rol = 1)
+            $sql_verificar_cliente = "SELECT id_usuario FROM usuario WHERE cedula = ? AND id_rol = 1 AND estatus = 1";
+            $stmt_verificar_cliente = $conex->prepare($sql_verificar_cliente);
+            $stmt_verificar_cliente->execute([$datos['cedula']]);
+            $cliente_existe = $stmt_verificar_cliente->fetch();
+            
+            // Si ya tiene rol de cliente, lanzar error
+            if ($cliente_existe) {
+                throw new \Exception('La cédula ya está registrada como cliente');
             }
             
-            // Insertar en persona primero
-            $sql_persona = "INSERT INTO persona (cedula, nombre, apellido, telefono, correo) VALUES (?, ?, ?, ?, ?)";
-            $params_persona = [
-                $datos['cedula'],
-                $datos['nombre'],
-                $datos['apellido'],
-                $datos['telefono'],
-                $datos['correo']
-            ];
-            $stmt_persona = $conex->prepare($sql_persona);
-            $stmt_persona->execute($params_persona);
+            // Si la persona no existe, insertar en persona
+            if (!$persona_existe) {
+                $sql_persona = "INSERT INTO persona (cedula, nombre, apellido, telefono, correo, tipo_documento) VALUES (?, ?, ?, ?, ?, 'V')";
+                $params_persona = [
+                    $datos['cedula'],
+                    $datos['nombre'],
+                    $datos['apellido'],
+                    $datos['telefono'],
+                    $datos['correo']
+                ];
+                $stmt_persona = $conex->prepare($sql_persona);
+                $stmt_persona->execute($params_persona);
+            } else {
+                // Si la persona existe, actualizar sus datos
+                $sql_actualizar_persona = "UPDATE persona SET nombre = ?, apellido = ?, telefono = ?, correo = ? WHERE cedula = ?";
+                $stmt_actualizar_persona = $conex->prepare($sql_actualizar_persona);
+                $stmt_actualizar_persona->execute([
+                    $datos['nombre'],
+                    $datos['apellido'],
+                    $datos['telefono'],
+                    $datos['correo'],
+                    $datos['cedula']
+                ]);
+            }
             
-            // Insertar en usuario con rol de cliente (id_rol = 1)
+            // 2. Insertar en usuario con rol de cliente (id_rol = 1)
             $sql_usuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol) VALUES (?, '', 1, 1)";
             $stmt_usuario = $conex->prepare($sql_usuario);
             $stmt_usuario->execute([$datos['cedula']]);

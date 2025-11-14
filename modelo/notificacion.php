@@ -135,7 +135,7 @@ public function getNuevosPedidos(int $lastId): array
       SELECT id_pedido,
              fecha,
              precio_total_bs AS total,
-             id_persona,
+             id_usuario,
              tipo
         FROM pedido
        WHERE tipo IN (2,3)

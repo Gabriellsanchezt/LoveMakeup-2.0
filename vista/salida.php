@@ -25,22 +25,97 @@
       align-items: center;
       margin-bottom: 2rem;
       position: relative;
+      padding: 0 20px;
     }
 
+    /* Barra de fondo gris (línea base) */
     .progress-steps::before {
       content: '';
       position: absolute;
       top: 50%;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background-color: #e9ecef;
+      left: 40px;
+      right: 40px;
+      height: 6px;
+      background: linear-gradient(90deg, #f3f4f6, #e5e7eb);
       z-index: 1;
+      transform: translateY(-50%);
+      border-radius: 10px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Barra de progreso animada rosa */
+    .progress-steps .progress-bar-container {
+      position: absolute;
+      top: 50%;
+      left: 40px;
+      height: 6px;
+      z-index: 2;
+      transform: translateY(-50%);
+      transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    .progress-steps .progress-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(
+        90deg,
+        #f472b6 0%,
+        #ec4899 25%,
+        #f472b6 50%,
+        #ec4899 75%,
+        #f472b6 100%
+      );
+      background-size: 200% 100%;
+      animation: progress-animation 2.5s ease-in-out infinite;
+      border-radius: 10px;
+      box-shadow: 
+        0 0 20px rgba(236, 72, 153, 0.4),
+        0 0 10px rgba(244, 114, 182, 0.3),
+        0 2px 6px rgba(236, 72, 153, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      position: relative;
+    }
+
+    /* Efecto de brillo adicional */
+    .progress-steps .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+      );
+      animation: shine 2s ease-in-out infinite;
+    }
+
+    @keyframes progress-animation {
+      0%, 100% {
+        background-position: 0% 0;
+      }
+      50% {
+        background-position: 100% 0;
+      }
+    }
+
+    @keyframes shine {
+      0% {
+        left: -100%;
+      }
+      50%, 100% {
+        left: 100%;
+      }
     }
 
     .step {
       position: relative;
-      z-index: 2;
+      z-index: 3;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -49,17 +124,20 @@
     }
 
     .step-number {
-      width: 40px;
-      height: 40px;
+      width: 45px;
+      height: 45px;
       border-radius: 50%;
       background-color: #e9ecef;
       color: #6c757d;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 1rem;
       margin-bottom: 0.5rem;
-      transition: all 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 3px solid transparent;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .step-label {
@@ -70,23 +148,38 @@
     }
 
     .step.active .step-number {
-      background-color: #007bff;
+      background: linear-gradient(135deg, #ec4899, #f472b6);
       color: white;
+      border-color: #ec4899;
+      box-shadow: 
+        0 0 20px rgba(236, 72, 153, 0.4),
+        0 4px 12px rgba(236, 72, 153, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
     }
 
     .step.active .step-label {
-      color: #007bff;
+      color: #ec4899;
       font-weight: 600;
+      transform: scale(1.05);
     }
 
     .step.completed .step-number {
-      background-color: #28a745;
+      background: linear-gradient(135deg, #10b981, #34d399);
       color: white;
+      border-color: #10b981;
+      box-shadow: 
+        0 0 15px rgba(16, 185, 129, 0.3),
+        0 3px 10px rgba(16, 185, 129, 0.2);
     }
 
     .step.completed .step-label {
-      color: #28a745;
+      color: #10b981;
       font-weight: 600;
+    }
+    
+    .step-label {
+      transition: all 0.3s ease;
     }
 
     /* Animación para las secciones */
@@ -425,6 +518,7 @@
                   <th class="text-white">Cliente</th>
                   <th class="text-white">Fecha</th>
                   <th class="text-white">Total (USD)</th>
+                  <th class="text-white">Método de Pago</th>
                   <th class="text-white">Acción</th>
                 </tr>
               </thead>
@@ -436,23 +530,51 @@
                     if (!is_array($venta)) {
                         continue;
                     }
-                    // Validar y formatear fecha de manera segura
+                    // Validar y formatear fecha de manera segura (con hora si está disponible)
                     $fecha_formateada = 'N/A';
                     if (isset($venta['fecha']) && !empty($venta['fecha'])) {
                         $timestamp = strtotime($venta['fecha']);
                         if ($timestamp !== false) {
-                            $fecha_formateada = date('d/m/Y', $timestamp);
+                            // Verificar si la fecha incluye hora (datetime) o solo fecha (date)
+                            if (strpos($venta['fecha'], ' ') !== false || strpos($venta['fecha'], 'T') !== false) {
+                                // Es datetime, mostrar fecha y hora
+                                $fecha_formateada = date('d/m/Y H:i', $timestamp);
+                            } else {
+                                // Es solo fecha
+                                $fecha_formateada = date('d/m/Y', $timestamp);
+                            }
+                        }
+                    } elseif (isset($venta['fecha_confirmacion']) && !empty($venta['fecha_confirmacion'])) {
+                        // Si no hay fecha en pedido, usar fecha_confirmacion de venta
+                        $timestamp = strtotime($venta['fecha_confirmacion']);
+                        if ($timestamp !== false) {
+                            if (strpos($venta['fecha_confirmacion'], ' ') !== false || strpos($venta['fecha_confirmacion'], 'T') !== false) {
+                                $fecha_formateada = date('d/m/Y H:i', $timestamp);
+                            } else {
+                                $fecha_formateada = date('d/m/Y', $timestamp);
+                            }
                         }
                     }
                     // Validar que todos los campos necesarios existan
                     $cliente = isset($venta['cliente']) ? htmlspecialchars($venta['cliente'], ENT_QUOTES, 'UTF-8') : 'Sin cliente';
-                    $precio_total = isset($venta['precio_total']) && is_numeric($venta['precio_total']) ? floatval($venta['precio_total']) : 0;
+                    // Usar precio_total_usd si existe, sino precio_total como fallback
+                    $precio_total = 0;
+                    if (isset($venta['precio_total_usd']) && is_numeric($venta['precio_total_usd'])) {
+                        $precio_total = floatval($venta['precio_total_usd']);
+                    } elseif (isset($venta['precio_total']) && is_numeric($venta['precio_total'])) {
+                        $precio_total = floatval($venta['precio_total']);
+                    }
+                    // Método de pago
+                    $metodo_pago = isset($venta['metodo_pago_nombre']) && !empty($venta['metodo_pago_nombre']) 
+                        ? htmlspecialchars($venta['metodo_pago_nombre'], ENT_QUOTES, 'UTF-8') 
+                        : 'Sin método de pago';
                     $id_pedido = isset($venta['id_pedido']) ? intval($venta['id_pedido']) : 0;
                     ?>
                     <tr>
                       <td class="texto-secundario"><?php echo $cliente; ?></td>
                       <td class="texto-secundario"><?php echo $fecha_formateada; ?></td>
-                      <td class="texto-secundario"><?php echo '$' . number_format($precio_total, 2); ?></td>
+                      <td class="texto-secundario">$<?php echo number_format($precio_total, 2); ?></td>
+                      <td class="texto-secundario"><?php echo $metodo_pago; ?></td>
                       <td class="text-center">
                         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'especial') && $id_pedido > 0): ?>
                           <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#verDetallesModal<?php echo $id_pedido; ?>">
@@ -703,7 +825,12 @@
         <div class="mb-4">
           <div class="row">
             <div class="col-12">
-              <div class="progress-steps ">
+              <div class="progress-steps">
+                <!-- Barra de progreso animada -->
+                <div class="progress-bar-container" id="progress-bar-pasos" style="width: 0%;">
+                  <div class="progress-bar-fill"></div>
+                </div>
+                
                 <div class="step active bg-s" id="step-cliente">
                   <div class="step-number">1</div>
                   <div class="step-label">Cliente</div>
@@ -792,15 +919,15 @@
           <div class="step-content" id="step-2-content" style="display: none;">
             <div class="mb-4">
               <h6 class="texto-quinto">Paso 2: Selección de Productos</h6>
-              
               <div class="table-responsive">
                 <table class="table table-m table-bordered">
                   <thead class="table-color">
                     <tr>
                       <th class="text-white">Producto</th>
+                      <th class="text-white text-center">Marca</th>
                       <th class="text-white">Cantidad</th>
                       <th class="text-white">Precio Unitario</th>
-                      <th class="text-white">Subtotal</th>
+                      <th class="text-white text-center">Subtotal</th>
                       <th class="text-white">Acción</th>
                     </tr>
                   </thead>
@@ -810,21 +937,46 @@
                         <!-- Select de productos con Select2 -->
                         <select class="form-select producto-select-venta" name="id_producto[]" required>
                           <option value="">Seleccione un producto</option>
-                            <?php if(isset($productos_lista) && !empty($productos_lista)): ?>
-                              <?php foreach($productos_lista as $producto): ?>
-                                <?php 
-                                  $stock = isset($producto['stock_disponible']) ? intval($producto['stock_disponible']) : 0;
-                                  $precio = isset($producto['precio_detal']) ? floatval($producto['precio_detal']) : 0;
-                                ?>
-                                <option value="<?php echo $producto['id_producto']; ?>" 
+                            <?php 
+                            // Asegurar que la variable exista y sea un array
+                            if (!isset($productos_lista)) {
+                                $productos_lista = [];
+                            }
+                            
+                            // Renderizar productos
+                            if (is_array($productos_lista) && !empty($productos_lista)): 
+                              foreach($productos_lista as $producto): 
+                                // Validar que sea un array y tenga los datos necesarios
+                                if (!is_array($producto) || !isset($producto['id_producto']) || empty($producto['id_producto'])) {
+                                    continue;
+                                }
+                                
+                                // Extraer valores con valores por defecto
+                                $id_producto = intval($producto['id_producto']);
+                                $nombre = isset($producto['nombre']) ? trim($producto['nombre']) : '';
+                                $marca = isset($producto['marca']) ? trim($producto['marca']) : 'Sin marca';
+                                $stock = isset($producto['stock_disponible']) ? intval($producto['stock_disponible']) : 0;
+                                $precio = isset($producto['precio_detal']) ? floatval($producto['precio_detal']) : 0;
+                                
+                                // Solo mostrar si tiene id_producto y nombre válidos
+                                if ($id_producto <= 0 || empty($nombre)) {
+                                    continue;
+                                }
+                            ?>
+                                <option value="<?php echo $id_producto; ?>" 
                                         data-precio="<?php echo number_format($precio, 2, '.', ''); ?>"
                                         data-stock="<?php echo $stock; ?>"
-                                        data-search-text="<?php echo strtolower($producto['nombre'] . ' ' . $producto['marca']); ?>">
-                                  <?php echo htmlspecialchars($producto['nombre']); ?>
+                                        data-marca="<?php echo htmlspecialchars($marca, ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-search-text="<?php echo htmlspecialchars(strtolower($nombre . ' ' . $marca), ENT_QUOTES, 'UTF-8'); ?>">
+                                  <?php echo htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
-                              <?php endforeach; ?>
-                            <?php endif; ?>
+                              <?php 
+                              endforeach; 
+                            endif; ?>
                           </select>
+                      </td>
+                      <td class="texto-secundario text-center">
+                        <span class="marca-producto-venta">no seleccionado</span>
                       </td>
                       <td>
                         <div class="input-group">
@@ -837,7 +989,7 @@
                         <input type="text" class="form-control precio-input-venta" 
                                name="precio_unitario[]" value="0.00" readonly>
                       </td>
-                      <td class="texto-secundario">
+                      <td class="texto-secundario text-center">
                         <span class="subtotal-venta texto-secundario">0.00</span>
                       </td>
                       <td class="text-center">
@@ -882,7 +1034,6 @@
           <div class="step-content" id="step-3-content" style="display: none;">
             <div class="mb-4">
               <h6 class="texto-quinto">Paso 3: Métodos de Pago</h6>
-              
               <!-- Resumen de costos -->
               <div class="row mb-3">
                 <div class="col-md-4">
@@ -1100,7 +1251,6 @@
           <div class="step-content" id="step-4-content" style="display: none;">
             <div class="mb-4">
               <h6 class="texto-quinto">Paso 4: Confirmación de Venta</h6>
-              
               <!-- Previsualización de los datos de los pasos anteriores -->
               <div id="resumen-venta" class="card-m">
                 <!-- Información del Cliente (Paso 1) -->

@@ -39,9 +39,141 @@ function esAjax() {
             strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 }
 
-// Función para sanitizar datos de entrada
+// Función para sanitizar datos de entrada (protección XSS)
 function sanitizar($dato) {
+    if (is_null($dato)) {
+        return null;
+    }
     return htmlspecialchars(trim($dato), ENT_QUOTES, 'UTF-8');
+}
+
+// Función para validar y limpiar nombres (solo letras, espacios y caracteres especiales permitidos)
+function validarYLimpiarNombre($nombre, $campo = 'nombre', $maxLength = 100) {
+    if (empty($nombre)) {
+        throw new \Exception("El campo {$campo} es obligatorio");
+    }
+    
+    $nombre = trim($nombre);
+    
+    // Validar longitud máxima
+    if (strlen($nombre) > $maxLength) {
+        throw new \Exception("El campo {$campo} no puede exceder {$maxLength} caracteres");
+    }
+    
+    // Validar que solo contenga letras, espacios, acentos y caracteres especiales comunes
+    if (!preg_match('/^[A-Za-zÁáÉéÍíÓóÚúÑñÜü\s\'-]+$/u', $nombre)) {
+        throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
+    }
+    
+    // Detectar caracteres peligrosos SQL (aunque los prepared statements protegen, es una capa adicional)
+    $caracteresPeligrosos = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_', 'exec', 'union', 'select', 'insert', 'update', 'delete', 'drop', 'create', 'alter'];
+    foreach ($caracteresPeligrosos as $peligroso) {
+        if (stripos($nombre, $peligroso) !== false) {
+            throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
+        }
+    }
+    
+    return sanitizar($nombre);
+}
+
+// Función para validar y limpiar texto general (para referencias, etc.)
+function validarYLimpiarTexto($texto, $campo = 'texto', $maxLength = 255, $soloNumeros = false) {
+    if (empty($texto)) {
+        throw new \Exception("El campo {$campo} es obligatorio");
+    }
+    
+    $texto = trim($texto);
+    
+    // Validar longitud máxima
+    if (strlen($texto) > $maxLength) {
+        throw new \Exception("El campo {$campo} no puede exceder {$maxLength} caracteres");
+    }
+    
+    if ($soloNumeros) {
+        // Solo números
+        if (!preg_match('/^\d+$/', $texto)) {
+            throw new \Exception("El campo {$campo} solo puede contener números");
+        }
+    } else {
+        // Validar caracteres alfanuméricos y algunos especiales
+        if (!preg_match('/^[A-Za-z0-9\s\-_\.]+$/', $texto)) {
+            throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
+        }
+    }
+    
+    // Detectar caracteres peligrosos SQL
+    $caracteresPeligrosos = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_', 'exec', 'union', 'select', 'insert', 'update', 'delete', 'drop', 'create', 'alter'];
+    foreach ($caracteresPeligrosos as $peligroso) {
+        if (stripos($texto, $peligroso) !== false) {
+            throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
+        }
+    }
+    
+    return sanitizar($texto);
+}
+
+// Función para validar ID (debe ser entero positivo)
+function validarId($id, $campo = 'ID') {
+    if (empty($id)) {
+        throw new \Exception("El campo {$campo} es obligatorio");
+    }
+    
+    // Convertir a entero y validar
+    $id = filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    
+    if ($id === false) {
+        throw new \Exception("El campo {$campo} debe ser un número entero positivo válido");
+    }
+    
+    return $id;
+}
+
+// Función para validar número decimal positivo
+function validarDecimal($numero, $campo = 'número', $min = 0) {
+    if (!isset($numero) || $numero === '') {
+        throw new \Exception("El campo {$campo} es obligatorio");
+    }
+    
+    $numero = filter_var($numero, FILTER_VALIDATE_FLOAT);
+    
+    if ($numero === false) {
+        throw new \Exception("El campo {$campo} debe ser un número válido");
+    }
+    
+    if ($numero < $min) {
+        throw new \Exception("El campo {$campo} debe ser mayor o igual a {$min}");
+    }
+    
+    return floatval($numero);
+}
+
+// Función para validar nombre de banco (lista blanca de caracteres)
+function validarNombreBanco($banco, $campo = 'banco') {
+    if (empty($banco)) {
+        throw new \Exception("El campo {$campo} es obligatorio");
+    }
+    
+    $banco = trim($banco);
+    
+    // Validar longitud
+    if (strlen($banco) > 100) {
+        throw new \Exception("El campo {$campo} no puede exceder 100 caracteres");
+    }
+    
+    // Solo letras, espacios y algunos caracteres especiales
+    if (!preg_match('/^[A-Za-zÁáÉéÍíÓóÚúÑñÜü\s\-\.]+$/u', $banco)) {
+        throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
+    }
+    
+    // Detectar caracteres peligrosos SQL
+    $caracteresPeligrosos = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_', 'exec', 'union', 'select', 'insert', 'update', 'delete', 'drop', 'create', 'alter'];
+    foreach ($caracteresPeligrosos as $peligroso) {
+        if (stripos($banco, $peligroso) !== false) {
+            throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
+        }
+    }
+    
+    return sanitizar($banco);
 }
 
 // Procesar el registro de una nueva venta
@@ -67,45 +199,85 @@ if (isset($_POST['registrar'])) {
             throw new \Exception('Error de validación del formulario');
         }
 
-            // Validar datos requeridos
-        if (empty($_POST['precio_total']) || !is_numeric($_POST['precio_total']) || $_POST['precio_total'] <= 0) {
-            throw new \Exception('Precio total inválido');
-            }
+            // Validar datos requeridos con validaciones robustas
+        $precio_total = validarDecimal($_POST['precio_total'] ?? 0, 'precio total', 0.01);
+        $precio_total_bs = validarDecimal($_POST['precio_total_bs'] ?? 0, 'precio total en bolívares', 0);
 
-            if (!isset($_POST['id_producto']) || !is_array($_POST['id_producto']) || empty($_POST['id_producto'])) {
+            if (!isset($_POST['id_producto']) || !is_array($_POST['id_producto'])) {
             throw new \Exception('Debe seleccionar al menos un producto');
             }
+
+        // Validar longitud de arrays para prevenir DoS
+        if (count($_POST['id_producto']) > 100) {
+            throw new \Exception('No se pueden procesar más de 100 productos a la vez');
+        }
+        
+        if (empty($_POST['id_producto'])) {
+            throw new \Exception('Debe seleccionar al menos un producto');
+        }
 
         // Procesar cliente (nuevo o existente)
         $id_persona = null;
             if (isset($_POST['registrar_cliente_con_venta'])) {
-            // Registrar cliente nuevo
-                $datosCliente = [
-                    'cedula' => sanitizar($_POST['cedula_cliente']),
-                    'nombre' => sanitizar($_POST['nombre_cliente']),
-                    'apellido' => sanitizar($_POST['apellido_cliente']),
-                    'telefono' => sanitizar($_POST['telefono_cliente']),
-                    'correo' => sanitizar($_POST['correo_cliente'])
-                ];
-
-            // Validar campos del cliente
-                foreach ($datosCliente as $campo => $valor) {
-                    if (empty($valor)) {
-                    throw new \Exception("Campo {$campo} del cliente es obligatorio");
-                    }
+            // Registrar cliente nuevo - Validaciones robustas contra SQL injection
+                if (!isset($_POST['cedula_cliente']) || !isset($_POST['nombre_cliente']) || 
+                    !isset($_POST['apellido_cliente']) || !isset($_POST['telefono_cliente']) || 
+                    !isset($_POST['correo_cliente'])) {
+                    throw new \Exception('Todos los campos del cliente son obligatorios');
                 }
 
-                if (!preg_match('/^[0-9]{7,8}$/', $datosCliente['cedula'])) {
-                throw new \Exception('Formato de cédula inválido');
+                // Validar cédula (solo números, 7-8 dígitos)
+                $cedula = trim($_POST['cedula_cliente']);
+                if (empty($cedula)) {
+                    throw new \Exception('La cédula es obligatoria');
                 }
+                if (!preg_match('/^\d{7,8}$/', $cedula)) {
+                    throw new \Exception('Formato de cédula inválido. Debe tener entre 7 y 8 dígitos numéricos');
+                }
+                // Validar que no contenga caracteres SQL peligrosos
+                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $cedula)) {
+                    throw new \Exception('La cédula contiene caracteres no permitidos');
+                }
+                $datosCliente['cedula'] = $cedula;
 
-                if (!preg_match('/^0[0-9]{10}$/', $datosCliente['telefono'])) {
-                throw new \Exception('Formato de teléfono inválido');
-                }
+                // Validar nombre
+                $datosCliente['nombre'] = validarYLimpiarNombre($_POST['nombre_cliente'], 'nombre', 100);
 
-                if (!filter_var($datosCliente['correo'], FILTER_VALIDATE_EMAIL)) {
-                throw new \Exception('Formato de correo inválido');
+                // Validar apellido
+                $datosCliente['apellido'] = validarYLimpiarNombre($_POST['apellido_cliente'], 'apellido', 100);
+
+                // Validar teléfono (solo números, formato específico)
+                $telefono = trim($_POST['telefono_cliente']);
+                if (empty($telefono)) {
+                    throw new \Exception('El teléfono es obligatorio');
                 }
+                if (!preg_match('/^0\d{10}$/', $telefono)) {
+                    throw new \Exception('Formato de teléfono inválido. Debe comenzar con 0 y tener 11 dígitos');
+                }
+                // Validar que no contenga caracteres SQL peligrosos
+                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $telefono)) {
+                    throw new \Exception('El teléfono contiene caracteres no permitidos');
+                }
+                $datosCliente['telefono'] = $telefono;
+
+                // Validar correo electrónico
+                $correo = trim($_POST['correo_cliente']);
+                if (empty($correo)) {
+                    throw new \Exception('El correo es obligatorio');
+                }
+                // Validar formato de correo
+                if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                    throw new \Exception('Formato de correo inválido');
+                }
+                // Validar longitud máxima
+                if (strlen($correo) > 255) {
+                    throw new \Exception('El correo no puede exceder 255 caracteres');
+                }
+                // Validar que no contenga caracteres SQL peligrosos
+                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $correo)) {
+                    throw new \Exception('El correo contiene caracteres no permitidos');
+                }
+                $datosCliente['correo'] = filter_var($correo, FILTER_SANITIZE_EMAIL);
 
                 $respuestaCliente = $salida->registrarClientePublico($datosCliente);
                 if (!$respuestaCliente['success']) {
@@ -114,38 +286,50 @@ if (isset($_POST['registrar'])) {
 
                 $id_persona = $respuestaCliente['id_cliente'];
             } else {
-            // Usar cliente existente
+            // Usar cliente existente - Validar ID contra SQL injection
                 if (empty($_POST['id_persona'])) {
                 throw new \Exception('ID de cliente no proporcionado');
                 }
-                $id_persona = intval($_POST['id_persona']);
+                $id_persona = validarId($_POST['id_persona'], 'ID de cliente');
             }
 
         // Preparar datos de la venta
             $datosVenta = [
                 'id_persona' => $id_persona,
-                'precio_total' => floatval($_POST['precio_total']),
-                'precio_total_bs' => floatval($_POST['precio_total_bs'] ?? 0),
+                'precio_total' => $precio_total,
+                'precio_total_bs' => $precio_total_bs,
             'detalles' => [],
             'metodos_pago' => []
             ];
 
-        // Procesar detalles de productos
+        // Procesar detalles de productos con validaciones robustas
+            $totalCantidadProductos = 0;
+            // Validar que los arrays tengan la misma longitud
+            if (count($_POST['id_producto']) !== count($_POST['cantidad'] ?? []) || 
+                count($_POST['id_producto']) !== count($_POST['precio_unitario'] ?? [])) {
+                throw new \Exception('Los datos de productos están incompletos');
+            }
+            
             for ($i = 0; $i < count($_POST['id_producto']); $i++) {
                 if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
-                    $id_producto = intval($_POST['id_producto'][$i]);
-                    $cantidad = intval($_POST['cantidad'][$i]);
-                    $precio_unitario = floatval($_POST['precio_unitario'][$i]);
-
-                    if ($id_producto <= 0 || $cantidad <= 0 || $precio_unitario <= 0) {
-                    throw new \Exception('Datos de producto inválidos en la fila ' . ($i + 1));
+                    // Validar ID de producto
+                    $id_producto = validarId($_POST['id_producto'][$i], 'ID de producto en fila ' . ($i + 1));
+                    
+                    // Validar cantidad (debe ser entero positivo)
+                    $cantidad = filter_var($_POST['cantidad'][$i], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 9999]]);
+                    if ($cantidad === false) {
+                        throw new \Exception('Cantidad inválida en la fila ' . ($i + 1) . '. Debe ser un número entero entre 1 y 9999');
                     }
+                    
+                    // Validar precio unitario
+                    $precio_unitario = validarDecimal($_POST['precio_unitario'][$i] ?? 0, 'precio unitario en fila ' . ($i + 1), 0.01);
 
                         $datosVenta['detalles'][] = [
                         'id_producto' => $id_producto,
                         'cantidad' => $cantidad,
                         'precio_unitario' => $precio_unitario
                     ];
+                    $totalCantidadProductos += $cantidad;
                 }
             }
 
@@ -153,14 +337,27 @@ if (isset($_POST['registrar'])) {
             throw new \Exception('Debe seleccionar al menos un producto válido');
             }
 
-        // Procesar métodos de pago
+        // Validar cantidad total de productos
+        if ($totalCantidadProductos <= 0) {
+            throw new \Exception('La cantidad total de productos debe ser mayor a 0');
+        }
+
+        // Procesar métodos de pago con validaciones robustas
             if (isset($_POST['id_metodopago']) && is_array($_POST['id_metodopago'])) {
+                // Validar longitud de arrays para prevenir DoS
+                if (count($_POST['id_metodopago']) > 10) {
+                    throw new \Exception('No se pueden procesar más de 10 métodos de pago a la vez');
+                }
+                
                 $totalMetodosPago = 0;
                 $metodosPagoUnicos = [];
 
                 for ($i = 0; $i < count($_POST['id_metodopago']); $i++) {
-                    $idMetodo = intval($_POST['id_metodopago'][$i]);
-                    $montoMetodo = floatval($_POST['monto_metodopago'][$i]);
+                    // Validar ID de método de pago
+                    $idMetodo = validarId($_POST['id_metodopago'][$i], 'ID de método de pago en fila ' . ($i + 1));
+                    
+                    // Validar monto
+                    $montoMetodo = validarDecimal($_POST['monto_metodopago'][$i] ?? 0, 'monto de método de pago en fila ' . ($i + 1), 0.01);
 
                     if ($idMetodo > 0 && $montoMetodo > 0) {
                         $key = $idMetodo . '-' . $montoMetodo;
@@ -193,34 +390,85 @@ if (isset($_POST['registrar'])) {
                                 if (isset($_POST['monto_pm_bs']) && $_POST['monto_pm_bs'] > 0) {
                                     $metodo['monto_bs'] = floatval($_POST['monto_pm_bs']);
                                 }
-                                if (isset($_POST['banco_emisor_pm'])) {
-                                    $metodo['banco_emisor'] = sanitizar($_POST['banco_emisor_pm']);
+                                
+                                // Validaciones específicas de Pago Móvil
+                                if (!isset($_POST['banco_emisor_pm']) || empty($_POST['banco_emisor_pm'])) {
+                                    throw new \Exception('Seleccione un banco emisor para Pago Móvil');
                                 }
-                                if (isset($_POST['banco_receptor_pm'])) {
-                                    $metodo['banco_receptor'] = sanitizar($_POST['banco_receptor_pm']);
+                                $metodo['banco_emisor'] = validarNombreBanco($_POST['banco_emisor_pm'], 'banco emisor');
+                                
+                                if (!isset($_POST['banco_receptor_pm']) || empty($_POST['banco_receptor_pm'])) {
+                                    throw new \Exception('Seleccione un banco receptor para Pago Móvil');
                                 }
-                                if (isset($_POST['referencia_pm'])) {
-                                    $metodo['referencia'] = sanitizar($_POST['referencia_pm']);
+                                $metodo['banco_receptor'] = validarNombreBanco($_POST['banco_receptor_pm'], 'banco receptor');
+                                
+                                if (!isset($_POST['referencia_pm']) || empty($_POST['referencia_pm'])) {
+                                    throw new \Exception('La referencia de Pago Móvil es obligatoria');
                                 }
-                                if (isset($_POST['telefono_emisor_pm'])) {
-                                    $metodo['telefono_emisor'] = sanitizar($_POST['telefono_emisor_pm']);
+                                $referenciaPM = trim($_POST['referencia_pm']);
+                                // Validar formato (solo números, 4-6 dígitos)
+                                if (!preg_match('/^\d{4,6}$/', $referenciaPM)) {
+                                    throw new \Exception('La referencia de Pago Móvil debe tener entre 4 y 6 dígitos numéricos');
                                 }
+                                // Validar contra SQL injection
+                                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $referenciaPM)) {
+                                    throw new \Exception('La referencia contiene caracteres no permitidos');
+                                }
+                                $metodo['referencia'] = $referenciaPM;
+                                
+                                if (!isset($_POST['telefono_emisor_pm']) || empty($_POST['telefono_emisor_pm'])) {
+                                    throw new \Exception('El teléfono emisor de Pago Móvil es obligatorio');
+                                }
+                                $telefonoPM = trim($_POST['telefono_emisor_pm']);
+                                // Validar formato (solo números, 11 dígitos)
+                                if (!preg_match('/^\d{11}$/', $telefonoPM)) {
+                                    throw new \Exception('El teléfono emisor debe tener 11 dígitos numéricos');
+                                }
+                                // Validar contra SQL injection
+                                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $telefonoPM)) {
+                                    throw new \Exception('El teléfono contiene caracteres no permitidos');
+                                }
+                                $metodo['telefono_emisor'] = $telefonoPM;
                                 break;
                             case 'Punto de Venta':
                                 if (isset($_POST['monto_pv_bs']) && $_POST['monto_pv_bs'] > 0) {
                                     $metodo['monto_bs'] = floatval($_POST['monto_pv_bs']);
                                 }
-                                if (isset($_POST['referencia_pv'])) {
-                                    $metodo['referencia'] = sanitizar($_POST['referencia_pv']);
+                                
+                                // Validación de referencia para Punto de Venta
+                                if (!isset($_POST['referencia_pv']) || empty($_POST['referencia_pv'])) {
+                                    throw new \Exception('La referencia de Punto de Venta es obligatoria');
                                 }
+                                $referenciaPV = trim($_POST['referencia_pv']);
+                                // Validar formato (solo números, 4-6 dígitos)
+                                if (!preg_match('/^\d{4,6}$/', $referenciaPV)) {
+                                    throw new \Exception('La referencia de Punto de Venta debe tener entre 4 y 6 dígitos numéricos');
+                                }
+                                // Validar contra SQL injection
+                                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $referenciaPV)) {
+                                    throw new \Exception('La referencia contiene caracteres no permitidos');
+                                }
+                                $metodo['referencia'] = $referenciaPV;
                                 break;
                             case 'Transferencia Bancaria':
                                 if (isset($_POST['monto_tb_bs']) && $_POST['monto_tb_bs'] > 0) {
                                     $metodo['monto_bs'] = floatval($_POST['monto_tb_bs']);
                                 }
-                                if (isset($_POST['referencia_tb'])) {
-                                    $metodo['referencia'] = sanitizar($_POST['referencia_tb']);
+                                
+                                // Validación de referencia para Transferencia Bancaria
+                                if (!isset($_POST['referencia_tb']) || empty($_POST['referencia_tb'])) {
+                                    throw new \Exception('La referencia de Transferencia Bancaria es obligatoria');
                                 }
+                                $referenciaTB = trim($_POST['referencia_tb']);
+                                // Validar formato (solo números, 4-6 dígitos)
+                                if (!preg_match('/^\d{4,6}$/', $referenciaTB)) {
+                                    throw new \Exception('La referencia de Transferencia Bancaria debe tener entre 4 y 6 dígitos numéricos');
+                                }
+                                // Validar contra SQL injection
+                                if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $referenciaTB)) {
+                                    throw new \Exception('La referencia contiene caracteres no permitidos');
+                                }
+                                $metodo['referencia'] = $referenciaTB;
                                 break;
                         }
 
@@ -231,9 +479,10 @@ if (isset($_POST['registrar'])) {
                     }
                 }
 
-                // Validar que la suma de métodos de pago coincida con el total
-                if (abs($totalMetodosPago - $datosVenta['precio_total']) > 0.01) {
-                throw new \Exception('La suma de los métodos de pago ($' . number_format($totalMetodosPago, 2) . ') no coincide con el total de la venta ($' . number_format($datosVenta['precio_total'], 2) . ')');
+                // Validar que la suma de métodos de pago no exceda el total (con tolerancia de 0.01 para errores de redondeo)
+                $diferencia = $totalMetodosPago - $datosVenta['precio_total'];
+                if ($diferencia > 0.01) {
+                    throw new \Exception('La suma de los métodos de pago ($' . number_format($totalMetodosPago, 2) . ') excede el total de la venta ($' . number_format($datosVenta['precio_total'], 2) . ') por $' . number_format($diferencia, 2));
                 }
 
             if (empty($datosVenta['metodos_pago'])) {
@@ -287,7 +536,23 @@ if (isset($_POST['registrar'])) {
 // Procesar búsqueda de cliente (AJAX)
 if (isset($_POST['buscar_cliente'])) {
     try {
-        $datos = ['cedula' => sanitizar($_POST['cedula'])];
+        // Validar que la cédula esté presente
+        if (!isset($_POST['cedula']) || empty($_POST['cedula'])) {
+            throw new \Exception('La cédula es obligatoria');
+        }
+        
+        // Validar formato de cédula (solo números, 7-8 dígitos)
+        $cedula = trim($_POST['cedula']);
+        if (!preg_match('/^\d{7,8}$/', $cedula)) {
+            throw new \Exception('Formato de cédula inválido. Debe tener entre 7 y 8 dígitos numéricos');
+        }
+        
+        // Validar contra SQL injection (aunque prepared statements protegen, es capa adicional)
+        if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $cedula)) {
+            throw new \Exception('La cédula contiene caracteres no permitidos');
+        }
+        
+        $datos = ['cedula' => $cedula];
         $respuesta = $salida->consultarClientePublico($datos);
         header('Content-Type: application/json');
         echo json_encode($respuesta);
@@ -305,12 +570,65 @@ if (isset($_POST['buscar_cliente'])) {
 // Procesar registro de cliente (AJAX)
 if (isset($_POST['registrar_cliente'])) {
     try {
+        // Validar que todos los campos estén presentes
+        if (!isset($_POST['cedula']) || !isset($_POST['nombre']) || 
+            !isset($_POST['apellido']) || !isset($_POST['telefono']) || 
+            !isset($_POST['correo'])) {
+            throw new \Exception('Todos los campos del cliente son obligatorios');
+        }
+        
+        // Validar cédula (solo números, 7-8 dígitos)
+        $cedula = trim($_POST['cedula']);
+        if (empty($cedula)) {
+            throw new \Exception('La cédula es obligatoria');
+        }
+        if (!preg_match('/^\d{7,8}$/', $cedula)) {
+            throw new \Exception('Formato de cédula inválido. Debe tener entre 7 y 8 dígitos numéricos');
+        }
+        if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $cedula)) {
+            throw new \Exception('La cédula contiene caracteres no permitidos');
+        }
+        
+        // Validar nombre
+        $nombre = validarYLimpiarNombre($_POST['nombre'], 'nombre', 100);
+        
+        // Validar apellido
+        $apellido = validarYLimpiarNombre($_POST['apellido'], 'apellido', 100);
+        
+        // Validar teléfono (solo números, formato específico)
+        $telefono = trim($_POST['telefono']);
+        if (empty($telefono)) {
+            throw new \Exception('El teléfono es obligatorio');
+        }
+        if (!preg_match('/^0\d{10}$/', $telefono)) {
+            throw new \Exception('Formato de teléfono inválido. Debe comenzar con 0 y tener 11 dígitos');
+        }
+        if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $telefono)) {
+            throw new \Exception('El teléfono contiene caracteres no permitidos');
+        }
+        
+        // Validar correo electrónico
+        $correo = trim($_POST['correo']);
+        if (empty($correo)) {
+            throw new \Exception('El correo es obligatorio');
+        }
+        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            throw new \Exception('Formato de correo inválido');
+        }
+        if (strlen($correo) > 255) {
+            throw new \Exception('El correo no puede exceder 255 caracteres');
+        }
+        if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $correo)) {
+            throw new \Exception('El correo contiene caracteres no permitidos');
+        }
+        $correo = filter_var($correo, FILTER_SANITIZE_EMAIL);
+        
         $datos = [
-            'cedula' => sanitizar($_POST['cedula']),
-            'nombre' => sanitizar($_POST['nombre']),
-            'apellido' => sanitizar($_POST['apellido']),
-            'telefono' => sanitizar($_POST['telefono']),
-            'correo' => sanitizar($_POST['correo'])
+            'cedula' => $cedula,
+            'nombre' => $nombre,
+            'apellido' => $apellido,
+            'telefono' => $telefono,
+            'correo' => $correo
         ];
         $respuesta = $salida->registrarClientePublico($datos);
         header('Content-Type: application/json');
@@ -329,9 +647,32 @@ if (isset($_POST['registrar_cliente'])) {
     // Procesar actualización de venta
     if (isset($_POST['actualizar'])) {
         try {
+            // Validar ID de pedido
+            if (!isset($_POST['id_pedido']) || empty($_POST['id_pedido'])) {
+                throw new \Exception('ID de pedido no proporcionado');
+            }
+            $id_pedido = validarId($_POST['id_pedido'], 'ID de pedido');
+            
+            // Validar estado del pedido (lista blanca de valores permitidos)
+            if (!isset($_POST['estado_pedido']) || empty($_POST['estado_pedido'])) {
+                throw new \Exception('El estado del pedido es obligatorio');
+            }
+            $estado = trim($_POST['estado_pedido']);
+            
+            // Lista blanca de estados permitidos (ajustar según los estados reales de tu sistema)
+            $estadosPermitidos = ['1', '2', '3', '4', '5']; // Pendiente, Completado, Cancelado, etc.
+            if (!in_array($estado, $estadosPermitidos)) {
+                throw new \Exception('Estado de pedido inválido');
+            }
+            
+            // Validar contra SQL injection
+            if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $estado)) {
+                throw new \Exception('El estado contiene caracteres no permitidos');
+            }
+            
             $datosVenta = [
-            'id_pedido' => intval($_POST['id_pedido']),
-            'estado' => sanitizar($_POST['estado_pedido'])
+                'id_pedido' => $id_pedido,
+                'estado' => $estado
             ];
             $respuesta = $salida->actualizarVentaPublico($datosVenta);
 
@@ -381,7 +722,13 @@ if (isset($_POST['registrar_cliente'])) {
     // Procesar eliminación de venta
     if (isset($_POST['eliminar'])) {
         try {
-        $datosVenta = ['id_pedido' => intval($_POST['eliminar'])];
+            // Validar ID de pedido
+            if (!isset($_POST['eliminar']) || empty($_POST['eliminar'])) {
+                throw new \Exception('ID de pedido no proporcionado');
+            }
+            $id_pedido = validarId($_POST['eliminar'], 'ID de pedido');
+            
+            $datosVenta = ['id_pedido' => $id_pedido];
             $respuesta = $salida->eliminarVentaPublico($datosVenta);
 
         if ($respuesta['respuesta'] == 1) {
@@ -432,53 +779,52 @@ if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Solo consultar datos para la vista si NO es una petición POST/AJAX
-if (!$esAjaxRequest && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Consultar datos para la vista
-    try {
-        // Consulta de prueba: verificar todos los pedidos tipo 1 sin filtrar por estado
-        $conex = $salida->getConex1();
-        $sql_test = "SELECT COUNT(*) as total FROM pedido WHERE (tipo = '1' OR tipo = 1)";
-        $stmt_test = $conex->prepare($sql_test);
-        $stmt_test->execute();
-        $test_result = $stmt_test->fetch(\PDO::FETCH_ASSOC);
-        error_log("Total de pedidos tipo 1: " . $test_result['total']);
-        
-        $sql_test2 = "SELECT COUNT(*) as total FROM pedido WHERE (tipo = '1' OR tipo = 1) AND (estado = '2' OR estado = 2)";
-        $stmt_test2 = $conex->prepare($sql_test2);
-        $stmt_test2->execute();
-        $test_result2 = $stmt_test2->fetch(\PDO::FETCH_ASSOC);
-        error_log("Total de pedidos tipo 1 y estado 2: " . $test_result2['total']);
-        
+    // Solo consultar datos para la vista si NO es una petición POST/AJAX
+    if (!$esAjaxRequest && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Consultar datos para la vista
+        try {
+        // Consultar datos
         $ventas = $salida->consultarVentas();
         $productos_lista = $salida->consultarProductos();
         $metodos_pago = $salida->consultarMetodosPago();
         
-        // Asegurar que las variables estén definidas
-        if (!isset($ventas)) {
+        // Asegurar que las variables estén definidas y sean arrays
+        if (!isset($ventas) || !is_array($ventas)) {
             $ventas = [];
         }
-        if (!isset($productos_lista)) {
+        if (!isset($productos_lista) || !is_array($productos_lista)) {
             $productos_lista = [];
         }
-        if (!isset($metodos_pago)) {
+        if (!isset($metodos_pago) || !is_array($metodos_pago)) {
             $metodos_pago = [];
         }
         
-        // Depuración temporal - remover en producción
-        error_log("Ventas consultadas: " . count($ventas));
-        if (count($ventas) > 0) {
-            error_log("Primera venta: " . json_encode($ventas[0]));
-        } else {
-            error_log("ADVERTENCIA: consultarVentas() devolvió un array vacío");
+        // Validar estructura de productos_lista
+        if (!empty($productos_lista)) {
+            $productos_validos = [];
+            foreach ($productos_lista as $producto) {
+                if (is_array($producto) && isset($producto['id_producto']) && !empty($producto['id_producto'])) {
+                    $productos_validos[] = $producto;
+                }
+            }
+            $productos_lista = $productos_validos;
         }
     } catch (\Exception $e) {
         // Si hay error, inicializar arrays vacíos
         $ventas = [];
         $productos_lista = [];
         $metodos_pago = [];
-        error_log("Error al consultar datos en salida: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
+    }
+    
+    // Asegurar que las variables estén definidas incluso si no entraron al try
+    if (!isset($ventas)) {
+        $ventas = [];
+    }
+    if (!isset($productos_lista)) {
+        $productos_lista = [];
+    }
+    if (!isset($metodos_pago)) {
+        $metodos_pago = [];
     }
 
     // Registrar acceso en bitácora
