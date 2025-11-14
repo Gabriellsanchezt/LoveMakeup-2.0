@@ -32,6 +32,105 @@ function sanitizar($dato) {
     return htmlspecialchars(trim($dato), ENT_QUOTES, 'UTF-8');
 }
 
+// Función para validar que un ID de proveedor existe y está activo
+function validarIdProveedor($id_proveedor) {
+    if (empty($id_proveedor) || !is_numeric($id_proveedor)) {
+        return false;
+    }
+    
+    $id_proveedor = intval($id_proveedor);
+    if ($id_proveedor <= 0) {
+        return false;
+    }
+    
+    try {
+        require_once 'modelo/entrada.php';
+        $entrada = new Entrada();
+        $resultado = $entrada->procesarCompra(json_encode([
+            'operacion' => 'consultarProveedores',
+            'datos' => null
+        ]));
+        
+        if ($resultado['respuesta'] == 1 && isset($resultado['datos'])) {
+            $proveedores_validos = array_column($resultado['datos'], 'id_proveedor');
+            return in_array($id_proveedor, $proveedores_validos);
+        }
+        
+        return false;
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
+// Función para validar que un ID de producto existe y está activo
+function validarIdProducto($id_producto) {
+    if (empty($id_producto) || !is_numeric($id_producto)) {
+        return false;
+    }
+    
+    $id_producto = intval($id_producto);
+    if ($id_producto <= 0) {
+        return false;
+    }
+    
+    try {
+        require_once 'modelo/entrada.php';
+        $entrada = new Entrada();
+        $resultado = $entrada->procesarCompra(json_encode([
+            'operacion' => 'consultarProductos',
+            'datos' => null
+        ]));
+        
+        if ($resultado['respuesta'] == 1 && isset($resultado['datos'])) {
+            $productos_validos = array_column($resultado['datos'], 'id_producto');
+            return in_array($id_producto, $productos_validos);
+        }
+        
+        return false;
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
+// Función para validar un array de IDs de productos
+function validarIdsProductos($ids_productos) {
+    if (!is_array($ids_productos) || empty($ids_productos)) {
+        return false;
+    }
+    
+    // Obtener lista de productos válidos una sola vez
+    try {
+        require_once 'modelo/entrada.php';
+        $entrada = new Entrada();
+        $resultado = $entrada->procesarCompra(json_encode([
+            'operacion' => 'consultarProductos',
+            'datos' => null
+        ]));
+        
+        if ($resultado['respuesta'] != 1 || !isset($resultado['datos'])) {
+            return false;
+        }
+        
+        $productos_validos = array_column($resultado['datos'], 'id_producto');
+        
+        // Validar cada ID del array
+        foreach ($ids_productos as $id_producto) {
+            if (empty($id_producto)) {
+                continue; // Permitir valores vacíos (se filtran después)
+            }
+            
+            $id_producto = intval($id_producto);
+            if ($id_producto <= 0 || !in_array($id_producto, $productos_validos)) {
+                return false;
+            }
+        }
+        
+        return true;
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
 // Procesar el registro de una nueva compra
 if (isset($_POST['registrar_compra'])) {
     // Validar que los campos requeridos estén presentes
@@ -67,10 +166,24 @@ if (isset($_POST['registrar_compra'])) {
         }
     }
     
-    // Validar ID de proveedor
+    // Validar ID de proveedor - verificar que existe y está activo
     $id_proveedor = intval($_POST['id_proveedor']);
-    if ($id_proveedor <= 0) {
-        $mensaje_error = 'Proveedor inválido.';
+    if ($id_proveedor <= 0 || !validarIdProveedor($id_proveedor)) {
+        $mensaje_error = 'Proveedor inválido o no autorizado.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar que los IDs de productos sean válidos (no manipulados)
+    if (!validarIdsProductos($_POST['id_producto'])) {
+        $mensaje_error = 'Uno o más productos seleccionados no son válidos o no están disponibles.';
         if (esAjax()) {
             header('Content-Type: application/json');
             echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
@@ -103,8 +216,23 @@ if (isset($_POST['registrar_compra'])) {
     $productos = [];
     for ($i = 0; $i < $count_productos; $i++) {
         if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
+            // Validar individualmente cada producto antes de agregarlo
+            $id_producto = intval($_POST['id_producto'][$i]);
+            if (!validarIdProducto($id_producto)) {
+                $mensaje_error = 'El producto en la posición ' . ($i + 1) . ' no es válido o no está disponible.';
+                if (esAjax()) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+                    exit;
+                } else {
+                    $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+                    header("Location: ?pagina=entrada");
+                    exit;
+                }
+            }
+            
             $productos[] = array(
-                'id_producto' => intval($_POST['id_producto'][$i]),
+                'id_producto' => $id_producto,
                 'cantidad' => intval($_POST['cantidad'][$i]),
                 'precio_unitario' => floatval($_POST['precio_unitario'][$i]),
                 'precio_total' => floatval($_POST['precio_total'][$i])
@@ -213,10 +341,24 @@ if (isset($_POST['modificar_compra'])) {
         }
     }
     
-    // Validar ID de proveedor
+    // Validar ID de proveedor - verificar que existe y está activo
     $id_proveedor = intval($_POST['id_proveedor']);
-    if ($id_proveedor <= 0) {
-        $mensaje_error = 'Proveedor inválido.';
+    if ($id_proveedor <= 0 || !validarIdProveedor($id_proveedor)) {
+        $mensaje_error = 'Proveedor inválido o no autorizado.';
+        if (esAjax()) {
+            header('Content-Type: application/json');
+            echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+            exit;
+        } else {
+            $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+            header("Location: ?pagina=entrada");
+            exit;
+        }
+    }
+    
+    // Validar que los IDs de productos sean válidos (no manipulados)
+    if (!validarIdsProductos($_POST['id_producto'])) {
+        $mensaje_error = 'Uno o más productos seleccionados no son válidos o no están disponibles.';
         if (esAjax()) {
             header('Content-Type: application/json');
             echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
@@ -249,8 +391,23 @@ if (isset($_POST['modificar_compra'])) {
     $productos = [];
     for ($i = 0; $i < $count_productos; $i++) {
         if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
+            // Validar individualmente cada producto antes de agregarlo
+            $id_producto = intval($_POST['id_producto'][$i]);
+            if (!validarIdProducto($id_producto)) {
+                $mensaje_error = 'El producto en la posición ' . ($i + 1) . ' no es válido o no está disponible.';
+                if (esAjax()) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['respuesta' => 0, 'mensaje' => $mensaje_error]);
+                    exit;
+                } else {
+                    $_SESSION['message'] = ['title' => 'Error', 'text' => $mensaje_error, 'icon' => 'error'];
+                    header("Location: ?pagina=entrada");
+                    exit;
+                }
+            }
+            
             $productos[] = array(
-                'id_producto' => intval($_POST['id_producto'][$i]),
+                'id_producto' => $id_producto,
                 'cantidad' => intval($_POST['cantidad'][$i]),
                 'precio_unitario' => floatval($_POST['precio_unitario'][$i]),
                 'precio_total' => floatval($_POST['precio_total'][$i])

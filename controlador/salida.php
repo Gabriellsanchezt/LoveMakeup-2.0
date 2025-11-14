@@ -147,6 +147,60 @@ function validarDecimal($numero, $campo = 'número', $min = 0) {
     return floatval($numero);
 }
 
+// Función para validar que un ID de producto existe y está activo
+function validarIdProductoSalida($id_producto) {
+    if (empty($id_producto) || !is_numeric($id_producto)) {
+        return false;
+    }
+    
+    $id_producto = intval($id_producto);
+    if ($id_producto <= 0) {
+        return false;
+    }
+    
+    try {
+        require_once 'modelo/producto.php';
+        $producto = new \LoveMakeup\Proyecto\Modelo\Producto();
+        $productos_validos = $producto->ProductosActivos();
+        
+        if (is_array($productos_validos)) {
+            $ids_validos = array_column($productos_validos, 'id_producto');
+            return in_array($id_producto, $ids_validos);
+        }
+        
+        return false;
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
+// Función para validar que un ID de método de pago existe y está activo
+function validarIdMetodoPago($id_metodopago) {
+    if (empty($id_metodopago) || !is_numeric($id_metodopago)) {
+        return false;
+    }
+    
+    $id_metodopago = intval($id_metodopago);
+    if ($id_metodopago <= 0) {
+        return false;
+    }
+    
+    try {
+        require_once 'modelo/metodopago.php';
+        $metodoPago = new \LoveMakeup\Proyecto\Modelo\MetodoPago();
+        $metodos_validos = $metodoPago->consultar();
+        
+        if (is_array($metodos_validos)) {
+            $ids_validos = array_column($metodos_validos, 'id_metodopago');
+            return in_array($id_metodopago, $ids_validos);
+        }
+        
+        return false;
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
 // Función para validar nombre de banco (lista blanca de caracteres)
 function validarNombreBanco($banco, $campo = 'banco') {
     if (empty($banco)) {
@@ -312,8 +366,13 @@ if (isset($_POST['registrar'])) {
             
             for ($i = 0; $i < count($_POST['id_producto']); $i++) {
                 if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
-                    // Validar ID de producto
+                    // Validar ID de producto - verificar que existe y está activo
                     $id_producto = validarId($_POST['id_producto'][$i], 'ID de producto en fila ' . ($i + 1));
+                    
+                    // Validar que el ID no haya sido manipulado
+                    if (!validarIdProductoSalida($id_producto)) {
+                        throw new \Exception('El producto en la fila ' . ($i + 1) . ' no es válido o no está disponible.');
+                    }
                     
                     // Validar cantidad (debe ser entero positivo)
                     $cantidad = filter_var($_POST['cantidad'][$i], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 9999]]);
@@ -353,8 +412,13 @@ if (isset($_POST['registrar'])) {
                 $metodosPagoUnicos = [];
 
                 for ($i = 0; $i < count($_POST['id_metodopago']); $i++) {
-                    // Validar ID de método de pago
+                    // Validar ID de método de pago - verificar que existe y está activo
                     $idMetodo = validarId($_POST['id_metodopago'][$i], 'ID de método de pago en fila ' . ($i + 1));
+                    
+                    // Validar que el ID no haya sido manipulado
+                    if (!validarIdMetodoPago($idMetodo)) {
+                        throw new \Exception('El método de pago en la fila ' . ($i + 1) . ' no es válido o no está disponible.');
+                    }
                     
                     // Validar monto
                     $montoMetodo = validarDecimal($_POST['monto_metodopago'][$i] ?? 0, 'monto de método de pago en fila ' . ($i + 1), 0.01);
