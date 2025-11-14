@@ -2207,6 +2207,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         element: '.table-color th:nth-child(4)',
                         popover: {
+                            title: 'Método de Pago',
+                            description: 'Indica el método de pago utilizado en la venta (Efectivo, Pago Móvil, Transferencia, etc.).',
+                            side: "bottom"
+                        }
+                    },
+                    {
+                        element: '.table-color th:nth-child(5)',
+                        popover: {
                             title: 'Acción',
                             description: 'Contiene el botón para ver los detalles completos de la venta.',
                             side: "bottom"
@@ -2234,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         element: '#btnAyuda',
                         popover: {
                             title: 'Botón de Ayuda',
-                            description: 'Haz clic aquí para ver esta guía interactiva del módulo de ventas.',
+                            description: 'Haz clic aquí para ver esta guía interactiva del módulo de ventas en cualquier momento.',
                             side: "bottom",
                             align: 'start'
                         }
@@ -2242,7 +2250,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         popover: {
                             title: '¡Eso es todo!',
-                            description: 'Has completado la guía del módulo de ventas. Aquí puedes gestionar todas las ventas del sistema, registrar nuevas ventas y consultar detalles completos. ¡Gracias por usar el sistema!'
+                            description: 'Has completado la guía del módulo de ventas. Aquí puedes gestionar todas las ventas del sistema, registrar nuevas ventas, consultar detalles completos y ver el historial de transacciones. ¡Gracias por usar el sistema!'
                         }
                     }
                 ]
@@ -2994,11 +3002,10 @@ document.addEventListener('DOMContentLoaded', function() {
               }
             },
             {
-              element: '#campos-cliente',
               popover: {
                 title: 'Datos del Cliente',
-                description: 'Complete los datos personales si el cliente es nuevo.',
-                side: 'bottom'
+                description: 'Si el cliente es nuevo, aparecerán campos adicionales aquí para completar sus datos personales (nombre, apellido, teléfono y correo). Estos campos se mostrarán automáticamente cuando ingrese una cédula que no esté registrada en el sistema.',
+                side: 'top'
               }
             }
           ];

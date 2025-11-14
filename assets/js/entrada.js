@@ -371,68 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
     muestraMensaje(tipo, 3000, tipo === 'success' ? 'Operación exitosa' : 'Atención', mensaje);
   }
 
-  // --- TOUR DE AYUDA ---
-  const btnAyuda = document.getElementById('btnAyuda');
-  if (btnAyuda) {
-    btnAyuda.addEventListener('click', function() {
-      const driver = window.driver.js.driver;
-      const driverObj = new driver({
-        nextBtnText: 'Siguiente',
-        prevBtnText: 'Anterior',
-        doneBtnText: 'Listo',
-        popoverClass: 'driverjs-theme',
-        closeBtn: false,
-        steps: [
-          {
-            element: '.table-color th:nth-child(1)',
-            popover: {
-              title: 'ID',
-              description: 'Identificador único de la compra registrada.',
-              side: 'bottom'
-            }
-          },
-          {
-            element: '.table-color th:nth-child(2)',
-            popover: {
-              title: 'Producto',
-              description: 'Muestra el primer producto registrado en la compra. Puedes ver más detalles en el botón de "Ver detalles".',
-              side: 'bottom'
-            }
-          },
-          {
-            element: '.table-color th:nth-child(3)',
-            popover: {
-              title: 'Fecha Entrada',
-              description: 'Fecha en la que se realizó la compra/entrada de productos.',
-              side: 'bottom'
-            }
-          },
-          {
-            element: '.table-color th:nth-child(4)',
-            popover: {
-              title: 'Proveedor',
-              description: 'Proveedor asociado a la compra.',
-              side: 'bottom'
-            }
-          },
-          {
-            element: '.table-color th:nth-child(5)',
-            popover: {
-              title: 'Acciones',
-              description: 'Botones para editar la compra o ver sus detalles.',
-              side: 'bottom'
-            }
-          },
-          { element: '#btnAyuda', popover: { title: 'Botón de ayuda', description: 'Haz clic aquí para ver esta guía interactiva del módulo de compras.', side: 'bottom', align: 'start' }},
-          { element: '.btn-success[data-bs-target="#registroModal"]', popover: { title: 'Registrar compra', description: 'Este botón abre el formulario para registrar una nueva compra.', side: 'bottom', align: 'start' }},
-          { element: '.btn-info', popover: { title: 'Ver detalles', description: 'Haz clic aquí para ver los detalles de una compra específica.', side: 'left', align: 'start' }},
-          { element: '.btn-primary[data-bs-target^="#editarModal"]', popover: { title: 'Editar compra', description: 'Permite modificar los datos de la compra seleccionada.', side: 'left', align: 'start' }},
-          { popover: { title: 'Eso es todo', description: 'Este es el fin de la guía del módulo de compras. ¡Gracias por usar el sistema!' } }
-        ]
-      });
-      driverObj.drive();
-    });
-  }
+  // --- TOUR DE AYUDA (código movido más abajo para mejor organización) ---
 
   // Función para configurar envío AJAX de formularios
   function configurarEnvioAjax() {
@@ -596,5 +535,133 @@ document.addEventListener('DOMContentLoaded', function() {
         showConfirmButton: false
       });
     });
+  }
+
+  // Tour de ayuda interactivo
+  const btnAyudaTour = document.getElementById('btnAyuda');
+  if (btnAyudaTour) {
+    btnAyudaTour.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Verificar que driver.js esté disponible
+      if (typeof window.driver === 'undefined' || !window.driver.js || typeof window.driver.js.driver !== 'function') {
+        console.error('Driver.js no está disponible');
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo cargar la guía de ayuda. Por favor, recarga la página.',
+            timer: 3000,
+            showConfirmButton: false
+          });
+        } else {
+          alert('No se pudo cargar la guía de ayuda. Por favor, recarga la página.');
+        }
+        return;
+      }
+      
+      try {
+        const driver = window.driver.js.driver;
+        const driverObj = new driver({
+          nextBtnText: 'Siguiente',
+          prevBtnText: 'Anterior',
+          doneBtnText: 'Listo',
+          popoverClass: 'driverjs-theme',
+          closeBtn: false,
+          steps: [
+            {
+              element: '.table-color th:nth-child(1)',
+              popover: {
+                title: 'Producto',
+                description: 'Muestra el nombre del primer producto de la compra registrada.',
+                side: "bottom"
+              }
+            },
+            {
+              element: '.table-color th:nth-child(2)',
+              popover: {
+                title: 'Fecha de Entrada',
+                description: 'Indica la fecha en la que se registró la compra en el sistema.',
+                side: "bottom"
+              }
+            },
+            {
+              element: '.table-color th:nth-child(3)',
+              popover: {
+                title: 'Proveedor',
+                description: 'Muestra el nombre del proveedor del cual se realizó la compra.',
+                side: "bottom"
+              }
+            },
+            {
+              element: '.table-color th:nth-child(4)',
+              popover: {
+                title: 'Acciones',
+                description: 'Contiene los botones para editar y ver los detalles completos de la compra.',
+                side: "bottom"
+              }
+            },
+            {
+              element: '.btn-success[data-bs-target="#registroModal"]',
+              popover: {
+                title: 'Registrar Compra',
+                description: 'Este botón abre el formulario para registrar una nueva compra de productos.',
+                side: "bottom",
+                align: 'start'
+              }
+            },
+            {
+              element: '.btn-primary.btn-sm[data-bs-toggle="modal"]',
+              popover: {
+                title: 'Editar Compra',
+                description: 'Haz clic aquí para modificar los datos de una compra existente.',
+                side: "left",
+                align: 'start'
+              }
+            },
+            {
+              element: '.btn-info.btn-sm[data-bs-toggle="modal"]',
+              popover: {
+                title: 'Ver Detalles',
+                description: 'Haz clic aquí para ver los detalles completos de una compra específica, incluyendo todos los productos y sus cantidades.',
+                side: "left",
+                align: 'start'
+              }
+            },
+            {
+              element: '#btnAyuda',
+              popover: {
+                title: 'Botón de Ayuda',
+                description: 'Haz clic aquí para ver esta guía interactiva del módulo de compras.',
+                side: "bottom",
+                align: 'start'
+              }
+            },
+            {
+              popover: {
+                title: '¡Eso es todo!',
+                description: 'Has completado la guía del módulo de compras. Aquí puedes gestionar todas las compras del sistema, registrar nuevas compras, editar compras existentes y consultar detalles completos. ¡Gracias por usar el sistema!'
+              }
+            }
+          ]
+        });
+        driverObj.drive();
+      } catch (error) {
+        console.error('Error al iniciar el tour:', error);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error al iniciar la guía de ayuda.',
+            timer: 3000,
+            showConfirmButton: false
+          });
+        } else {
+          alert('Ocurrió un error al iniciar la guía de ayuda.');
+        }
+      }
+    });
+  } else {
+    console.warn('Botón de ayuda no encontrado');
   }
 });
