@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-11-2025 a las 05:38:26
+-- Tiempo de generación: 14-11-2025 a las 23:08:11
 -- Versión del servidor: 10.1.9-MariaDB
 -- Versión de PHP: 8.0.3
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `lovemakeupbds1`
+-- Base de datos: `lovebd2`
 --
 
 -- --------------------------------------------------------
@@ -610,20 +610,20 @@ ALTER TABLE `usuario`
 -- Filtros para la tabla `bitacora`
 --
 ALTER TABLE `bitacora`
-  ADD CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`cedula`) REFERENCES `persona` (`cedula`);
+  ADD CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`cedula`) REFERENCES `persona` (`cedula`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `permiso`
 --
 ALTER TABLE `permiso`
   ADD CONSTRAINT `permiso_ibfk_1` FOREIGN KEY (`id_modulo`) REFERENCES `modulo` (`id_modulo`),
-  ADD CONSTRAINT `permiso_ibfk_2` FOREIGN KEY (`cedula`) REFERENCES `persona` (`cedula`);
+  ADD CONSTRAINT `permiso_ibfk_2` FOREIGN KEY (`cedula`) REFERENCES `persona` (`cedula`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  ADD CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`cedula`) REFERENCES `persona` (`cedula`),
+  ADD CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`cedula`) REFERENCES `persona` (`cedula`) ON UPDATE CASCADE,
   ADD CONSTRAINT `usuario_ibfk_2` FOREIGN KEY (`id_rol`) REFERENCES `rol_usuario` (`id_rol`);
 COMMIT;
 

@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 4.5.1
--- http://www.phpmyadmin.net
+-- version 5.1.0
+-- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 10-11-2025 a las 22:16:02
+-- Tiempo de generación: 14-11-2025 a las 22:51:47
 -- Versión del servidor: 10.1.9-MariaDB
--- Versión de PHP: 5.6.15
+-- Versión de PHP: 8.0.3
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -17,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `lovemakeupbd1`
+-- Base de datos: `lovebd1`
 --
 
 -- --------------------------------------------------------
@@ -47,7 +48,7 @@ INSERT INTO `categoria` (`id_categoria`, `nombre`, `estatus`) VALUES
 
 CREATE TABLE `compra` (
   `id_compra` int(11) NOT NULL,
-  `fecha_entrada` date DEFAULT NULL,
+  `fecha_entrada` datetime DEFAULT NULL,
   `id_proveedor` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -150,7 +151,8 @@ CREATE TABLE `marca` (
 --
 
 INSERT INTO `marca` (`id_marca`, `nombre`, `estatus`) VALUES
-(1, 'Sin Marca', 1);
+(1, 'Sin Marca', 1),
+(2, 'Ushas', 1);
 
 -- --------------------------------------------------------
 
@@ -165,6 +167,16 @@ CREATE TABLE `metodo_entrega` (
   `estatus` int(2) DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Volcado de datos para la tabla `metodo_entrega`
+--
+
+INSERT INTO `metodo_entrega` (`id_entrega`, `nombre`, `descripcion`, `estatus`) VALUES
+(1, 'Delivery', 'Barquisimeto', 1),
+(2, 'MRW', 'Envió nacionales', 1),
+(3, 'ZOOM', 'Envio nacionales', 1),
+(4, 'Retiro en Tienda Fisica', 'Tienda Fisica', 1);
+
 -- --------------------------------------------------------
 
 --
@@ -175,8 +187,8 @@ CREATE TABLE `metodo_pago` (
   `id_metodopago` int(11) NOT NULL,
   `nombre` varchar(200) DEFAULT NULL,
   `descripcion` varchar(200) DEFAULT NULL,
-  `requiere_banco` tinyint(1) DEFAULT '0',
-  `estatus` int(2) DEFAULT '1'
+  `requiere_banco` int(2) DEFAULT NULL,
+  `estatus` int(2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -199,8 +211,8 @@ INSERT INTO `metodo_pago` (`id_metodopago`, `nombre`, `descripcion`, `requiere_b
 CREATE TABLE `notificaciones` (
   `id_notificacion` int(11) NOT NULL,
   `titulo` varchar(100) DEFAULT NULL,
-  `mensaje` text,
-  `fecha` date DEFAULT NULL,
+  `mensaje` varchar(100) DEFAULT NULL,
+  `fecha` datetime DEFAULT NULL,
   `estado` varchar(20) DEFAULT NULL,
   `id_pedido` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -215,12 +227,12 @@ CREATE TABLE `pedido` (
   `id_pedido` int(11) NOT NULL,
   `tipo` varchar(20) DEFAULT NULL,
   `canal_origen` varchar(20) DEFAULT NULL,
-  `fecha` date DEFAULT NULL,
+  `fecha` datetime DEFAULT NULL,
   `estatus` varchar(20) DEFAULT NULL,
   `tracking` varchar(100) DEFAULT NULL,
   `precio_total_usd` decimal(12,2) DEFAULT NULL,
   `precio_total_bs` decimal(12,2) DEFAULT NULL,
-  `id_usuario` int(11) DEFAULT NULL,
+  `cedula` int(11) DEFAULT NULL,
   `id_direccion` int(11) DEFAULT NULL,
   `id_pago` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -248,14 +260,14 @@ CREATE TABLE `pedido_detalles` (
 CREATE TABLE `producto` (
   `id_producto` int(11) NOT NULL,
   `nombre` varchar(100) DEFAULT NULL,
-  `descripcion` text,
+  `descripcion` varchar(200) DEFAULT NULL,
   `cantidad_mayor` int(11) DEFAULT NULL,
   `precio_mayor` decimal(10,2) DEFAULT NULL,
   `precio_detal` decimal(10,2) DEFAULT NULL,
   `stock_disponible` int(11) DEFAULT NULL,
   `stock_minimo` int(11) DEFAULT NULL,
   `stock_maximo` int(11) DEFAULT NULL,
-  `estatus` tinyint(1) DEFAULT '1',
+  `estatus` int(1) DEFAULT '1',
   `id_categoria` int(11) DEFAULT NULL,
   `id_marca` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -290,6 +302,13 @@ CREATE TABLE `proveedor` (
   `estatus` int(1) DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Volcado de datos para la tabla `proveedor`
+--
+
+INSERT INTO `proveedor` (`id_proveedor`, `tipo_documento`, `numero_documento`, `nombre`, `correo`, `telefono`, `direccion`, `estatus`) VALUES
+(1, 'J', '900800700', 'Inveriones casa de maquijalle', 'inversionescasa@hotmail.com', '02518862233', 'av lara', 1);
+
 -- --------------------------------------------------------
 
 --
@@ -314,7 +333,7 @@ CREATE TABLE `referencia_pago` (
 CREATE TABLE `reserva` (
   `id_reserva` int(11) NOT NULL,
   `id_pedido` int(11) DEFAULT NULL,
-  `fecha_expiracion` date DEFAULT NULL
+  `fecha_retiro` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -339,7 +358,7 @@ CREATE TABLE `tasa_dolar` (
 CREATE TABLE `venta` (
   `id_venta` int(11) NOT NULL,
   `id_pedido` int(11) DEFAULT NULL,
-  `fecha_confirmacion` date DEFAULT NULL
+  `fecha_confirmacion` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -393,14 +412,16 @@ ALTER TABLE `detalle_pago`
 ALTER TABLE `direccion`
   ADD PRIMARY KEY (`id_direccion`),
   ADD KEY `id_metodoentrega` (`id_metodoentrega`),
-  ADD KEY `id_delivery` (`id_delivery`);
+  ADD KEY `id_delivery` (`id_delivery`),
+  ADD KEY `cedula` (`cedula`);
 
 --
 -- Indices de la tabla `lista_deseo`
 --
 ALTER TABLE `lista_deseo`
   ADD PRIMARY KEY (`id_lista`),
-  ADD KEY `id_producto` (`id_producto`);
+  ADD KEY `id_producto` (`id_producto`),
+  ADD KEY `cedula` (`cedula`);
 
 --
 -- Indices de la tabla `marca`
@@ -433,7 +454,8 @@ ALTER TABLE `notificaciones`
 ALTER TABLE `pedido`
   ADD PRIMARY KEY (`id_pedido`),
   ADD KEY `id_direccion` (`id_direccion`),
-  ADD KEY `id_pago` (`id_pago`);
+  ADD KEY `id_pago` (`id_pago`),
+  ADD KEY `cedula` (`cedula`);
 
 --
 -- Indices de la tabla `pedido_detalles`
@@ -450,7 +472,8 @@ ALTER TABLE `producto`
   ADD PRIMARY KEY (`id_producto`),
   ADD KEY `id_categoria` (`id_categoria`),
   ADD KEY `id_marca` (`id_marca`),
-  ADD KEY `nombre` (`nombre`);
+  ADD KEY `nombre` (`nombre`),
+  ADD KEY `stock_disponible` (`stock_disponible`);
 
 --
 -- Indices de la tabla `producto_imagen`
@@ -502,101 +525,121 @@ ALTER TABLE `venta`
 --
 ALTER TABLE `categoria`
   MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
 --
 -- AUTO_INCREMENT de la tabla `compra`
 --
 ALTER TABLE `compra`
   MODIFY `id_compra` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `compra_detalles`
 --
 ALTER TABLE `compra_detalles`
   MODIFY `id_detalle_compra` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `comprobante_pago`
 --
 ALTER TABLE `comprobante_pago`
   MODIFY `id_comprobante` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `delivery`
 --
 ALTER TABLE `delivery`
   MODIFY `id_delivery` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `detalle_pago`
 --
 ALTER TABLE `detalle_pago`
   MODIFY `id_pago` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `direccion`
 --
 ALTER TABLE `direccion`
   MODIFY `id_direccion` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `lista_deseo`
 --
 ALTER TABLE `lista_deseo`
   MODIFY `id_lista` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `marca`
 --
 ALTER TABLE `marca`
-  MODIFY `id_marca` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_marca` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
 --
 -- AUTO_INCREMENT de la tabla `metodo_entrega`
 --
 ALTER TABLE `metodo_entrega`
-  MODIFY `id_entrega` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_entrega` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
 --
 -- AUTO_INCREMENT de la tabla `metodo_pago`
 --
 ALTER TABLE `metodo_pago`
   MODIFY `id_metodopago` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
 --
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
   MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `pedido`
 --
 ALTER TABLE `pedido`
   MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `pedido_detalles`
 --
 ALTER TABLE `pedido_detalles`
   MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `producto`
 --
 ALTER TABLE `producto`
-  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
 --
 -- AUTO_INCREMENT de la tabla `producto_imagen`
 --
 ALTER TABLE `producto_imagen`
   MODIFY `id_imagen` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `proveedor`
 --
 ALTER TABLE `proveedor`
-  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
 --
 -- AUTO_INCREMENT de la tabla `referencia_pago`
 --
 ALTER TABLE `referencia_pago`
   MODIFY `id_referencia` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `reserva`
 --
 ALTER TABLE `reserva`
   MODIFY `id_reserva` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT de la tabla `venta`
 --
 ALTER TABLE `venta`
   MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- Restricciones para tablas volcadas
 --
@@ -689,6 +732,7 @@ ALTER TABLE `reserva`
 --
 ALTER TABLE `venta`
   ADD CONSTRAINT `venta_ibfk_1` FOREIGN KEY (`id_pedido`) REFERENCES `pedido` (`id_pedido`);
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
