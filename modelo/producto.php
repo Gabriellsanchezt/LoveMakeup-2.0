@@ -319,22 +319,36 @@ class Producto extends Conexion {
         }
     }
 
-    public function ProductosActivos() {
+   public function ProductosActivos() {
     $conex = $this->getConex1();
     try {
-        $sql = "SELECT * FROM producto WHERE estatus = 1";
+        $sql = "
+            SELECT p.*, 
+                   c.nombre AS nombre_categoria,
+                   m.nombre AS nombre_marca
+            FROM producto p
+            INNER JOIN categoria c ON p.id_categoria = c.id_categoria
+            INNER JOIN marca m ON p.id_marca = m.id_marca
+            WHERE p.estatus = 1
+        ";
         $stmt = $conex->prepare($sql);
         $stmt->execute();
-        $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $conex = null;
-        return $resultado;
-    } catch (\PDOException $e) {
-        if ($conex) {
-            $conex = null;
+        $productos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Agregamos todas las imágenes de cada producto
+        foreach ($productos as &$prod) {
+            $prod['imagenes'] = $this->obtenerImagenes($prod['id_producto']);
         }
+
+        $conex = null;
+        return $productos;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
         throw $e;
     }
 }
+
+
 
 public function obtenerImagenes($id_producto) {
     $conex = $this->getConex1();

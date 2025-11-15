@@ -174,7 +174,7 @@
                      data-id="<?php echo $producto['id_producto']; ?>"
                      data-nombre="<?php echo htmlspecialchars($producto['nombre']); ?>"
                      data-precio="<?php echo $producto['precio_detal']; ?>"
-                     data-marca="<?php echo htmlspecialchars($producto['marca']); ?>"
+                     data-marca="<?php echo htmlspecialchars($producto['nombre_marca']); ?>"
                      data-descripcion="<?php echo htmlspecialchars($producto['descripcion']); ?>"
                      data-cantidad-mayor="<?php echo $producto['cantidad_mayor']; ?>"
                      data-precio-mayor="<?php echo $producto['precio_mayor']; ?>"

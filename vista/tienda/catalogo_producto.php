@@ -126,16 +126,16 @@
                      data-id="<?php echo $producto['id_producto']; ?>"
                      data-nombre="<?php echo htmlspecialchars($producto['nombre']); ?>"
                      data-precio="<?php echo $producto['precio_detal']; ?>"
-                     data-marca="<?php echo htmlspecialchars($producto['marca']); ?>"
+                     data-marca="<?php echo htmlspecialchars($producto['nombre_marca']); ?>"
                      data-descripcion="<?php echo htmlspecialchars($producto['descripcion']); ?>"
                      data-cantidad-mayor="<?php echo $producto['cantidad_mayor']; ?>"
                      data-precio-mayor="<?php echo $producto['precio_mayor']; ?>"
                      data-stock-disponible="<?php echo $producto['stock_disponible']; ?>"
-                     data-imagen="<?php echo $producto['imagen']; ?>">
+                     data-imagenes="<?php echo htmlspecialchars(json_encode($producto['imagenes'])); ?>">
                   <figure class="position-relative">
                     <p title="<?php echo htmlspecialchars($producto['nombre']); ?>">
                       <img
-                       src="<?php echo $producto['imagen']; ?>"
+                       src="<?php echo $producto['imagenes'][0]['url_imagen']; ?>"
                        alt="<?php echo htmlspecialchars($producto['nombre']); ?>"
                        class="tab-image img-fluid rounded-3"
                        data-bs-toggle="modal"
@@ -195,7 +195,7 @@
                     <input type="hidden" name="precio_detal" value="<?php echo $producto['precio_detal']; ?>">
                     <input type="hidden" name="precio_mayor" value="<?php echo $producto['precio_mayor']; ?>">
                     <input type="hidden" name="cantidad_mayor" value="<?php echo $producto['cantidad_mayor']; ?>">
-                    <input type="hidden" name="imagen" value="<?php echo $producto['imagen']; ?>">
+                    <input type="hidden" name="imagen" value="<?php echo $producto['imagenes'][0]['url_imagen']; ?>">
                     <input type="hidden" name="stockDisponible" value="<?php echo $producto['stock_disponible']; ?>">
 
 
@@ -234,7 +234,8 @@
     </div>
 
                 <!-- FIN GRIP DE PRODUCTO -->
-                   <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+
+ <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -244,8 +245,20 @@
       <div class="modal-body">
         <div class="row">
           <!-- Imagen a la izquierda -->
-          <div class="col-md-6 text-center">
-            <img id="modal-imagen" src="" alt="Producto" class="img-fluid mb-3" style="max-height: 400px; object-fit: contain;">
+         <div class="col-md-6 text-center">
+            <div id="modal-slider" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner" id="modal-slider-inner">
+                <!-- Aquí se llenan las imágenes -->
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#modal-slider" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#modal-slider" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+              </button>
+            </div>
           </div>
           <!-- Datos a la derecha -->
           <div class="col-md-6">
@@ -272,12 +285,7 @@
   <button type="button" id="btn-agregar-carrito"  class="btn btn-dark w-100 rounded-1 p-2 fs-7 btn-cart">
                             <i class="fa fa-cart-plus me-2"></i> Añadir al carrito
                           </button>
-
-
-
-
 <?php else: ?>
- 
     <a href="?pagina=catalogo" class="btn btn-dark w-100 mt-2">
         <i class="fa fa-cart-plus me-2"></i> Añadir al carrito
     </a>

@@ -47,37 +47,57 @@ function openModal(element) {
     const id = element.dataset.id;
     const nombre = element.dataset.nombre;
     const precio = element.dataset.precio;
-    const imagen = element.dataset.imagen;
     const marca = element.dataset.marca || 'N/A';
     const descripcion = element.dataset.descripcion || 'N/A';
     const cantidadMayor = element.dataset.cantidadMayor || 'N/A';
     const precioMayor = element.dataset.precioMayor || 'N/A';
     const stockDisponible = element.dataset.stockDisponible || 'N/A';
+    
+    // Convertir el JSON de imágenes
+    const imagenes = JSON.parse(element.dataset.imagenes || '[]');
 
     // Insertar datos en el modal
     document.getElementById('modal-title').textContent = nombre;
     document.getElementById('modal-precio').textContent = "$" + precio;
-    document.getElementById('modal-imagen').src = imagen;
     document.getElementById('modal-marca').textContent = marca;
     document.getElementById('modal-descripcion').textContent = descripcion;
     document.getElementById('modal-cantidad-mayor').textContent = cantidadMayor;
     document.getElementById('modal-precio-mayor').textContent = "$" + precioMayor;
     document.getElementById('modal-stock-disponible').textContent = stockDisponible;
 
-    // Rellenar formulario oculto
-    document.getElementById('form-id').value = element.dataset.id;
+    // Rellenar el slider
+    const sliderInner = document.getElementById('modal-slider-inner');
+    sliderInner.innerHTML = ''; // limpiar antes de agregar
+
+    imagenes.forEach((img, index) => {
+        const div = document.createElement('div');
+        div.classList.add('carousel-item');
+        if(index === 0) div.classList.add('active');
+
+        const image = document.createElement('img');
+        image.src = img.url_imagen;
+        image.classList.add('d-block','w-100');
+        image.style.maxHeight = '400px';
+        image.style.objectFit = 'contain';
+
+        div.appendChild(image);
+        sliderInner.appendChild(div);
+    });
+
+    // Rellenar formulario oculto con la primera imagen
+    document.getElementById('form-id').value = id;
     document.getElementById('form-nombre').value = nombre;
     document.getElementById('form-precio-detal').value = precio;
     document.getElementById('form-precio-mayor').value = precioMayor;
     document.getElementById('form-cantidad-mayor').value = cantidadMayor;
-    document.getElementById('form-imagen').value = imagen;
+    document.getElementById('form-imagen').value = imagenes.length ? imagenes[0].url_imagen : '';
     document.getElementById('form-stock-disponible').value = stockDisponible;
-    
+
+    // Botón favorito
     const btnFavorito = document.querySelector('.btn-favorito');
-    if (btnFavorito) {
-      btnFavorito.dataset.id = id;
-    }
+    if (btnFavorito) btnFavorito.dataset.id = id;
 }
+
 
 function muestraMensaje(icono, tiempo, titulo, mensaje) {
     Swal.fire({
