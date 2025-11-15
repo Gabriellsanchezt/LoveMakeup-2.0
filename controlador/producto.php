@@ -25,6 +25,12 @@ $categoria = $objproducto->obtenerCategoria();
 $marca = $objproducto->obtenerMarca();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['accion']) && $_POST['accion'] === 'obtenerImagenes') {
+        $id_producto = $_POST['id_producto'];
+        $imagenes = $objproducto->obtenerImagenes($id_producto);
+        echo json_encode(['respuesta' => 1, 'imagenes' => $imagenes]);
+        exit;
+    }
     if (isset($_POST['registrar'])) {
         if (!empty($_POST['nombre']) && !empty($_POST['descripcion']) && !empty($_POST['marca']) && !empty($_POST['cantidad_mayor']) && !empty($_POST['precio_mayor']) && !empty($_POST['precio_detal']) && !empty($_POST['stock_maximo']) && !empty($_POST['stock_minimo']) && !empty($_POST['categoria'])) {
             $rutaImagen = 'assets/img/logo.PNG';
@@ -78,6 +84,11 @@ if (isset($_FILES['imagenarchivo'])) {
     } else if(isset($_POST['actualizar'])) {
         $rutaImagen = $_POST['imagenActual'];
         $imagenes = [];
+
+        if (!empty($_POST['imagenesEliminadas'])) {
+        $imagenesEliminar = json_decode($_POST['imagenesEliminadas'], true);
+        $objproducto->eliminarImagenes($imagenesEliminar);
+    }
             
         if (isset($_FILES['imagenarchivo'])) {
     foreach ($_FILES['imagenarchivo']['name'] as $indice => $nombreArchivo) {

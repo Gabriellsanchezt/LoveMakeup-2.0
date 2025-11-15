@@ -336,6 +336,39 @@ class Producto extends Conexion {
     }
 }
 
+public function obtenerImagenes($id_producto) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "SELECT id_imagen, url_imagen, tipo FROM producto_imagen WHERE id_producto = :id_producto";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_producto' => $id_producto]);
+        $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
+
+public function eliminarImagenes($idsImagenes) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "DELETE FROM producto_imagen WHERE id_imagen = :id_imagen";
+        $stmt = $conex->prepare($sql);
+
+        foreach ($idsImagenes as $idImg) {
+            $stmt->execute(['id_imagen' => $idImg]);
+        }
+
+        $conex = null;
+        return ['respuesta' => 1, 'mensaje' => 'Imágenes eliminadas correctamente'];
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
+
     public function obtenerCategoria() {
         return $this->objcategoria->consultar();
     }
