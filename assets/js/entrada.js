@@ -205,11 +205,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar Select2 en el nuevo select
     const nuevoSelect = nuevaFila.querySelector('.producto-select');
-    $(nuevoSelect).select2({
+    // Encontrar el modal padre si existe
+    const modal = nuevaFila.closest('.modal');
+    const select2Config = {
       theme: 'bootstrap-5',
       placeholder: 'Seleccione un producto',
       allowClear: true,
       width: '100%',
+      minimumResultsForSearch: 0,
+      minimumInputLength: 0,
       language: {
         noResults: function() {
           return "No se encontraron productos";
@@ -218,6 +222,28 @@ document.addEventListener('DOMContentLoaded', function() {
           return "Buscando...";
         }
       }
+    };
+    
+    // Si está dentro de un modal, usar dropdownParent
+    if (modal) {
+      select2Config.dropdownParent = $(modal);
+    }
+    
+    $(nuevoSelect).select2(select2Config);
+    
+    // Asegurar que el campo de búsqueda sea interactuable
+    $(nuevoSelect).on('select2:open', function() {
+      setTimeout(function() {
+        const searchField = $('.select2-search__field');
+        if (searchField.length) {
+          searchField.prop('readonly', false);
+          searchField.prop('disabled', false);
+          searchField.css({
+            'pointer-events': 'auto',
+            'cursor': 'text'
+          });
+        }
+      }, 10);
     });
     
     // Configurar eventos para la nueva fila
