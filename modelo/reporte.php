@@ -891,40 +891,38 @@ public static function graficaVentaTop5(): array
     $conex = (new Conexion())->getConex1();
 
     $sql = "
-      SELECT pr.nombre    AS producto,
-             SUM(pd.cantidad) AS total
-        FROM pedido pe
-        JOIN pedido_detalles pd ON pd.id_pedido = pe.id_pedido
-        JOIN producto       pr ON pr.id_producto = pd.id_producto
-       WHERE
-         (pe.tipo = 1 AND pe.estatus = '1')      
-         OR
-         (pe.tipo = 2 AND pe.estatus IN ('2','3','4','5'))
-         OR
-         (pe.tipo = 3 AND pe.estatus IN ('2','3','4','5'))
-    GROUP BY pr.id_producto
-    ORDER BY total DESC
-       LIMIT 5
+        SELECT 
+            pr.nombre AS producto,
+            SUM(pd.cantidad) AS cantidad_vendida,
+            SUM(pd.cantidad * pd.precio_unitario) AS total_vendido
+        FROM producto pr
+        INNER JOIN pedido_detalles pd ON pr.id_producto = pd.id_producto
+        INNER JOIN pedido pe ON pe.id_pedido = pd.id_pedido
+        WHERE pe.estatus = '2'
+        GROUP BY pr.id_producto
+        ORDER BY cantidad_vendida DESC
+        LIMIT 5
     ";
+
     $stmt = $conex->prepare($sql);
     $stmt->execute();
 
     $labels = [];
-    $data   = [];
+    $data   = []; // aquí guardamos cantidad_vendida
+
     while ($r = $stmt->fetch(\PDO::FETCH_ASSOC)) {
         $labels[] = htmlspecialchars($r['producto'], ENT_QUOTES);
-        $data[]   = (int)$r['total'];
+        $data[]   = (int)$r['cantidad_vendida'];
     }
 
-    // cierra conexión
     $conex = null;
 
-    // siempre devolvemos el array, incluso si está vacío
     return [
-      'labels' => $labels,
-      'data'   => $data
+        'labels' => $labels,
+        'data'   => $data
     ];
 }
+
 
 
 
