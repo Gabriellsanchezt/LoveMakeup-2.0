@@ -47,6 +47,26 @@
       outline: none;
       box-shadow: none;
     }
+    /* Asegurar que el campo de búsqueda de Select2 sea interactuable */
+    .select2-search__field {
+      pointer-events: auto !important;
+      cursor: text !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+      pointer-events: auto !important;
+      cursor: text !important;
+      width: 100% !important;
+    }
+    
+    .select2-dropdown {
+      z-index: 9999 !important;
+    }
+    
+    .modal .select2-dropdown {
+      z-index: 1056 !important;
+    }
+    
     .modal-header .btn-close {
       filter: invert(1);
       opacity: 0.8;
@@ -757,19 +777,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializar Select2 en los selects de productos
     function inicializarSelect2() {
-        $('.producto-select').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Seleccione un producto',
-            allowClear: true,
-            width: '100%',
-            language: {
-                noResults: function() {
-                    return "No se encontraron productos";
-                },
-                searching: function() {
-                    return "Buscando...";
+        $('.producto-select').each(function() {
+            const $select = $(this);
+            const modal = $select.closest('.modal');
+            const select2Config = {
+                theme: 'bootstrap-5',
+                placeholder: 'Seleccione un producto',
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0,
+                minimumInputLength: 0,
+                language: {
+                    noResults: function() {
+                        return "No se encontraron productos";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
                 }
+            };
+            
+            // Si está dentro de un modal, usar dropdownParent
+            if (modal.length > 0) {
+                select2Config.dropdownParent = modal;
             }
+            
+            $select.select2(select2Config);
+            
+            // Asegurar que el campo de búsqueda sea interactuable después de inicializar
+            $select.on('select2:open', function() {
+                setTimeout(function() {
+                    const searchField = $('.select2-search__field');
+                    if (searchField.length) {
+                        searchField.prop('readonly', false);
+                        searchField.prop('disabled', false);
+                        searchField.css({
+                            'pointer-events': 'auto',
+                            'cursor': 'text'
+                        });
+                    }
+                }, 10);
+            });
         });
     }
 

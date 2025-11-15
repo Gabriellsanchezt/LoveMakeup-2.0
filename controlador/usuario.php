@@ -413,7 +413,18 @@ if (isset($_POST['registrar'])) { /* -------  */
     $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
     echo json_encode($resultado);
 
-} else {
+} else  if(isset($_POST['rol'])){ /* -------  */
+    $datosUsuario = [
+        'operacion' => 'verificarrol',
+        'datos' => [
+            'id_rol' => $_POST['rol']
+        ] 
+    ];
+
+    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+    echo json_encode($resultado);
+
+}  else{
       $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
         require_once 'vista/usuario.php';  
         

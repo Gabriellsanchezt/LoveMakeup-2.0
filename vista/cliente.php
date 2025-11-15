@@ -102,6 +102,7 @@
                   <th class="text-white text-center">Telefono</th>
                   <th class="text-white text-center">Correo</th>
                   <th class="text-white text-center">Estatus</th>
+                  <th class="text-white text-center">3</th>
                     <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <th class="text-white text-center">Acción</th>
                     <?php endif; ?>
@@ -182,6 +183,13 @@
                   <span class="<?= $estatus_classes[$dato['estatus']] ?>">
                     <?php echo $estatus_texto[$dato['estatus']] ?>
                   </span>
+                  </td>
+
+                  <td>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalPedidos_<?php echo $dato['cedula']; ?>">
+                      <i class="fas fa-box-open me-1"></i> Ver pedidos
+                    </button>
+
                   </td>
                     
                   <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
@@ -333,6 +341,73 @@ function copiarCorreo(elemento) {
 <!-- para el datatable-->
 <script src="assets/js/demo/datatables-demo.js"></script>
 <script src="assets/js/cliente.js"></script>
+
+
+<div class="modal fade" id="modalPedidos_<?php echo $dato['cedula']; ?>" tabindex="-1" aria-labelledby="modalPedidosLabel_<?php echo $dato['cedula']; ?>" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modo-escuro">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalPedidosLabel_<?php echo $dato['cedula']; ?>">Pedidos de <?php echo $dato['nombre']; ?></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <?php
+          $venta = 0;
+          $pedido_web = 0;
+          $reserva = 0;
+          $total_usd = 0;
+          $total_bs = 0;
+
+          foreach ($pedidos as $p) {
+            if ($p['cedula'] == $dato['cedula']) {
+              switch ($p['tipo']) {
+                case 1: $venta++; break;
+                case 2: $pedido_web++; break;
+                case 3: $reserva++; break;
+              }
+              $total_usd += floatval($p['precio_total_usd']);
+              $total_bs += floatval($p['precio_total_bs']);
+            }
+          }
+        ?>
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h6>Ventas</h6>
+                <p class="fs-4"><?php echo $venta; ?></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h6>Pedido Web</h6>
+                <p class="fs-4"><?php echo $pedido_web; ?></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="card bg-warning text-dark">
+              <div class="card-body">
+                <h6>Reservas</h6>
+                <p class="fs-4"><?php echo $reserva; ?></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+        <div class="text-center mt-3">
+          <h6 class="text-light">Totales</h6>
+          <p class="mb-1 text-success">💵 USD: <b>$<?php echo number_format($total_usd, 2); ?></b></p>
+          <p class="mb-0 text-warning">💴 Bs: <b><?php echo number_format($total_bs, 2, ',', '.'); ?></b></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 
 </html>

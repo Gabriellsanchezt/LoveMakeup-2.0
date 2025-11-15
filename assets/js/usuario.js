@@ -230,35 +230,16 @@ $('#correo').on("blur", function () {
   } 
 });
 
+$('#rolSelect').on("change", function () {
+  const rol = parseInt($(this).val(), 10); // Convertir a número entero
 
-
-/*
-
-$('#modalCorreo').on("blur", function () {
-  const cedula = $(this).val().trim();
-  const formato = /^[0-9]{7,8}$/;
-
-  if (formato.test(cedula)) {
+  if (rol >= 1) {
     activarLoaderBoton('#registrar');
     const datos = new FormData();
-    datos.append('cedula', cedula);
+    datos.append('rol', rol);
     enviaAjax(datos);
-  } 
+  }
 });
-
-$('#modalCorreo').on("blur", function () {
-  const correo = $(this).val().trim();
-  const formato =  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,60}$/;
-
-  if (formato.test(correo)) {
-    activarLoaderBoton('#registrar');
-        const datos = new FormData();
-    datos.append('correo', correo);
-    enviaAjax(datos);
-  } 
-});
-
-*/
 
 
 $('#actualizar_permisos').on("click", function () {
@@ -548,6 +529,28 @@ function enviaAjax(datos) {
                     muestraMensajetost("success",lee.text, "", "1500"); 
                     desactivarLoaderBoton('#registrar');
                      manejarAlerta('correo', 'alertcorreo', false);
+                  }
+              } else if (lee.accion == 'verifirol') {
+                  if (lee.respuesta == 1) {
+                  
+                      desactivarLoaderBoton('#registrar');
+                      manejarAlerta('rolSelect', 'alertRol', false);
+                  } else {
+                       muestraMensaje("error", 2000, lee.text,"" );
+                       desactivarLoaderBoton('#registrar');
+                       manejarAlerta('rolSelect', 'alertRol', true);
+
+                  }
+              } else if (lee.accion == 'verifirolEditar') {
+                  if (lee.respuesta == 1) {
+                  
+                      desactivarLoaderBoton('#actualizar');
+                      manejarAlerta('rolSelectedit', 'alertRolEditar', false);
+                  } else {
+                       muestraMensaje("error", 2000, lee.text,"" );
+                       desactivarLoaderBoton('#actualizar');
+                       manejarAlerta('rolSelectedit', 'alertRolEditar', true);
+
                   }
               }
   

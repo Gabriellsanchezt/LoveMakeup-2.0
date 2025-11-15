@@ -57,7 +57,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let descripcion = $('#descripcion').val();
 
     $.ajax({
-      url: 'controlador/metodopago.php',
+      async: true,
+      url: '',
       type: 'POST',
       data: {
         registrar: 'registrar',
@@ -75,6 +76,8 @@ document.addEventListener('DOMContentLoaded', function () {
             showConfirmButton: false
           }).then(() => location.reload());
         } else {
+          console.log("Enviando:", nombre, descripcion);
+
           Swal.fire({ title: 'Error', text: res.mensaje || 'Error al registrar', icon: 'error', timer: 1500, showConfirmButton: false });
         }
       },
@@ -96,7 +99,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }).then((result) => {
       if (result.isConfirmed) {
         $.ajax({
-          url: 'controlador/metodopago.php',
+          async: true,
+          url: '',
           type: 'POST',
           data: {
             eliminar: 'eliminar',
@@ -179,7 +183,8 @@ $('#btnModificar').on('click', function () {
     let descripcion = $('#descripcion_modificar').val();
 
     $.ajax({
-      url: 'controlador/metodopago.php',
+      async: true,
+      url: '',
       type: 'POST',
       data: {
         modificar: 'modificar',

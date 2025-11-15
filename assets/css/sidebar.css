@@ -420,13 +420,18 @@
 /*||||||||||||||||||||||| MODAL FORMULARIO*/
 
 .modo-oscuro .modal-producto .modal-header {
-  background: linear-gradient(135deg, #f086bb 0%, #f3479d 100%);
+  background: linear-gradient(135deg, #f086bb 0%, #f3479d 100%)!important;
 
 }  
 .modo-oscuro .modal-producto .modal-title {
-  color: #ffffff;
+  color: #ffffff !important;
 
 } 
+
+.modo-oscuro .header-color{
+  background: linear-gradient(135deg, #f086bb 0%, #f3479d 100%)!important;
+  border-color: #000;
+}
 
 .modo-oscuro .seccion-formulario{
   background-color: #1E1E1E !important;

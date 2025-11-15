@@ -21,6 +21,7 @@ $objcliente = new Cliente();
 
 
 $registro = $objcliente->consultar();
+$pedidos = $objcliente->consultarPedidos();
 
 
 if(isset($_POST['actualizar'])){
