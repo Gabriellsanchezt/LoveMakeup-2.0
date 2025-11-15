@@ -4,7 +4,7 @@ namespace LoveMakeup\Proyecto\Modelo;
 
 use LoveMakeup\Proyecto\Config\Conexion;
 
-/*||||||||||||||||||||||||||||||| TOTAL DE METODOS =  |||||||||||||||||||||||||  04  |||||*/    
+/*||||||||||||||||||||||||||||||| TOTAL DE METODOS =  |||||||||||||||||||||||||  05  |||||*/    
 
 class Tasacambio extends Conexion
 {
@@ -20,26 +20,28 @@ class Tasacambio extends Conexion
         $datosProcesar = $datos['datos'];
         
         try {
+            // Validar y sanitizar datos
+            $datosProcesar['fecha'] = filter_var($datosProcesar['fecha'], FILTER_SANITIZE_STRING);
+            $datosProcesar['tasa'] = filter_var($datosProcesar['tasa'], FILTER_VALIDATE_FLOAT);
+            $datosProcesar['fuente'] = filter_var($datosProcesar['fuente'], FILTER_SANITIZE_STRING);
+            
+            if ($datosProcesar['tasa'] === false || $datosProcesar['tasa'] <= 0) {
+                return ['respuesta' => 0, 'accion' => $operacion, 'text' => 'La tasa debe ser un número válido mayor a 0'];
+            }
+            
             switch ($operacion) {
                 case 'modificar':
-                    
-                   if ($this->verificarFechaNoExiste($datosProcesar['fecha'])) {
-                         return $this->ejecutarRegistro2($datosProcesar);
-                    }
-    
-                    return $this->ejecutarMofidicacion($datosProcesar);
-                
                 case 'sincronizar':
                     if ($this->verificarFechaNoExiste($datosProcesar['fecha'])) {
-                         return $this->ejecutarRegistro($datosProcesar);
+                        return $this->ejecutarRegistro($datosProcesar, $operacion);
                     }
-
-                    return $this->ejecutarMofidicacion($datosProcesar);
+                    return $this->ejecutarMofidicacion($datosProcesar, $operacion);
+                    
                 default:
-                    return ['respuesta' => 0, 'accion' => 'sincronizar', 'text' => 'Operación no válida'];
+                    return ['respuesta' => 0, 'accion' => $operacion, 'text' => 'Operación no válida'];
             }
         } catch (\Exception $e) {
-            return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
+            return ['respuesta' => 0, 'accion' => $operacion ?? 'desconocida', 'text' => $e->getMessage()];
         }
     }
 
@@ -86,8 +88,8 @@ class Tasacambio extends Conexion
             }
         }
 
-/*||||||||||||||||||||||||||||||| ACTUALIZAR DATOS DEL CLIENTE  |||||||||||||||||||||||||  03  |||||*/    
-   private function ejecutarMofidicacion($datos) {
+/*||||||||||||||||||||||||||||||| ACTUALIZAR DATOS DE TASA  |||||||||||||||||||||||||  03  |||||*/    
+   private function ejecutarMofidicacion($datos, $operacion) {
     $conex = $this->getConex1();
   
     try {
@@ -109,31 +111,27 @@ class Tasacambio extends Conexion
 
         $conex->commit();
         $conex = null;
-        return ['respuesta' => 1, 'accion' => 'modificar'];
+        return ['respuesta' => 1, 'accion' => $operacion];
 
     } catch (\PDOException $e) {
         if ($conex) {
             $conex->rollBack();
             $conex = null;
         }
-        return ['respuesta' => 0, 'text' => $e->getMessage()];
+        return ['respuesta' => 0, 'accion' => $operacion, 'text' => 'Error al actualizar: ' . $e->getMessage()];
     }
 }
 
 
-/*||||||||||||||||||||||||||||||| VERIFICAR CEDULA Y CORREO  |||||||||||||||||||||||||  04  |||||*/        
+/*||||||||||||||||||||||||||||||| VERIFICAR FECHA NO EXISTE  |||||||||||||||||||||||||  04  |||||*/        
 private function verificarFechaNoExiste($fecha) {
     $conex = $this->getConex1();
     try {
-        $conex->beginTransaction();
-
         $sql = "SELECT COUNT(*) FROM tasa_dolar WHERE fecha = :fecha";
         $stmt = $conex->prepare($sql);
         $stmt->execute(['fecha' => $fecha]);
 
         $noExiste = $stmt->fetchColumn() == 0;
-
-        $conex->commit();
         $conex = null;
         return $noExiste;
     } catch (\PDOException $e) {
@@ -142,14 +140,15 @@ private function verificarFechaNoExiste($fecha) {
     }
 }
 
-private function ejecutarRegistro($datos) {
+/*||||||||||||||||||||||||||||||| REGISTRAR NUEVA TASA  |||||||||||||||||||||||||  05  |||||*/
+private function ejecutarRegistro($datos, $operacion) {
     $conex = $this->getConex1();
   
     try {
         $conex->beginTransaction();
 
-        $sql = "INSERT tasa_dolar (fecha, tasa_bs, fuente, estatus)
-                         VALUES (:fecha,:tasa,:fuente, 1)";
+        $sql = "INSERT INTO tasa_dolar (fecha, tasa_bs, fuente, estatus)
+                         VALUES (:fecha, :tasa, :fuente, 1)";
 
         $parametros = [
             'tasa' => $datos['tasa'],
@@ -162,45 +161,14 @@ private function ejecutarRegistro($datos) {
 
         $conex->commit();
         $conex = null;
-        return ['respuesta' => 1, 'accion' => 'sincronizar'];
+        return ['respuesta' => 1, 'accion' => $operacion];
 
     } catch (\PDOException $e) {
         if ($conex) {
             $conex->rollBack();
             $conex = null;
         }
-        return ['respuesta' => 0, 'text' => $e->getMessage()];
-    }
-}
-
-private function ejecutarRegistro2($datos) {
-    $conex = $this->getConex1();
-  
-    try {
-        $conex->beginTransaction();
-
-        $sql = "INSERT tasa_dolar (fecha, tasa_bs, fuente, estatus)
-                         VALUES (:fecha,:tasa,:fuente, 1)";
-
-        $parametros = [
-            'tasa' => $datos['tasa'],
-            'fuente' => $datos['fuente'],
-            'fecha' => $datos['fecha']
-        ];
-
-        $stmt = $conex->prepare($sql);
-        $stmt->execute($parametros);
-
-        $conex->commit();
-        $conex = null;
-        return ['respuesta' => 1, 'accion' => 'modificar'];
-
-    } catch (\PDOException $e) {
-        if ($conex) {
-            $conex->rollBack();
-            $conex = null;
-        }
-        return ['respuesta' => 0, 'text' => $e->getMessage()];
+        return ['respuesta' => 0, 'accion' => $operacion, 'text' => 'Error al registrar: ' . $e->getMessage()];
     }
 }
 }

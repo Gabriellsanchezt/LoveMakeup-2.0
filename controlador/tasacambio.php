@@ -23,12 +23,35 @@ $objtasa = new Tasacambio();
 $registro = $objtasa->consultar();
 
 if(isset($_POST['modificar'])){
-     $datosTasa = [
+    // Validar y sanitizar datos
+    $fecha = isset($_POST['fecha']) ? filter_var($_POST['fecha'], FILTER_SANITIZE_STRING) : '';
+    $tasa = isset($_POST['tasa']) ? filter_var($_POST['tasa'], FILTER_VALIDATE_FLOAT) : false;
+    $fuente = isset($_POST['fuente']) ? filter_var($_POST['fuente'], FILTER_SANITIZE_STRING) : 'Manualmente';
+    
+    // Validaciones
+    if (empty($fecha)) {
+        echo json_encode(['respuesta' => 0, 'accion' => 'modificar', 'text' => 'La fecha es requerida']);
+        exit;
+    }
+    
+    if ($tasa === false || $tasa <= 0) {
+        echo json_encode(['respuesta' => 0, 'accion' => 'modificar', 'text' => 'La tasa debe ser un número válido mayor a 0']);
+        exit;
+    }
+    
+    // Validar formato de fecha
+    $fechaValidada = DateTime::createFromFormat('Y-m-d', $fecha);
+    if (!$fechaValidada || $fechaValidada->format('Y-m-d') !== $fecha) {
+        echo json_encode(['respuesta' => 0, 'accion' => 'modificar', 'text' => 'Formato de fecha inválido']);
+        exit;
+    }
+    
+    $datosTasa = [
         'operacion' => 'modificar',
         'datos' => [
-            'fecha' => $_POST['fecha'],
-            'tasa' => $_POST['tasa'],
-            'fuente' => $_POST['fuente']
+            'fecha' => $fecha,
+            'tasa' => $tasa,
+            'fuente' => $fuente
         ]
     ]; 
 
@@ -36,26 +59,45 @@ if(isset($_POST['modificar'])){
     echo json_encode($resultado);
 
 } else if(isset($_POST['sincronizar'])){
-    if(empty($_POST['tasa'])){
-        echo json_encode(['respuesta' => 0, 'accion' => 'sincronizar', 'text' => ' tasa no encontrada']);
+    // Validar y sanitizar datos
+    $fecha = isset($_POST['fecha']) ? filter_var($_POST['fecha'], FILTER_SANITIZE_STRING) : '';
+    $tasa = isset($_POST['tasa']) ? filter_var($_POST['tasa'], FILTER_VALIDATE_FLOAT) : false;
+    $fuente = isset($_POST['fuente']) ? filter_var($_POST['fuente'], FILTER_SANITIZE_STRING) : 'Via Internet';
+    
+    // Validaciones
+    if(empty($tasa) || $tasa === false){
+        echo json_encode(['respuesta' => 0, 'accion' => 'sincronizar', 'text' => 'Tasa no encontrada o inválida']);
         exit;
     } 
-    $cambio = $_POST['tasa'];
-    if($cambio === '0.00'){
-     echo json_encode(['respuesta' => 0, 'accion' => 'sincronizar', 'text' => 'Error Conexion o tasa no encontrada']);
-     exit;
+    
+    if($tasa <= 0){
+        echo json_encode(['respuesta' => 0, 'accion' => 'sincronizar', 'text' => 'Error: La tasa debe ser mayor a 0']);
+        exit;
     }
-        $datosTasa = [
-            'operacion' => 'sincronizar',
-            'datos' => [
-                'fecha' => $_POST['fecha'],
-                'tasa' => $_POST['tasa'],
-                'fuente' => $_POST['fuente']
-            ]
-        ]; 
+    
+    if (empty($fecha)) {
+        echo json_encode(['respuesta' => 0, 'accion' => 'sincronizar', 'text' => 'La fecha es requerida']);
+        exit;
+    }
+    
+    // Validar formato de fecha
+    $fechaValidada = DateTime::createFromFormat('Y-m-d', $fecha);
+    if (!$fechaValidada || $fechaValidada->format('Y-m-d') !== $fecha) {
+        echo json_encode(['respuesta' => 0, 'accion' => 'sincronizar', 'text' => 'Formato de fecha inválido']);
+        exit;
+    }
+    
+    $datosTasa = [
+        'operacion' => 'sincronizar',
+        'datos' => [
+            'fecha' => $fecha,
+            'tasa' => $tasa,
+            'fuente' => $fuente
+        ]
+    ]; 
 
-        $resultado = $objtasa->procesarTasa(json_encode($datosTasa));
-        echo json_encode($resultado);
+    $resultado = $objtasa->procesarTasa(json_encode($datosTasa));
+    echo json_encode($resultado);
     
 } else if(isset($_POST['obtener_tasa_actual']) || (isset($_GET['obtener_tasa_actual']) && $_GET['obtener_tasa_actual'] == '1')) {
     // Endpoint para obtener la tasa actual desde la base de datos

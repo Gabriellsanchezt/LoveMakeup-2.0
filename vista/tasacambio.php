@@ -7,6 +7,74 @@
   <link rel="stylesheet" href="assets/css/formulario.css">
   <title> Tasa de Cambio | LoveMakeup  </title> 
 
+  <style>
+.driver-popover.driverjs-theme {
+  color: #000;
+}
+
+.driver-popover.driverjs-theme .driver-popover-title {
+  font-size: 20px;
+}
+
+.driver-popover.driverjs-theme .driver-popover-title,
+.driver-popover.driverjs-theme .driver-popover-description,
+.driver-popover.driverjs-theme .driver-popover-progress-text {
+  color: #000;
+}
+
+.driver-popover.driverjs-theme button {
+  flex: 1;
+  text-align: center;
+  background-color: #000;
+  color: #ffffff;
+  border: 2px solid #000;
+  text-shadow: none;
+  font-size: 14px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+.driver-popover.driverjs-theme button:hover {
+  background-color: #000;
+  color: #ffffff;
+}
+
+.driver-popover.driverjs-theme .driver-popover-navigation-btns {
+  justify-content: space-between;
+  gap: 3px;
+}
+
+.driver-popover.driverjs-theme .driver-popover-close-btn {
+  color: #fff;
+  width: 20px; /* Reducir el tamaño del botón */
+  height: 20px;
+  font-size: 16px;
+  transition: all 0.5 ease-in-out;
+}
+
+.driver-popover.driverjs-theme .driver-popover-close-btn:hover {
+ background-color: #fff;
+ color: #000;
+ border: #000;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: #fde047;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: #fde047;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: #fde047;
+}
+
+.driver-popover.driverjs-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: #fde047;
+}
+  </style>
+
   <script>
     async function obtenerTasaDolarApi() {
     try {
@@ -20,8 +88,7 @@
 
         document.getElementById("bcv").textContent =  tasaBCV + " Bs";
         document.getElementById("tasabcv").value = tasaBCV;
-       
-
+        
     } catch (error) {
         document.getElementById("bcv").textContent = "Error al cargar la tasa";
         document.getElementById("tasabcv").value = "0";
@@ -94,17 +161,14 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
           <h4 class="card-subtitle mb-2 text-dark" id="tasaBD"> </h4>
           <p class="card-text">Actualmente estás es la tasa de cambio de USD a Bolívares (Bs) guardada en nuestra base de datos. puedes modificarla manualmente en cualquier momento según tu preferencia o la tasa vigente.</p>
              <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
-          <form action="?pagina=tasacambio" method="POST" autocomplete="off" id="for_modificar">
-            <label for="">Modificarla manualmente la tasa del $ a Bs</label>
-            <div class="input-group">
-            <input type="text" class="form-control mb-2" name="tasa" id="tasa" placeholder="100.50">
+          <form action="?pagina=tasacambio" method="POST" autocomplete="off" id="for_modificar" style="display: none;">
+            <input type="text" name="tasa" id="tasa">
             <input type="hidden" name="fuente" id="fuente_1" value="Manualmente">
-              <input type="hidden" name="fecha" id="fecha_1">
-            <button type="button" name="modificar" id="modificar" class="btn btn-success">Modificar Tasa</button>
-    
-          </div>
-            <span id="textotasa" class="error-message"></span>
-        </form>
+            <input type="hidden" name="fecha" id="fecha_1">
+          </form>
+          <button type="button" class="btn btn-success" id="btnActualizarManual">
+            <i class="fas fa-edit me-2"></i>Actualizar Manualmente
+          </button>
     <?php endif; ?>
           
         </div>
@@ -119,13 +183,14 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
          <h4 class="card-subtitle mb-2 text-dark" id="bcv"></h4>
           <p class="card-text">Estás utilizando la tasa de cambio USD a Bs obtenida automáticamente desde internet. Si lo prefieres, puedes sincronizar esta tasa y actualizar la que está guardada en la base de datos.</p>
 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
-          <form action="?pagina=tasacambio" method="POST" id="for_sincronizar">
-               <input type="hidden" name="fecha" id="fecha_2">
-                <input type="hidden" name="tasa" id="tasabcv">
-                <input type="hidden" name="fuente" value="Via Internet">
-               <button type="button" class="btn btn-primary" name="sincronizar" id="sincronizar">Sincronizar y Actualizar</button>
-           </form>
-              <span id="textotasabcv" class="error-message"></span>
+          <form action="?pagina=tasacambio" method="POST" id="for_sincronizar" style="display: none;">
+            <input type="hidden" name="fecha" id="fecha_2">
+            <input type="hidden" name="tasa" id="tasabcv">
+            <input type="hidden" name="fuente" value="Via Internet">
+          </form>
+          <button type="button" class="btn btn-primary" id="btnSincronizar">
+            <i class="fas fa-sync-alt me-2"></i>Sincronizar y Actualizar
+          </button>
                <?php endif; ?>
         </div>
       </div>
