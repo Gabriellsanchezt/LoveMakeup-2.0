@@ -78,6 +78,25 @@ class Cliente extends Conexion
             }
         }
 
+
+         public function consultarPedidos() {
+            $conex = $this->getConex1();
+            try {
+                $sql = "SELECT * FROM pedido";
+                        
+                $stmt = $conex->prepare($sql);
+                $stmt->execute();
+                $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                $conex = null;
+                return $resultado;
+            } catch (\PDOException $e) {
+                if ($conex) {
+                    $conex = null;
+                }
+                throw $e;
+            }
+        }
+
 /*||||||||||||||||||||||||||||||| ACTUALIZAR DATOS DEL CLIENTE  |||||||||||||||||||||||||  03  |||||*/    
    private function ejecutarActualizacion($datos) {
     $conex = $this->getConex2();

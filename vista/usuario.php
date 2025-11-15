@@ -31,7 +31,11 @@
 #alertcorreo{
     display: none;
 }
+#alertRol{
+    display: none;
+}
 </style>
+
 </head>
 
 <body class="g-sidenav-show bg-gray-100">
@@ -332,6 +336,10 @@
           </select>
         </div>
          <span id="textorol" class="error-message"></span>
+         <div class="alert alert-warning" role="alert" id="alertRol">
+                <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                <span class="alert-text"><strong>Error ROL!</strong> no se encuentra un rol registrado</span>
+          </div>
         <input type="hidden" id="nivelHidden" name="nivel">
       </div>
 
@@ -464,7 +472,7 @@
                           <option value="<?php echo $item['id_rol'];?>" data-nivel="<?php echo $item['nivel'];?>"> <?php echo $item['nombre']." - Nivel ".$item['nivel'];?> </option>
                         <?php } ?>
                     </select>
-
+                          
                     <input type="hidden" name="rol_actual" id="rolactual">
                     <input type="hidden" name="nivel" id="idnivel">
               </div> 
