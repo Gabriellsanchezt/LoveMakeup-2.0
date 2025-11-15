@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($res);
         exit;
     }
-} if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'ver')) {
+} if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'ver')) {
       
         $registro = $obj->consultar();
         $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tipousuario';

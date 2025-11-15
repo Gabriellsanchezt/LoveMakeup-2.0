@@ -67,6 +67,20 @@ class Login extends Conexion {
                     
                 case 'activousuaio':
                     return $this->activousuario($datosProcesar);
+                
+                case 'verificarcedula':
+                  if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                        return ['respuesta' => 1,'accion' => 'verificar','text' => 'La cédula ya está registrada' ];
+                    } else {
+                        return [ 'respuesta' => 0,'accion' => 'verificar','text' => 'La cédula no se encuentra registrada'];
+                    }
+
+                 case 'verificarCorreo':
+                    if ($this->verificarExistencia(['campo' => 'correo', 'valor' => $datosProcesar['correo']])) {
+                            return ['respuesta' => 1, 'accion' => 'verificar', 'text' => 'La correo ya está registrada' ];
+                        } else {
+                            return [ 'respuesta' => 0, 'accion' => 'verificar', 'text' => 'La correo no se encuentra registrada'  ];
+                        } 
 
                 default:
                     return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
@@ -217,6 +231,7 @@ class Login extends Conexion {
                 p.correo,
                 p.telefono,
                 p.tipo_documento,
+                u.id_usuario,
                 u.estatus,
                 u.id_rol,
                 ru.nivel

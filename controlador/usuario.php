@@ -391,6 +391,28 @@ if (isset($_POST['registrar'])) { /* -------  */
 */
     echo json_encode($resultado);
 
+} else if(isset($_POST['cedula'])){ /* -------  */
+    $datosUsuario = [
+        'operacion' => 'verificar',
+        'datos' => [
+            'cedula' => $_POST['cedula']
+        ] 
+    ];
+
+    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+    echo json_encode($resultado);
+
+} else if(isset($_POST['correo'])){ /* -------  */
+    $datosUsuario = [
+        'operacion' => 'verificarCorreo',
+        'datos' => [
+            'correo' => $_POST['correo']
+        ] 
+    ];
+
+    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+    echo json_encode($resultado);
+
 } else {
       $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
         require_once 'vista/usuario.php';  

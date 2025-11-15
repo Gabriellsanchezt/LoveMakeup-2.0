@@ -101,6 +101,7 @@
                   <th class="text-white text-center">Nombre y Cédula</th>
                   <th class="text-white text-center">Telefono</th>
                   <th class="text-white text-center">Correo</th>
+                   <th class="text-white text-center">Conctatar</th>
                   <th class="text-white text-center">Estatus</th>
                     <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <th class="text-white text-center">Acción</th>
@@ -113,7 +114,6 @@
                     $_SESSION['registro_limite'] = 100;
                 }
 
-                // Si se presionó el botón para cargar más
                 if (isset($_POST['cargar_mas'])) {
                     $_SESSION['registro_limite'] += 100;
                 }
@@ -161,9 +161,7 @@
                     $telefono_sin_cero = ltrim($telefono_limpio, '0');
                     $link_whatsapp = "https://wa.me/58" . $telefono_sin_cero;
                   ?>
-                  <a href="<?= $link_whatsapp ?>" target="_blank" class="btn btn-success btn-sm mt-1 Ayudatelefono" title="Contactar por WhatsApp">
-                    <i class="fab fa-whatsapp me-1"></i> WhatsApp
-                  </a>
+                  
                 </td>
 
                  <td>
@@ -173,11 +171,19 @@
                             <i class="fas fa-copy"></i>
                         </span>
                       </div> <br>
-                      <a href="mailto:<?= $dato['correo'] ?>" class="btn btn-info btn-sm mt-1 Ayudacorreo" title="Enviar correo">
+                      
+                </td>
+                    
+                  <td class="text-center">
+                      <div>
+                            <a href="<?= $link_whatsapp ?>" target="_blank" class="btn btn-success btn-sm mt-1 Ayudatelefono" title="Contactar por WhatsApp">
+                            <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                          </a>
+                      </div>
+                        <a href="mailto:<?= $dato['correo'] ?>" class="btn btn-info btn-sm mt-1 Ayudacorreo" title="Enviar correo">
                     <i class="fas fa-envelope me-1"></i> Enviar correo
                   </a>
-                </td>
-
+                  </td>
                   <td class="text-center">
                   <span class="<?= $estatus_classes[$dato['estatus']] ?>">
                     <?php echo $estatus_texto[$dato['estatus']] ?>
@@ -227,6 +233,14 @@
   .text-g{
     font-size:15px;
   }
+  .input-group #rolSelect2 {
+  flex: 0 0 30%;
+  max-width: 60%;
+}
+
+.input-group .form-control {
+  flex: 1 1 auto;
+}
 </style>
 
 <!-- Modal -->
@@ -245,6 +259,13 @@
             <label for="cedula" class="form-label text-g">Cédula</label>
              <div class="input-group mb-3">
                   <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-id-card"></i></span>
+                   <select class="form-select" name="tipo_documento" id="rolSelect2"  required >
+                    <option id="modaldocumento">  </option>
+                    <option value="V"> V </option>
+                    <option value="E"> E </option>
+                    <option value="J"> J </option>
+    
+          </select>
                    <input type="text" class="form-control" id="modalCedula" name="cedula">
               </div>
                 <span id="textocedulamodal" class="text-danger"></span>
@@ -269,7 +290,6 @@
               </div>   
             <input type="hidden" id="modalce" name="cedulaactual">
             <input type="hidden" id="modalco" name="correoactual">
-            <input type="hidden" id="Nacionalidad" name="tipo_documento">
            </div>
         
           </form>

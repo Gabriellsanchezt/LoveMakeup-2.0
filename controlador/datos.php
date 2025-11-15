@@ -8,7 +8,7 @@ if (empty($_SESSION["id"])) {
     header("location:?pagina=login");
     exit;
 } /* Validacion URL */
-if (!empty($_SESSION['id'])) {
+if (!empty($_SESSION['id'])) { 
         require_once 'verificarsession.php';
  } 
 
@@ -25,21 +25,22 @@ if (isset($_POST['actualizar'])) {
      $datosUsuario = [
         'operacion' => 'actualizar',
         'datos' => [
-            'id_persona' => $_SESSION["id"],
+
             'nombre' => ucfirst(strtolower($_POST['nombre'])),
             'apellido' => ucfirst(strtolower($_POST['apellido'])),
             'cedula' => $_POST['cedula'],
             'correo' => strtolower($_POST['correo']),
             'telefono' => $_POST['telefono'],
-            'cedula_actual' => $_SESSION["cedula"],
-            'correo_actual' => $_SESSION["correo"]
+            'cedula_actual' => $_SESSION["id"],
+            'correo_actual' => $_SESSION["correo"],
+            'tipo_documento' => $_POST['tipo_documento']
         ]
     ];
 
     $nombre_actual = ucfirst(strtolower($_SESSION["nombre"]));
     $apellido_actual = ucfirst(strtolower($_SESSION["apellido"]));
     $telefono_actual = $_SESSION["telefono"];
-
+     $documento_actual = $_SESSION["documento"];
    
 
     $datos = $datosUsuario['datos'];
@@ -49,6 +50,7 @@ if (isset($_POST['actualizar'])) {
         $apellido_actual !== $datos['apellido'] ||
         $telefono_actual !== $datos['telefono'] ||
         $datos['cedula_actual'] !== $datos['cedula'] ||
+         $documento_actual !== $datos['tipo_documento'] ||
         strtolower($datos['correo_actual']) !== strtolower($datos['correo']) // Comparación case-insensitive
     );
 
@@ -63,10 +65,10 @@ if (isset($_POST['actualizar'])) {
     }
 
    $resultado = $objdatos->procesarUsuario(json_encode($datosUsuario));
-    
+    /*
      if ($resultado['respuesta'] == 1) {
         $bitacora = [
-            'id_persona' => $_SESSION["id"],
+            'id_usuario' => $_SESSION["id_usuario"],
             'accion' => 'Modificación de Usuario',
             'descripcion' => 'El usuario con ID: ' . $datosUsuario['datos']['id_persona'] . 
                            ' cedula: ' . $datosUsuario['datos']['cedula'] .
@@ -79,37 +81,39 @@ if (isset($_POST['actualizar'])) {
         $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
     }
 
-       
-    echo json_encode($resultado);
+       */
 
     if ($resultado['respuesta'] == 1) {
-        $id_persona = $_SESSION["id"];
-        $resultado = $objdatos->consultardatos($id_persona);
+        $id_usuario = $_SESSION["id_usuario"];
+        $resultado1 = $objdatos->consultardatos($id_usuario);
 
                 // Verificamos que hay al menos un resultado
-            if (!empty($resultado) && is_array($resultado)) {
-                $datos = $resultado[0]; // Accedemos al primer elemento
+            if (!empty($resultado1) && is_array($resultado1)) {
+                $datos = $resultado1[0]; // Accedemos al primer elemento
 
                 $_SESSION["nombre"]   = $datos["nombre"];
                 $_SESSION["apellido"] = $datos["apellido"];
                 $_SESSION["telefono"] = $datos["telefono"];
                 $_SESSION["correo"]   = $datos["correo"];
-                $_SESSION["cedula"]   = $datos["cedula"];
+                $_SESSION["documento"]   = $datos["tipo_documento"];
+                $_SESSION["id"]   = $datos["cedula"];
             }
       }   
+
+    echo json_encode($resultado);
       
 } else if(isset($_POST['actualizarclave'])){
     $datosUsuario = [
         'operacion' => 'actualizarclave',
         'datos' => [
-            'id_persona' => $_SESSION["id"],
+            'id_usuario' => $_SESSION["id_usuario"],
             'clave_actual' => $_POST['clave'],
             'clave' => $_POST["clavenueva"]
         ]
     ];
 
   $resultado = $objdatos->procesarUsuario(json_encode($datosUsuario));
-    
+    /*
      if ($resultado['respuesta'] == 1) {
         $bitacora = [
             'id_persona' => $_SESSION["id"],
@@ -121,6 +125,7 @@ if (isset($_POST['actualizar'])) {
         $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
         
     }
+        */
         echo json_encode($resultado);
 
  

@@ -40,8 +40,8 @@ if (isset($_POST['ingresar'])) {
         $id_persona = $_SESSION["id"]; 
         $resultadopermiso = $objlogin->consultar($id_persona);
         $_SESSION["permisos"] = $resultadopermiso;
-
-     
+        $_SESSION['id_usuario']= $resultado->id_usuario;
+        $_SESSION['documento']= $resultado->tipo_documento;
         $_SESSION["nombre"] = $resultado->nombre;
         $_SESSION["apellido"] = $resultado->apellido;
         $_SESSION["nivel_rol"] = $resultado->nivel;
@@ -163,6 +163,28 @@ if (isset($_POST['ingresar'])) {
     }
 
  // ------------------
+
+} else if(isset($_POST['cedula'])){ /* -------  */
+    $datosLogin = [
+        'operacion' => 'verificarcedula',
+        'datos' => [
+            'cedula' => $_POST['cedula']
+        ] 
+    ];
+
+    $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
+    echo json_encode($resultado);
+
+} else if(isset($_POST['correo'])){ /* -------  */
+    $datosLogin = [
+        'operacion' => 'verificarCorreo',
+        'datos' => [
+            'correo' => $_POST['correo']
+        ] 
+    ];
+
+    $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
+    echo json_encode($resultado);
 
 } else if (isset($_POST['cerrarolvido'])) {    
     session_destroy();

@@ -112,7 +112,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.getElementById("modalestatus").value = estatus;
     document.getElementById("modalestatus").textContent = estatus == "1" ? "Activo - Actual" : estatus == "2" ? "Inactivo - Actual" : "Desconocido";
-
+    document.getElementById("roldocumento").textContent = 
+          tipo_doc == "V" ? "V (Actual)" : 
+          tipo_doc == "E" ? "E (Actual)" :  
+          "Tipo desconocido";
+    
   });
 });
 
@@ -201,6 +205,60 @@ $('#registrar').on("click", function () {
     }
 });
 
+
+$('#cedula').on("blur", function () {
+  const cedula = $(this).val().trim();
+  const formato = /^[0-9]{7,8}$/;
+
+  if (formato.test(cedula)) {
+    activarLoaderBoton('#registrar');
+    const datos = new FormData();
+    datos.append('cedula', cedula);
+    enviaAjax(datos);
+  } 
+});
+
+$('#correo').on("blur", function () {
+  const correo = $(this).val().trim();
+  const formato =  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,60}$/;
+
+  if (formato.test(correo)) {
+    activarLoaderBoton('#registrar');
+        const datos = new FormData();
+    datos.append('correo', correo);
+    enviaAjax(datos);
+  } 
+});
+
+
+
+/*
+
+$('#modalCorreo').on("blur", function () {
+  const cedula = $(this).val().trim();
+  const formato = /^[0-9]{7,8}$/;
+
+  if (formato.test(cedula)) {
+    activarLoaderBoton('#registrar');
+    const datos = new FormData();
+    datos.append('cedula', cedula);
+    enviaAjax(datos);
+  } 
+});
+
+$('#modalCorreo').on("blur", function () {
+  const correo = $(this).val().trim();
+  const formato =  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,60}$/;
+
+  if (formato.test(correo)) {
+    activarLoaderBoton('#registrar');
+        const datos = new FormData();
+    datos.append('correo', correo);
+    enviaAjax(datos);
+  } 
+});
+
+*/
 
 
 $('#actualizar_permisos').on("click", function () {
@@ -375,7 +433,22 @@ function muestraMensaje(icono, tiempo, titulo, mensaje) {
   });
 }
 
-
+function muestraMensajetost(icono, titulo, mensaje, tiempo) {
+  Swal.fire({
+    icon: icono,
+    title: titulo,
+    text: mensaje,
+    toast: true,
+    position: "top",
+    showConfirmButton: false,
+    timer: tiempo,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.onmouseenter = Swal.stopTimer;
+      toast.onmouseleave = Swal.resumeTimer;
+    }
+  });
+}
 
 function enviaAjax(datos) {
     $.ajax({
@@ -434,7 +507,7 @@ function enviaAjax(datos) {
                 }
               } else if (lee.accion == 'actualizar_permisos') {
                 if (lee.respuesta == 1) {
-                  muestraMensaje("success", 1500, "Se ha modificado los Permisos con éxito", "Los datos se han modificado correctamente ");
+                  muestraMensaje("success", 2000, "Se ha modificado los Permisos con éxito", "Los datos se han modificado correctamente ");
                   desactivarLoaderBoton('#actualizar_permisos');
                   setTimeout(function () {
                      location = '?pagina=usuario';
@@ -443,6 +516,16 @@ function enviaAjax(datos) {
                   muestraMensaje("error", 2000, lee.text,"" );
                   desactivarLoaderBoton('#actualizar_permisos');
                 }
+              } else if (lee.accion == 'verificar') {
+                  if (lee.respuesta == 1) {
+                    
+                    muestraMensaje("error", 2000, lee.text,"" );
+                    desactivarLoaderBoton('#registrar');
+                   
+                  } else {
+                    muestraMensajetost("success",lee.text, "", "1500"); 
+                    desactivarLoaderBoton('#registrar');
+                  }
               }
   
         } catch (e) {
