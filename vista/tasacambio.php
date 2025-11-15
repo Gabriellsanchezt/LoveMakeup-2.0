@@ -4,11 +4,11 @@
 <head> 
   <!-- php barra de navegacion-->
   <?php include 'complementos/head.php' ?> 
-  <link rel="stylesheet" href="assets/css/formulario.css">
   <title> Tasa de Cambio | LoveMakeup  </title> 
+  <link rel="stylesheet" href="assets/css/formulario.css">
 
   <style>
-.driver-popover.driverjs-theme {
+  .driver-popover.driverjs-theme {
   color: #000;
 }
 
@@ -73,6 +73,7 @@
 .driver-popover.driverjs-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
   border-bottom-color: #fde047;
 }
+
   </style>
 
   <script>

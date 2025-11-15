@@ -43,6 +43,26 @@
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
     }
 
+    /* Asegurar que el campo de búsqueda de Select2 sea interactuable */
+    .select2-search__field {
+      pointer-events: auto !important;
+      cursor: text !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+      pointer-events: auto !important;
+      cursor: text !important;
+      width: 100% !important;
+    }
+    
+    .select2-dropdown {
+      z-index: 9999 !important;
+    }
+    
+    .modal .select2-dropdown {
+      z-index: 1056 !important;
+    }
+    
     /* Barra de progreso animada rosa */
     .progress-steps .progress-bar-container {
       position: absolute;
