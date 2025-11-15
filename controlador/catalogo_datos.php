@@ -14,10 +14,11 @@ if (!empty($_SESSION['id'])) {
     require_once 'verificarsession.php';
 }
 
-$objdatos = new Datoscliente();
+$objdatos = new Catalogo_datos();
 
   $entrega = $objdatos->obtenerEntrega();
-  $direccion = $objdatos->consultardireccion();
+
+//  $direccion = $objdatos->consultardireccion();
 
 if (isset($_POST['actualizar'])) {
      $datosCliente = [
@@ -29,7 +30,8 @@ if (isset($_POST['actualizar'])) {
             'cedula' => $_POST['cedula'],
             'correo' => strtolower($_POST['correo']),
             'telefono' => $_POST['telefono'],
-            'cedula_actual' => $_SESSION["cedula"],
+            'tipo_documento' => $_POST['tipo_documento'],
+            'cedula_actual' => $_SESSION["id"],
             'correo_actual' => $_SESSION["correo"]
         ]
     ];
@@ -37,7 +39,7 @@ if (isset($_POST['actualizar'])) {
     $nombre_actual = $_SESSION["nombre"];
     $apellido_actual = $_SESSION["apellido"];
     $telefono_actual = $_SESSION["telefono"];
-
+  $documento_actual = $_SESSION["documento"];
    
 
     $datos = $datosCliente['datos'];
@@ -47,6 +49,7 @@ if (isset($_POST['actualizar'])) {
         $apellido_actual !== $datos['apellido'] ||
         $telefono_actual !== $datos['telefono'] ||
         $datos['cedula_actual'] !== $datos['cedula'] ||
+           $documento_actual !== $datos['tipo_documento'] ||
         strtolower($datos['correo_actual']) !== strtolower($datos['correo']) // Comparación case-insensitive
     );
 
@@ -62,23 +65,26 @@ if (isset($_POST['actualizar'])) {
 
    $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
     
-   echo json_encode($resultado);
+
 
     if ($resultado['respuesta'] == 1) {
-        $id_persona = $_SESSION["id"];
-        $resultado = $objdatos->consultardatos($id_persona);
+        $id_usuario = $_SESSION["id_usuario"];
+        $resultado1 = $objdatos->consultardatos($id_usuario);
 
                 // Verificamos que hay al menos un resultado
-            if (!empty($resultado) && is_array($resultado)) {
-                $datos = $resultado[0]; // Accedemos al primer elemento
+            if (!empty($resultado1) && is_array($resultado1)) {
+                $datos = $resultado1[0]; // Accedemos al primer elemento
 
                 $_SESSION["nombre"]   = $datos["nombre"];
                 $_SESSION["apellido"] = $datos["apellido"];
                 $_SESSION["telefono"] = $datos["telefono"];
                 $_SESSION["correo"]   = $datos["correo"];
-                $_SESSION["cedula"]   = $datos["cedula"];
+                $_SESSION["documento"]   = $datos["tipo_documento"];
+                $_SESSION["id"]   = $datos["cedula"];
             }
-      }   
+      } 
+      
+   echo json_encode($resultado);      
       
 } else if (isset($_POST['actualizardireccion'])) {
     
@@ -133,7 +139,7 @@ if (isset($_POST['actualizar'])) {
     $datosCliente = [
         'operacion' => 'actualizarclave',
         'datos' => [
-            'id_persona' => $_SESSION["id"],
+            'id_usuario' => $_SESSION["id_usuario"],
             'clave_actual' => $_POST['clave'],
             'clave' => $_POST["clavenueva"]
         ]

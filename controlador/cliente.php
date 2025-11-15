@@ -38,23 +38,23 @@ if(isset($_POST['actualizar'])){
   
 
     $resultado = $objcliente->procesarCliente(json_encode($datosCliente));
-    /*
+    
      if ($resultado['respuesta'] == 1) {
         $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Modificación de cliente',
-            'descripcion' => 'Se modificó el cliente con ID: ' . $datosCliente['datos']['id_persona'] . 
+            'descripcion' => 'Se modificó el cliente con ID: ' . $datosCliente['datos']['cedula_actual'] . 
                            ' Cédula: ' . $datosCliente['datos']['cedula'] . 
                            ' Correo: ' . $datosCliente['datos']['correo']
         ];
         $bitacoraObj = new Bitacora();
         $bitacoraObj->registrarOperacion($bitacora['accion'], 'cliente', $bitacora);
     }
-*/
+
     echo json_encode($resultado);
 
       
-    } else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'ver')) {
+    } else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'ver')) {
          $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Acceso a Módulo',

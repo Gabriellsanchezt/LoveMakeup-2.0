@@ -6,6 +6,14 @@
 <?php include 'vista/complementos/head_catalogo.php' ?>
 <link rel="stylesheet" href="assets/css/formulario.css">
 <style>
+  .input-group #rolSelect2 {
+  flex: 0 0 25%;
+  max-width: 50%;
+}
+
+.input-group .form-control {
+  flex: 1 1 auto;
+}
   .modal-productoo {
   border-radius: 15px;
   border: none;
@@ -121,7 +129,13 @@
               <label for="cedula">Cédula</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-id-card" style="color:#ff2bc3;"></i></span>
-                <input type="text" class="form-control text-dark" id="cedula" name="cedula" value="<?php echo $_SESSION['cedula'] ?>">
+                 <select class="form-select text-dark" name="tipo_documento" id="rolSelect2"  required >
+                  <option value="<?php echo $_SESSION['documento'] ?>"> <?php echo $_SESSION['documento'] . " (ACTUAL)";?> </option>
+                  <option value="V"> V </option>
+                  <option value="E"> E </option>
+          
+                </select>
+                <input type="text" class="form-control text-dark" id="cedula" name="cedula" value="<?php echo $_SESSION['id'] ?>">
               </div>
               <p id="textocedula" class="text-danger"></p>
             </div>
@@ -222,7 +236,7 @@
     </div>
   </div>
 
-  <input type="hidden" name="persona" value="<?php echo $_SESSION['id'] ?>">
+  <input type="hidden" name="persona" value="<?php echo $_SESSION['id_usuario'] ?>">
 
   </div>
         <div class="row">

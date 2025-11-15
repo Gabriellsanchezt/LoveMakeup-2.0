@@ -322,6 +322,31 @@ $(document).ready(function() {
       validarCampo($(this),/^.{8,16}$/, 
       $("#textorecontrasena"), "El formato debe ser entre 8 y 16 caracteres");
     });
+
+
+    $('#cedula').on("blur", function () {
+        const cedula = $(this).val().trim();
+        const formato = /^[0-9]{7,8}$/;
+
+        if (formato.test(cedula)) {
+          activarLoaderBoton('#registrar');
+          const datos = new FormData();
+          datos.append('cedula', cedula);
+          enviaAjax(datos);
+        } 
+      });
+
+      $('#correo').on("blur", function () {
+        const correo = $(this).val().trim();
+        const formato =  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,60}$/;
+
+        if (formato.test(correo)) {
+          activarLoaderBoton('#registrar');
+            const datos = new FormData();
+          datos.append('correo', correo);
+          enviaAjax(datos);
+        } 
+      });
     
 });
 document.getElementById('fecha').value = moment().format('YYYY-MM-DD');
@@ -367,8 +392,8 @@ function enviaAjax(datos) {
                   }, 2000); 
               } else {
                   muestraMensaje("error", 2500, lee.text, "revise o cambialo y lo vuelve a intentar");
-                  
-                    $('#registrar').prop("disabled", false).html('<i class="fa-solid fa-user-plus"></i> Registrar');
+                   desactivarLoaderBoton('#registrar');
+                   
                 }
               
               } else if (lee.accion == 'ingresar') { // Login
@@ -403,7 +428,17 @@ function enviaAjax(datos) {
                   desactivarLoaderBoton('#validarolvido');
                 }
               
-            }
+             }else if (lee.accion == 'verificar') {
+                  if (lee.respuesta == 1) {
+                    
+                    muestraMensaje("error", 2000, lee.text,"" );
+                    desactivarLoaderBoton('#registrar');
+                   
+                  } else {
+                    muestraMensajetost("success",lee.text, "", "1500"); 
+                    desactivarLoaderBoton('#registrar');
+                  }
+              }
         } catch (e) {
             muestraMensaje("error", 2000, "Error", "ERROR: <br/>" + e.name);
                 desactivarLoaderBoton('#registrar');

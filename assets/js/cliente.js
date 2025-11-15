@@ -56,9 +56,16 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("modalce").value = cedula;
     document.getElementById("modalco").value = correo;
     document.getElementById("modalestatus").value = estatus;
-    document.getElementById("Nacionalidad").value = tipo_doc;
+    document.getElementById("modaldocumento").value = tipo_doc;
+    
+   
     document.getElementById("modalestatus").textContent = estatus == "1" ? "Activo - Actual" : estatus == "2" ? "Inactivo - Actual" : "Desconocido";
-  });
+    document.getElementById("modaldocumento").textContent = 
+      tipo_doc == "V" ? "V (Actual)" : 
+      tipo_doc == "E" ? "E (Actual)" : 
+      tipo_doc == "J" ? "J (Actual)" : 
+      "Tipo desconocido";
+      });
 });
 
 //Función para validar por Keypress

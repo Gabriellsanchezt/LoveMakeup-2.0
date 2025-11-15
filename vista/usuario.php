@@ -16,6 +16,15 @@
 .input-group .form-control {
   flex: 1 1 auto;
 }
+
+.input-group #rolSelect02 {
+  flex: 0 0 30%;
+  max-width: 60%;
+}
+
+.input-group .form-control {
+  flex: 1 1 auto;
+}
 </style>
 </head>
 
@@ -62,10 +71,10 @@
        <!-- Button que abre el Modal N1 Registro -->
        
           <button type="button" class="btn btn-success registrar" title="(CONTROL + ALT + N) Registrar usuario" data-bs-toggle="modal" data-bs-target="#registro">
-            <span class="icon text-dark">
+            <span class="icon text-white">
             <i class="fas fa-file-medical me-2"></i>
             </span>
-            <span class="text-dark" id="btnAbrirRegistrar">Registrar</span>
+            <span class="text-white" id="btnAbrirRegistrar">Registrar</span>
           </button>
    
          
@@ -411,6 +420,13 @@
             <label for="cedula" class="form-label text-g">Cédula</label>
              <div class="input-group mb-3">
                   <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-id-card"></i></span>
+                  <select class="form-select" name="tipo_documento" id="rolSelect02"  required >
+                    <option id="roldocumento">  </option>
+                    <option value="V"> V </option>
+                    <option value="E"> E </option>
+                    
+    
+          </select>
                    <input type="text" class="form-control" id="modalCedula" name="cedula">
               </div>
                 <span id="textocedulamodal" class="error-message"> </span>
@@ -436,7 +452,6 @@
 
                     <input type="hidden" name="rol_actual" id="rolactual">
                     <input type="hidden" name="nivel" id="idnivel">
-                    <input type="hidden" name="tipo_documento" id="roldocumento">
               </div> 
               
 

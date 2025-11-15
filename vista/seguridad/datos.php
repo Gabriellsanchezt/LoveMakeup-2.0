@@ -6,6 +6,16 @@
   <?php include 'vista/complementos/head.php' ?>
   <link rel="stylesheet" href="assets/css/formulario.css"> 
   <title> Cambiar Datos | LoveMakeup  </title> 
+  <style>
+    .input-group #rolSelect2 {
+  flex: 0 0 25%;
+  max-width: 50%;
+}
+
+.input-group .form-control {
+  flex: 1 1 auto;
+}
+  </style>
 </head>
  
 <body class="g-sidenav-show bg-gray-100">
@@ -102,7 +112,17 @@
         <div class="row mb-3">
           <div class="col-12">
             <label for="cedula" class="form-label text-g">Cédula</label>
-            <input type="text" class="form-control" name="cedula" id="cedula" value="<?php echo $_SESSION['cedula'] ?>">
+            
+             <div class="input-group">
+                
+                <select class="form-select" name="tipo_documento" id="rolSelect2"  required >
+                  <option value="<?php echo $_SESSION['documento'] ?>"> <?php echo $_SESSION['documento'] . " (ACTUAL)";?> </option>
+                  <option value="V"> V </option>
+                  <option value="E"> E </option>
+          
+                </select>
+                    <input type="text" class="form-control" name="cedula" id="cedula" value="<?php echo $_SESSION['id'] ?>">
+              </div>
             <span id="textocedula" class="text-danger"></span>
           </div>
         </div>

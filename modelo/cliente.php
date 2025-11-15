@@ -84,7 +84,7 @@ class Cliente extends Conexion
     try {
         $conex->beginTransaction();
 
-           // 1. Actualizar tabla persona primero
+             // 1. Actualizar datos en la tabla persona
         $sqlPersona = "UPDATE persona 
                        SET cedula = :cedula_nueva, 
                            correo = :correo, 
@@ -101,11 +101,11 @@ class Cliente extends Conexion
         $stmtPersona = $conex->prepare($sqlPersona);
         $stmtPersona->execute($paramPersona);
 
-        // 2. Luego actualizar tabla usuario
+        // 2. Actualizar datos en la tabla usuario
         $sqlUsuario = "UPDATE usuario 
                        SET cedula = :cedula_nueva, 
-                           estatus = :estatus 
-                       WHERE cedula = :cedula_actual";
+                           estatus = :estatus
+                     WHERE cedula = :cedula_actual";
 
         $paramUsuario = [
             'cedula_nueva' => $datos['cedula'],
@@ -113,8 +113,8 @@ class Cliente extends Conexion
             'cedula_actual' => $datos['cedula_actual']
         ];
 
-        $stmtPersona = $conex->prepare($sqlPersona);
-        $stmtPersona->execute($paramPersona);
+        $stmtUsuario = $conex->prepare($sqlUsuario);
+        $stmtUsuario->execute($paramUsuario);
 
         $conex->commit();
         $conex = null;

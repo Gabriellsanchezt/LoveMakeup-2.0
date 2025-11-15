@@ -47,7 +47,7 @@
               <div class="card-header pb-0 div-oscuro-2">  
                 <div class="d-sm-flex align-items-center justify-content-between mb-5">
                   <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-truck me-2 icoM" style="color: #f6c5b4;"></i> Método de Entrega</h4>
-                   <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'registrar')): ?>  
+                   <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 'registrar')): ?>  
                   <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro">
                     <i class="fas fa-file-medical"></i> Registrar
                   </button>
@@ -68,7 +68,7 @@
                         <td class="texto-secundario"><?= htmlspecialchars($dato['nombre']); ?></td>
                         <td class="texto-secundario"><?= htmlspecialchars($dato['descripcion']); ?></td>
                         <td>
-                           <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'editar')): ?>  
+                           <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 'editar')): ?>  
                             <button class="btn btn-primary btn-sm btn-editar"
                               data-id="<?= $dato['id_entrega']; ?>"
                               data-nombre="<?= htmlspecialchars($dato['nombre']); ?>"
@@ -77,7 +77,7 @@
                             </button>
                           <?php endif; ?>
 
-                             <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'eliminar')): ?>  
+                             <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 'eliminar')): ?>  
                           <button class="btn btn-danger btn-sm" onclick="eliminarMetodoEntrega(<?= $dato['id_entrega']; ?>)">
                             <i class="fas fa-trash-alt"></i>
                           </button>

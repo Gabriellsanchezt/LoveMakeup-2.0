@@ -92,7 +92,7 @@
             </h4>
             
             <div class="d-flex align-items-center gap-2">
-              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'registrar')): ?>
+              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'registrar')): ?>
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar" title="(CONTROL + ALT + N) Registrar delivery">
                   <span class="icon text-white">
                     <i class="fas fa-file-medical me-2"></i>
@@ -161,7 +161,7 @@
                     </span>
                   </td>
                   <td class="text-center">
-                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'ver')): ?>
+                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'ver')): ?>
                       <button type="button"
                               class="btn btn-info btn-sm me-1"
                               data-bs-toggle="modal"
@@ -170,14 +170,14 @@
                       </button>
                     <?php endif; ?>
 
-                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'editar')): ?>
+                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'editar')): ?>
                       <button type="button" class="btn btn-primary btn-sm modificar me-1" 
                               onclick="abrirModalModificar(<?php echo $dato['id_delivery']; ?>)" title="Editar datos del delivery"> 
                         <i class="fas fa-pencil-alt" title="Editar"> </i> 
                       </button>
                     <?php endif; ?>
 
-                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'eliminar')): ?>
+                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'eliminar')): ?>
                       <button type="button" class="btn btn-danger btn-sm eliminar" 
                               onclick="eliminarDelivery(<?php echo $dato['id_delivery']; ?>)" title="Eliminar delivery">
                         <i class="fas fa-trash-alt" title="Eliminar"> </i>
