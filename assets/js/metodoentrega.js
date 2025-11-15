@@ -46,7 +46,8 @@ $(document).ready(function () {
     let descripcion = $('#descripcion').val();
 
     $.ajax({
-      url: 'controlador/metodoentrega.php',
+      async: true,
+      url: '',
       type: 'POST',
       data: {
         registrar: 'registrar',
@@ -98,7 +99,8 @@ $(document).ready(function () {
     let descripcion = $('#descripcion_modificar').val();
 
     $.ajax({
-      url: 'controlador/metodoentrega.php',
+      async: true,
+      url: '',
       type: 'POST',
       data: {
         actualizar: 'actualizar',
@@ -132,7 +134,8 @@ $(document).ready(function () {
     }).then((result) => {
       if (result.isConfirmed) {
         $.ajax({
-          url: 'controlador/metodoentrega.php',
+          async: true,
+          url: '',
           type: 'POST',
           data: {
             eliminar: 'eliminar',
