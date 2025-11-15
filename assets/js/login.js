@@ -361,6 +361,15 @@ function muestraMensaje(icono, tiempo, titulo, mensaje) {
   });
 }
 
+function manejarAlerta(idCampo, idAlerta, mostrar) {
+  const alerta = document.getElementById(idAlerta);
+  if (mostrar) {
+    alerta.style.display = 'block';
+  } else {
+    alerta.style.display = 'none';
+  }
+}
+
 function enviaAjax(datos) {
     $.ajax({
       async: true,
@@ -433,12 +442,27 @@ function enviaAjax(datos) {
                     
                     muestraMensaje("error", 2000, lee.text,"" );
                     desactivarLoaderBoton('#registrar');
+                      manejarAlerta('cedula', 'alertcedula', true);
                    
                   } else {
                     muestraMensajetost("success",lee.text, "", "1500"); 
                     desactivarLoaderBoton('#registrar');
+                      manejarAlerta('cedula', 'alertcedula', false);
+                  }
+              } else if (lee.accion == 'verificarcorreo') {
+                  if (lee.respuesta == 1) {
+                    
+                    muestraMensaje("error", 2000, lee.text,"" );
+                    desactivarLoaderBoton('#registrar');
+                    manejarAlerta('correo', 'alertcorreo', true);
+                   
+                  } else {
+                    muestraMensajetost("success",lee.text, "", "1500"); 
+                    desactivarLoaderBoton('#registrar');
+                    manejarAlerta('correo', 'alertcorreo', false);
                   }
               }
+
         } catch (e) {
             muestraMensaje("error", 2000, "Error", "ERROR: <br/>" + e.name);
                 desactivarLoaderBoton('#registrar');

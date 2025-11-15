@@ -67,15 +67,21 @@ $(document).on('click', '.ver-detalles', function () {
   $('#modalDetallesProducto').modal('show');
 });
 
+function limpiarModal() {
+    $('#u')[0].reset();
+    $('#preview').html('');
+    $('#imagen').attr('src', 'assets/img/logo.PNG').show(); 
+    $('#archivo').val(''); 
+    $('#imagenesEliminadas').val('[]'); 
+}
+
   
   $('#btnAbrirRegistrar').on('click', function () {
-    // Limpiar formulario
-    $('#u')[0].reset();
+    limpiarModal();
     $('#id_producto').val('');
     $('#accion').val('registrar');
     $('#modalTitle').text('Registrar Producto');
-    $('#imagen').attr('src', 'assets/img/logo.PNG');
-  });
+});
   
   $(document).ready(function () {
     $('#btnEnviar').on("click", function () {
@@ -100,6 +106,7 @@ $(document).on('click', '.ver-detalles', function () {
   
   // modificar al abrir el modal
   function abrirModalModificar(boton) {
+    limpiarModal()
     const fila = $(boton).closest('tr');
 
     // Obtener ID del producto desde el botón de eliminación
@@ -166,21 +173,38 @@ if (marcaSelect !== undefined) {
     $('#accion').val('modificar');
 
     // **Corrección en la imagen**  
-    $('#imagenActual').val(imagenSrc); // Se guarda la imagen actual correctamente  
-    if (imagenSrc && imagenSrc !== 'assets/img/logo.PNG') {
-        $('#imagen').attr('src', imagenSrc);
-    } else {
-        $('#imagen').attr('src', 'assets/img/logo.PNG');
-    }
+   $.post('', { accion: 'obtenerImagenes', id_producto }, function(respuesta) {
+        const data = JSON.parse(respuesta);
+        if(data.respuesta == 1) {
+            const preview = $('#preview');
+            if(data.imagenes.length > 0) {
+                $('#imagen').hide(); // Ocultar imagen principal si hay varias
+                data.imagenes.forEach(img => {
+                    const imgWrapper = $('<div class="position-relative d-inline-block m-1">');
+                    const imgTag = $('<img>').attr('src', img.url_imagen).addClass('img-thumbnail').css({width:'100px', height:'100px', objectFit:'cover'});
+                    const btnEliminar = $('<button type="button" class="btn-close position-absolute top-0 end-0"></button>');
+                    btnEliminar.on('click', function() {
+                        imgWrapper.remove();
+                        
+                        let eliminadas = $('#imagenesEliminadas').val() ? JSON.parse($('#imagenesEliminadas').val()) : [];
+                        eliminadas.push(img.id_imagen);
+                        $('#imagenesEliminadas').val(JSON.stringify(eliminadas));
+                        if(preview.children().length === 0) $('#imagen').show();
+                    });
+                    imgWrapper.append(imgTag).append(btnEliminar);
+                    preview.append(imgWrapper);
+                });
+            } else {
+                $('#imagen').show();
+            }
+        }
+    });
 
     // Abrir modal
     $('#modalTitle').text('Modificar Producto');
     $('#registro').modal('show');
 }
 
-
-
-  
   function eliminarproducto(id_producto) {
   Swal.fire({
     title: '¿Eliminar producto?',
@@ -340,57 +364,66 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
   });
   
   function mostrarImagen(input) {
-  const preview = $('#preview');
-  const imagenPrincipal = $('#imagen'); // Logo principal grande
-  preview.html(''); // Limpiar previsualización anterior
+    const preview = $('#preview');
+    const imagenPrincipal = $('#imagen');
+    preview.html(''); // limpiar previsualización anterior
+    imagenPrincipal.show(); // mostrar imagen principal por defecto
 
-  if (input.files && input.files.length > 0) {
-    const archivos = Array.from(input.files);
+    if (input.files && input.files.length > 0) {
+        const archivos = Array.from(input.files);
 
-    // Si solo se selecciona una imagen
-    if (archivos.length === 1) {
-      const file = archivos[0];
-      const tamanoKB = parseInt(file.size / 1024);
-      if (tamanoKB > 1024) {
-        muestraMensaje("error", 2000, "Error", "La imagen debe ser igual o menor a 1024 K");
-        input.value = ""; // limpiar input
-        return;
-      }
+        if (archivos.length === 1) {
+            // Una sola imagen
+            const file = archivos[0];
+            if (file.size / 1024 > 1024) {
+                muestraMensaje("error", 2000, "Error", "La imagen debe ser igual o menor a 1024 K");
+                input.value = "";
+                return;
+            }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        imagenPrincipal.attr('src', e.target.result).show(); // mostrar logo principal
-        preview.html(''); // limpiar previews pequeñas
-      };
-      reader.readAsDataURL(file);
-    } 
-    // Si se seleccionan varias imágenes
-    else {
-      imagenPrincipal.hide(); // ocultar imagen principal
-      archivos.forEach(file => {
-        const tamanoKB = parseInt(file.size / 1024);
-        if (tamanoKB > 1024) {
-          muestraMensaje("error", 2000, "Error", "Cada imagen debe ser igual o menor a 1024 K");
-          return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                imagenPrincipal.attr('src', e.target.result).show();
+                preview.html('');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // Varias imágenes
+            imagenPrincipal.hide();
+            archivos.forEach((file, index) => {
+                if (file.size / 1024 > 1024) {
+                    muestraMensaje("error", 2000, "Error", `La imagen ${file.name} supera 1024 K`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imgWrapper = $('<div class="position-relative d-inline-block m-1">');
+                    const img = $('<img>')
+                        .attr('src', e.target.result)
+                        .addClass('img-thumbnail')
+                        .css({ width: '100px', height: '100px', objectFit: 'cover' });
+
+                    // Botón para eliminar miniatura
+                    const btnEliminar = $('<button type="button" class="btn-close position-absolute top-0 end-0" aria-label="Close"></button>');
+                    btnEliminar.on('click', function () {
+                        imgWrapper.remove();
+                        if (preview.children().length === 0) imagenPrincipal.show();
+                    });
+
+                    imgWrapper.append(img).append(btnEliminar);
+                    preview.append(imgWrapper);
+                };
+                reader.readAsDataURL(file);
+            });
         }
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const img = $('<img>')
-            .attr('src', e.target.result)
-            .addClass('img-thumbnail m-1')
-            .css({ 'width': '100px', 'height': '100px', 'object-fit': 'cover' });
-          preview.append(img);
-        };
-        reader.readAsDataURL(file);
-      });
+    } else {
+        // Si no hay imagen seleccionada
+        imagenPrincipal.attr('src', 'assets/img/logo.PNG').show();
+        preview.html('');
     }
-  } else {
-    // Si no hay imagen seleccionada, mostrar el logo por defecto
-    imagenPrincipal.attr('src', 'assets/img/logo.PNG').show();
-    preview.html('');
-  }
 }
+
 
 
 

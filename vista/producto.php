@@ -524,6 +524,7 @@
                       <img src="assets/img/logo.PNG" id="imagen" class="img-fluid rounded mt-3" style="max-width: 200px; max-height: 200px; object-fit: cover;">
                       <div id="preview" class="d-flex flex-wrap mt-2"></div>
                     </label>
+                    <input type="hidden" id="imagenesEliminadas" name="imagenesEliminadas" value="[]">
                    <input id="archivo" type="file" style="display:none" accept=".png,.jpg,.jpeg,.webp" name="imagenarchivo[]" multiple />
                   </div>
                 </div>

@@ -319,19 +319,66 @@ class Producto extends Conexion {
         }
     }
 
-    public function ProductosActivos() {
+   public function ProductosActivos() {
     $conex = $this->getConex1();
     try {
-        $sql = "SELECT * FROM producto WHERE estatus = 1";
+        $sql = "
+            SELECT p.*, 
+                   c.nombre AS nombre_categoria,
+                   m.nombre AS nombre_marca
+            FROM producto p
+            INNER JOIN categoria c ON p.id_categoria = c.id_categoria
+            INNER JOIN marca m ON p.id_marca = m.id_marca
+            WHERE p.estatus = 1
+        ";
         $stmt = $conex->prepare($sql);
         $stmt->execute();
+        $productos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Agregamos todas las imágenes de cada producto
+        foreach ($productos as &$prod) {
+            $prod['imagenes'] = $this->obtenerImagenes($prod['id_producto']);
+        }
+
+        $conex = null;
+        return $productos;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
+
+
+
+public function obtenerImagenes($id_producto) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "SELECT id_imagen, url_imagen, tipo FROM producto_imagen WHERE id_producto = :id_producto";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_producto' => $id_producto]);
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $conex = null;
         return $resultado;
     } catch (\PDOException $e) {
-        if ($conex) {
-            $conex = null;
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
+
+public function eliminarImagenes($idsImagenes) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "DELETE FROM producto_imagen WHERE id_imagen = :id_imagen";
+        $stmt = $conex->prepare($sql);
+
+        foreach ($idsImagenes as $idImg) {
+            $stmt->execute(['id_imagen' => $idImg]);
         }
+
+        $conex = null;
+        return ['respuesta' => 1, 'mensaje' => 'Imágenes eliminadas correctamente'];
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
         throw $e;
     }
 }
