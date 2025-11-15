@@ -5,7 +5,7 @@ $(document).ready(function() {
     Swal.fire({
       title: '¿Desea guardar los cambios?',
       text: '',
-      icon: 'question',
+      icon: 'question', 
       showCancelButton: true,
       color: "#00000",
       confirmButtonColor: '#1e913bff',

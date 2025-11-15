@@ -101,7 +101,6 @@
                   <th class="text-white text-center">Nombre y Cédula</th>
                   <th class="text-white text-center">Telefono</th>
                   <th class="text-white text-center">Correo</th>
-                   <th class="text-white text-center">Conctatar</th>
                   <th class="text-white text-center">Estatus</th>
                     <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <th class="text-white text-center">Acción</th>
@@ -156,12 +155,15 @@
                             <i class="fas fa-copy"></i>
                         </span>
                       </div> <br>
+
                   <?php
                     $telefono_limpio = str_replace('-', '', $dato['telefono']);
                     $telefono_sin_cero = ltrim($telefono_limpio, '0');
                     $link_whatsapp = "https://wa.me/58" . $telefono_sin_cero;
                   ?>
-                  
+                  <a href="<?= $link_whatsapp ?>" target="_blank" class="btn btn-success btn-sm mt-1 Ayudatelefono" title="Contactar por WhatsApp">
+                             <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                             </a>
                 </td>
 
                  <td>
@@ -171,19 +173,11 @@
                             <i class="fas fa-copy"></i>
                         </span>
                       </div> <br>
-                      
+                        <a href="mailto:<?= $dato['correo'] ?>" class="btn btn-info btn-sm mt-1 Ayudacorreo" title="Enviar correo">
+                               <i class="fas fa-envelope me-1"></i> Enviar correo
+                            </a>
                 </td>
                     
-                  <td class="text-center">
-                      <div>
-                            <a href="<?= $link_whatsapp ?>" target="_blank" class="btn btn-success btn-sm mt-1 Ayudatelefono" title="Contactar por WhatsApp">
-                            <i class="fab fa-whatsapp me-1"></i> WhatsApp
-                          </a>
-                      </div>
-                        <a href="mailto:<?= $dato['correo'] ?>" class="btn btn-info btn-sm mt-1 Ayudacorreo" title="Enviar correo">
-                    <i class="fas fa-envelope me-1"></i> Enviar correo
-                  </a>
-                  </td>
                   <td class="text-center">
                   <span class="<?= $estatus_classes[$dato['estatus']] ?>">
                     <?php echo $estatus_texto[$dato['estatus']] ?>

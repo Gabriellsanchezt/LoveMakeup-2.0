@@ -8,22 +8,28 @@
   <link rel="stylesheet" href="assets/css/formulario.css">
   
 <style>
-.input-group #rolSelect2 {
-  flex: 0 0 25%;
-  max-width: 50%;
-}
+    .input-group #rolSelect2 {
+      flex: 0 0 25%;
+      max-width: 50%;
+    }
 
-.input-group .form-control {
-  flex: 1 1 auto;
-}
+    .input-group .form-control {
+      flex: 1 1 auto;
+    }
 
-.input-group #rolSelect02 {
-  flex: 0 0 30%;
-  max-width: 60%;
-}
+    .input-group #rolSelect02 {
+      flex: 0 0 30%;
+      max-width: 60%;
+    }
 
-.input-group .form-control {
-  flex: 1 1 auto;
+    .input-group .form-control {
+      flex: 1 1 auto;
+    }
+    #alertcedula {
+  display: none;
+}
+#alertcorreo{
+    display: none;
 }
 </style>
 </head>
@@ -305,6 +311,11 @@
           <input type="text" class="form-control" name="cedula" id="cedula" placeholder="cedula: 11222333">
         </div>
         <span id="textocedula" class="error-message"></span>
+         
+          <div class="alert alert-warning" role="alert" id="alertcedula">
+                <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                <span class="alert-text"><strong>La cedula!</strong> ya esta registrada</span>
+          </div>
       </div>
 
       <div class="col-md-6">
@@ -341,6 +352,10 @@
           <input type="text" class="form-control" name="correo" id="correo" placeholder="Correo: tucorreo@dominio.com">
         </div>
         <span id="textocorreo" class="error-message"></span>
+        <div class="alert alert-warning" role="alert" id="alertcorreo">
+                <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                <span class="alert-text"><strong>El Correo!</strong> ya esta registrado</span>
+          </div>
       </div>
 
       <!-- F4: Contraseña -->
