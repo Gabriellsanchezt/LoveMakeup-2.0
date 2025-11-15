@@ -57,7 +57,7 @@
   <div class="container-fluid py-1 px-3">
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-        <li class="breadcrumb-item text-sm"><a class="opacity-5 text-white" href="#">Web</a></li>
+        <li class="breadcrumb-item text-sm"><a class="opacity-5 text-white" href="#">Clientes y Entregas</a></li>
         <li class="breadcrumb-item text-sm text-white active" aria-current="page">Cliente</li>
       </ol>
       <h6 class="font-weight-bolder text-white mb-0">Gestionar Cliente</h6>
@@ -80,7 +80,7 @@
     
     <!--Titulo de página -->
      <div class="d-sm-flex align-items-center justify-content-between mb-3">
-       <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-user me-2" style="color: #f6c5b4;"></i>
+       <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-user me-2 icoM" style="color: #f6c5b4;"></i>
         Clientes</h4>
            
        <!-- Button que abre el Modal N1 Registro -->

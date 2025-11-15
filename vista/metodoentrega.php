@@ -27,7 +27,7 @@
     <div class="container-fluid py-1 px-3">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-          <li class="breadcrumb-item text-sm"><a class="opacity-5 text-white" href="#">Administrar</a></li>
+          <li class="breadcrumb-item text-sm"><a class="opacity-5 text-white" href="#">Clientes y Entregas</a></li>
           <li class="breadcrumb-item text-sm text-white active" aria-current="page">Método de Entrega</li>
         </ol>
         <h6 class="font-weight-bolder text-white mb-0">Gestionar Método de Entrega</h6>
@@ -46,7 +46,7 @@
             <div class="card mb-4">
               <div class="card-header pb-0 div-oscuro-2">  
                 <div class="d-sm-flex align-items-center justify-content-between mb-5">
-                  <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-truck mr-2" style="color: #f6c5b4;"></i> Método de Entrega</h4>
+                  <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-truck me-2 icoM" style="color: #f6c5b4;"></i> Método de Entrega</h4>
                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'registrar')): ?>  
                   <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro">
                     <i class="fas fa-file-medical"></i> Registrar

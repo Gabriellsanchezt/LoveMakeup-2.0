@@ -12,7 +12,7 @@
 
 <div style=" height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;">
   
-    <img src="assets/img/E2.svg" alt="Imagen de Error" style="margin-bottom: 20px; border-radius: 10px;" width="30%">
+    <img src="assets/img/E2.svg" class="pt-6" alt="Imagen de Error" style="margin-bottom: 20px; border-radius: 10px;" width="30%">
 
    
     <h1 style="font-size: 4rem; color:rgb(0, 0, 0); margin: 0;">ERROR 404</h1>

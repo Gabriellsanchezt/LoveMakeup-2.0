@@ -153,7 +153,7 @@
                 echo "</tr>";
               }
             } else {
-              echo "<tr><td colspan='3' class='text-center'>No hay datos disponibles</td></tr>";
+              echo "<tr><td colspan='3' class='text-center texto-secundario'>No hay datos disponibles</td></tr>";
             }
             ?>
           </tbody>

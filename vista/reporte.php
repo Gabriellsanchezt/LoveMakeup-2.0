@@ -155,7 +155,7 @@
             <div class="card-header pb-0 div-oscuro-2">
               <div class="d-sm-flex align-items-center justify-content-between mb-4">
                 <h4 class="mb-0 texto-quinto">
-                  <i class="fa-solid fa-file-pdf me-2" style="color: #f6c5b4;"></i>
+                  <i class="fa-solid fa-file-pdf me-2 icoM" style="color: #f6c5b4;"></i>
                   Generar Reporte
                 </h4>
                 <div>

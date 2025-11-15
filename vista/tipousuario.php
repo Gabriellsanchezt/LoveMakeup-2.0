@@ -43,7 +43,7 @@
             <div class="card-header pb-0 div-oscuro-2">
               <div class="d-sm-flex align-items-center justify-content-between mb-4">
                 <h4 class="mb-0 texto-quinto">
-                  <i class="fa-solid fa-user-group mr-2" style="color: #f6c5b4;"></i> Tipo Usuario
+                  <i class="fa-solid fa-user-group me-2 icoM" style="color: #f6c5b4;"></i> Tipo Usuario
                 </h4>
                 <div class="d-flex align-items-center gap-2">
                   <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'registrar')): ?>

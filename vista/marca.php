@@ -15,7 +15,7 @@
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
             <li class="breadcrumb-item text-sm">
-              <a class="opacity-5 text-white" href="#">Administrar</a>
+              <a class="opacity-5 text-white" href="#">Inventario</a>
             </li>
             <li class="breadcrumb-item text-sm text-white active" aria-current="page">
               Marca
@@ -38,7 +38,7 @@
             <div class="card-header pb-0 div-oscuro-2">
               <div class="d-sm-flex align-items-center justify-content-between mb-5">
                 <h4 class="mb-0 texto-quinto">
-                  <i class="fa-solid fa-tag me-2" style="color: #f6c5b4;"></i>
+                  <i class="fa-solid fa-tag me-2 icoM" style="color: #f6c5b4;"></i>
                   Marca
                 </h4>
  

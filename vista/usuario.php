@@ -8,13 +8,11 @@
   <link rel="stylesheet" href="assets/css/formulario.css">
   
 <style>
-/* Hace que el select ocupe exactamente el 10% del ancho del input-group */
 .input-group #rolSelect2 {
   flex: 0 0 25%;
   max-width: 50%;
 }
 
-/* Opcional: asegura que el input de texto tome el resto del espacio */
 .input-group .form-control {
   flex: 1 1 auto;
 }
@@ -55,7 +53,7 @@
     
     <!--Titulo de página -->
      <div class="d-sm-flex align-items-center justify-content-between mb-5">
-       <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-user-gear me-2" style="color: #f6c5b4;"></i>
+       <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-user-gear me-2 icoM" style="color: #f6c5b4;"></i>
         Usuario</h5>
          
       <div class="d-flex gap-2">
@@ -64,10 +62,10 @@
        <!-- Button que abre el Modal N1 Registro -->
        
           <button type="button" class="btn btn-success registrar" title="(CONTROL + ALT + N) Registrar usuario" data-bs-toggle="modal" data-bs-target="#registro">
-            <span class="icon text-white">
+            <span class="icon text-dark">
             <i class="fas fa-file-medical me-2"></i>
             </span>
-            <span class="text-white" id="btnAbrirRegistrar">Registrar</span>
+            <span class="text-dark" id="btnAbrirRegistrar">Registrar</span>
           </button>
    
          
@@ -254,7 +252,7 @@
     <div class="modal-content modal-producto">
     <div class="modal-header">
         <h5 class="modal-title fs-5" id="1">
-        <i class="fa-solid fa-user-plus"></i>
+        <i class="fa-solid fa-user-plus icoM2 "></i>
          Registrar Usuario</h5>
         <button type="button" class="btn-close"  title="(CONTROL + ALT + X) Cerrar" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -263,7 +261,7 @@
         
   <form action="?pagina=usuario" method="POST" id="u" autocomplete="off">
      <div class="seccion-formulario">
-              <h6 class="texto-quinto"><i class="fas fa-boxes"></i> Datos del Usuario </h6>
+              <h6 class="texto-quinto"><i class="fas fa-boxes "></i> Datos del Usuario </h6>
     <div class="row g-3">
       <!-- F1: Nombre y Apellido -->
       <div class="col-md-6">

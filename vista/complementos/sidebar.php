@@ -50,7 +50,7 @@
         <?php endif; ?>
 
         <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6 texto-cuarto">Gestión Comercial</h6>
+          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder texto-cuarto">Gestión Comercial</h6>
         </li>
         
         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 'ver')): ?>
@@ -100,7 +100,7 @@
       <?php endif; ?>
 
         <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6 texto-cuarto">Inventario</h6>
+          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder  texto-cuarto">Inventario</h6>
         </li>
         
          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'ver')): ?>
@@ -151,7 +151,7 @@
         
       
         <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6 texto-cuarto">Clientes y Entregas</h6>
+          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder texto-cuarto">Clientes y Entregas</h6>
         </li>
 
         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'ver')): ?>
@@ -188,7 +188,7 @@
       <?php endif; ?>
 
        <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6 texto-cuarto">Finanza</h6>
+          <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder  texto-cuarto">Finanza</h6>
       </li>
 
         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 'ver')): ?>
@@ -215,7 +215,7 @@
 
         <?php if($_SESSION["nivel_rol"] == 3) { ?>
           <li class="nav-item mt-3">
-            <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6 texto-cuarto">Administrar Usuario</h6>
+            <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder  texto-cuarto">Administrar Usuario</h6>
           </li>
         <?php } ?>
 

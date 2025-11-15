@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
     
     <!--Titulo de página -->
      <div class="d-sm-flex align-items-center justify-content-between mb-3">
-       <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-comments-dollar  me-2" style="color: #f6c5b4;"></i>
+       <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-comments-dollar me-2 icoM" style="color: #f6c5b4;"></i>
         Tasa de Cambio</h4>
            
         <div class="d-flex gap-2">

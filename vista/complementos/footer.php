@@ -21,8 +21,9 @@
       
       <div class="modal-body bg-s"> <!-- Modal contenido -->
       
-      <div class="d-flex justify-content-center mp-3 align-items-center">
-          <img src="assets/img/integoracion.png" width="35%">
+      <div class="d-flex justify-content-center mp-3 pt-3 align-items-center mb-5">
+          
+          <i class="fa-solid fa-circle-question fa-8x"></i>
       </div>
       <div class="d-flex justify-content-center align-items-center">
         <h3 class="texto-secundario">¿Desea Cerrar la sesión?</h3>

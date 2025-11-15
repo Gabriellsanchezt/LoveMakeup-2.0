@@ -270,7 +270,12 @@
           }
 
 
-
+.iconCR{
+  color:#ee0101 !important;
+    width: 50px;
+    height: 50px;
+ 
+}
 
 
 
@@ -278,12 +283,12 @@
 /*||||||||||||||||||||||| MODO ESCURO |||||||||||||||||||||*/
 /* Fondo general */
 .modo-oscuro {
-  background-color: #1b1b1b !important;
+  background-color: #121212 !important;
   color: #F5E8D8 !important;
 }
 
 .modo-oscuro .body-oscuro{
-   background-color: #383838 !important;
+   background-color: #121212 !important;
   color: #F5E8D8 !important;
 }
 
@@ -293,7 +298,7 @@
 
 /* Sidebar */
 .modo-oscuro .sidebar {
-  background-color: #1d1f25 !important;
+  background-color: #1E1E1E !important;
   color: #E0E0E0 !important;
   border-right: 1px solid #101011 !important;
 }
@@ -305,7 +310,7 @@
 
 /* Navbar */
 .modo-oscuro .navv {
-  background-color: #303e6d !important;
+  background-color: #444444 !important;
   color: #F5E8D8 !important;
   border-bottom: 1px solid #444444;
 }
@@ -326,28 +331,37 @@
 }
 
 .modo-oscuro .texto-cuarto {
-  color: #ff0080 !important;
+  color: #f172b2 !important;
 }
 
 .modo-oscuro .texto-quinto {
-  color: #f6c5b4 !important;
+  color: #f172b2 !important;
 }
 
 .modo-oscuro .texto-sexto  {
-  color: #f53b98 !important;
+  color: #f172b2 !important;
+}
+
+.modo-oscuro .icoM {
+  color: #f172b2 !important;
 }
 
 
+.modo-oscuro .icoM2 {
+  color: #ffffff !important;
+}
+
+
+
 .modo-oscuro .table-m {
-  background-color: #6e6e6e86 !important;
+  background-color: #1E1E1E !important;
   color: #ffffff !important;
 }
 
               
 .modo-oscuro .bg-s{
-  background-color: #636364 !important;
+  background-color: #121212 !important;
   color: #ffffff !important;
-  border-radius: 8px;
 }
 
 
@@ -359,9 +373,84 @@
 }
 
 .modo-oscuro .card-m1 {
-  background-color: #353535 !important;
+  background-color: #1E1E1E !important;
   border: 1px solid #2b2929 !important;
   color: #E0E0E0 !important;
+}
+
+.modo-oscuro .dropdown-menu .dropdown-item:hover {
+  background-color: #f172b2 !important ; 
+  color: #f8f8f8 !important;           
+}
+
+
+.modo-oscuro .div-oscuro-1 {
+  background-color: #1E1E1E !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+.modo-oscuro .div-oscuro-2 {
+  background-color: #1E1E1E !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+.modo-oscuro .preloader-wrapper{
+  background-color: #151A28 !important;
+}
+
+.modo-oscuro .dt-input{
+  background-color: #ececec !important;
+  color: #000000 !important;
+}
+
+.modo-oscuro label{ 
+   color: #ffffff !important;
+}
+
+.modo-oscuro .dt-empty{
+     color: #ffffff !important;
+}
+
+.modo-oscuro .texto-hr{
+  background-color: #ffffff !important;
+}
+
+/*||||||||||||||||||||||| MODAL FORMULARIO*/
+
+.modo-oscuro .modal-producto .modal-header {
+  background: linear-gradient(135deg, #f086bb 0%, #f3479d 100%);
+
+}  
+.modo-oscuro .modal-producto .modal-title {
+  color: #ffffff;
+
+} 
+
+.modo-oscuro .seccion-formulario{
+  background-color: #1E1E1E !important;
+  color: #ffffff !important;
+   border-left: 4px solid #f172b2;
+}
+.modo-oscuro .seccion-formulario h6 i {
+  color: #f172b2 !important;
+}
+
+.modo-oscuro .info-box{
+    background-color: #202020 !important;
+}
+
+.modo-oscuro .info-box p{
+  color: #f7f7f7 !important;
+}
+
+.modo-oscuro .info-box strong{
+  color: #ffffff !important;
+}
+  
+.modo-oscuro .info-box span{
+  color: #f172b2 !important;
 }
 
 /* Inputs y formularios */
@@ -383,56 +472,19 @@
    border: 1px solid #1c72c4;
 }
 
-.modo-oscuro .dropdown-menu .dropdown-item:hover {
-  background-color: #e221a2 !important ; /* Color de fondo al hacer hover */
-  color: #f8f8f8 !important;            /* Color del texto al hacer hover */
-}
+/* |||||||||||||||||||||||| SWEALERT2*/
 
-
-.modo-oscuro .div-oscuro-1 {
-  background-color: #383838 !important;
+/* Clase personalizada para el popup en modo oscuro */
+.modo-oscuro .swal2-title {
   color: #ffffff !important;
-  border: none;
 }
 
-.modo-oscuro .div-oscuro-2 {
-  background-color: #353535 !important;
-  color: #ffffff !important;
-  border: none;
+.modo-oscuro .swal2-popup{
+    background-color: #1E1E1E !important;
 }
 
-
-.modo-oscuro .seccion-formulario{
-  background-color: #383838 !important;
-  color: #ffffff !important;
-   border-left: 4px solid #f6c5b4;
+.modo-oscuro .swal2-html-container{
+    color: #e2e2e2 !important;
 }
 
 
-.modo-oscuro .preloader-wrapper{
-  background-color: #151A28 !important;
-}
-
-
-.modo-oscuro .dt-input{
-  background-color: #ececec !important;
-  color: #000000 !important;
-}
-
-.modo-oscuro label{ 
-   color: #ffffff !important;
-}
-
-.modo-oscuro .dt-empty{
-     color: #ffffff !important;
-}
-
-.modo-oscuro .hola{
-  background-color: #000000 !important;
-}
-
-
-  
-  .modo-oscuro .texto-hr{
-     background-color: #ffffff !important;
-  }
