@@ -41,7 +41,18 @@
 
 document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
     </script>
+
+    <style>
+         #alertcedula {
+            display: none;
+          }
+          #alertcorreo{
+              display: none;
+          }
+    </style>
   </head>
+
+
   <body>
   <?php
 if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
@@ -242,6 +253,11 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
                 <label for="usuario" class="form-label">Cedula</label>
             <input type="text" class="form-control" id="cedula"  name="cedula" placeholder="00100300">
             <span id="textocedula" class="text-danger"></span>
+             <div class="alert alert-warning" role="alert" id="alertcedula">
+                <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                <span class="alert-text"><strong>La cedula!</strong> ya esta registrada</span>
+          </div>
+         
             </div>
 
             <div class="mb-1 col-md-6">
@@ -260,6 +276,10 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'sesion_expirada') {
             <label for="email" class="form-label">Correo electrónico</label>
             <input type="email" class="form-control" id="correo" name="correo" placeholder="ejemplo@correo.com">
             <span id="textocorreo" class="text-danger"></span>
+               <div class="alert alert-warning" role="alert" id="alertcorreo">
+                <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                <span class="alert-text"><strong>El Correo!</strong> ya esta registrado</span>
+             </div>
           </div>
 
             <div class="mb-1">

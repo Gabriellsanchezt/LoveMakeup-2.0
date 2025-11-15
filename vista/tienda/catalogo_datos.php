@@ -619,11 +619,12 @@ document.addEventListener('DOMContentLoaded', function () {
         <h5 class="modal-title text-white" id="exampleModalLabel">¿Deseas Eliminar la Cuenta?</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style=" color: #ffffff;"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body"> 
         <h5 class="text-titel-2">Aviso Importante sobre la Eliminación de Cuenta</h5>
         <p class="text-dark"> <b>Estimado/a, <?php echo $nombreCompleto ?> </b></p>
 
-        <p class="text-dark">Queremos informarte que al eliminar tu cuenta, se perderá de forma permanente toda la información relacionada con tus pedidos, tu historial de compras y la lista de tus productos favoritos.</p>
+        <p class="text-dark">Queremos informarte que al eliminar tu cuenta, se perderá de forma permanente toda la información relacionada con tus pedidos,
+           tu historial de compras y la lista de tus productos favoritos y tu historial de compra en la tienda fisica</p>
 
         <p class="text-dark">Esta acción es irreversible, y una vez eliminada tu cuenta, no podremos recuperar la información eliminada.</p>
 

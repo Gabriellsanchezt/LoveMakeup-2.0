@@ -12,7 +12,7 @@ private $objEntrega;
         $this->objEntrega = new MetodoEntrega();
     }
 
-    protected function encryptClave($datos) {
+    private function encryptClave($datos) {
         $config = [
             'key' => "MotorLoveMakeup",
             'method' => "AES-256-CBC"
@@ -23,7 +23,7 @@ private $objEntrega;
         return base64_encode($iv . $encrypted);
     }
 
-    protected function decryptClave($datos) {
+    private function decryptClave($datos) {
         $config = [
             'key' => "MotorLoveMakeup",
             'method' => "AES-256-CBC"
@@ -86,7 +86,7 @@ private $objEntrega;
         }
     }
     
-     protected function ejecutarActualizacion($datos) {
+     private function ejecutarActualizacion($datos) {
         $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
@@ -146,7 +146,7 @@ private $objEntrega;
         }
     }
 
-    protected function ejecutarActualizacionDireccion($datos) {
+    private function ejecutarActualizacionDireccion($datos) {
         $conex = $this->getConex1();
         try {
             $conex->beginTransaction();
@@ -184,17 +184,17 @@ private $objEntrega;
         }
     }
 
-     protected function RegistroDireccion($datos) {
+     private function RegistroDireccion($datos) {
         $conex = $this->getConex1();
         try {
             $conex->beginTransaction();
             
-            $sql = "INSERT INTO direccion(id_metodoentrega, id_persona, direccion_envio, sucursal_envio)
-                    VALUES(:id_metodoentrega, :id_persona, :direccion_envio, :sucursal_envio)";
+            $sql = "INSERT INTO direccion(id_metodoentrega, cedula, direccion_envio, sucursal_envio)
+                    VALUES(:id_metodoentrega, :cedula, :direccion_envio, :sucursal_envio)";
             
             $parametros = [
                 'id_metodoentrega' => $datos['id_metodoentrega'],
-                'id_persona' => $datos['id_persona'],
+                'cedula' => $datos['cedula'],
                 'direccion_envio' => $datos['direccion_envio'],
                 'sucursal_envio' => $datos['sucursal_envio']
                 ];
@@ -220,9 +220,9 @@ private $objEntrega;
             throw $e;
         }
     }
+ 
 
-
-   protected function validarClaveActual($datos) {
+   private function validarClaveActual($datos) {
         $conex = $this->getConex2();
        try {
             $sql = "SELECT clave FROM usuario WHERE id_usuario = :id_usuario AND estatus >= 1";
@@ -244,7 +244,7 @@ private $objEntrega;
     }
 
 
-   protected function ejecutarActualizacionClave($datos) {
+   private function ejecutarActualizacionClave($datos) {
         $conex = $this->getConex2();
        try {
             $conex->beginTransaction();
@@ -281,7 +281,7 @@ private $objEntrega;
     }
 
     
-   protected function verificarExistencia($datos) {
+   private function verificarExistencia($datos) {
        $conex = $this->getConex2();
        try {
         $conex->beginTransaction();
@@ -301,33 +301,60 @@ private $objEntrega;
     }
     }
     
-    protected function ejecutarEliminacion($datos) {
-        $conex = $this->getConex1();
-        try {
-            $conex->beginTransaction();
-    
-            $sql = "UPDATE cliente SET estatus = 0 WHERE id_persona = :id_persona";
-            $stmt = $conex->prepare($sql);
-            $resultado = $stmt->execute($datos);
-            
-            if ($resultado) {
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'eliminar'];
-            }
-            
+   private function ejecutarEliminacion($datos) {
+    $conex = $this->getConex1(); 
+    $conex2 = $this->getConex2(); 
+
+    try {
+        $conex->beginTransaction();
+        $conex2->beginTransaction();
+
+        // 1. Actualizar la cédula en pedidos (anteponer 0)
+        $nuevaCedula = '1' . $datos['cedula'];
+        $sqlPedido = "UPDATE pedido SET cedula = :nueva_cedula WHERE cedula = :cedula";
+        $stmtPedido = $conex->prepare($sqlPedido);
+        $stmtPedido->execute([
+            'nueva_cedula' => $nuevaCedula,
+            'cedula' => $datos['cedula']
+        ]);
+
+        // 2. Eliminar de usuario
+        $sqlUsuario = "DELETE FROM usuario WHERE id_usuario = :id_usuario";
+        $stmtUsuario = $conex2->prepare($sqlUsuario);
+        $stmtUsuario->execute(['id_usuario' => $datos['id_usuario']]);
+
+        $sqlbitacora = "DELETE FROM bitacora WHERE cedula = :cedula";
+        $stmbitacora = $conex2->prepare($sqlbitacora);
+        $stmbitacora->execute(['cedula' => $datos['cedula']]);
+
+        // 3. Eliminar de persona
+        $sqlPersona = "DELETE FROM persona WHERE cedula = :cedula";
+        $stmtPersona = $conex2->prepare($sqlPersona);
+        $stmtPersona->execute(['cedula' => $datos['cedula']]);
+
+     
+        $conex->commit();
+        $conex2->commit();
+
+        $conex = null;
+        $conex2 = null;
+
+        return ['respuesta' => 1, 'accion' => 'eliminar'];
+
+    } catch (\PDOException $e) {
+      
+        if ($conex) {
             $conex->rollBack();
             $conex = null;
-            return ['respuesta' => 0, 'accion' => 'eliminar'];
-            
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex->rollBack();
-                $conex = null;
-            }
-            throw $e;
         }
+        if ($conex2) {
+            $conex2->rollBack();
+            $conex2 = null;
+        }
+        throw $e;
     }
+}
+
 
      public function obtenerEntrega() {
         return $this->objEntrega->consultar();
@@ -338,10 +365,10 @@ private $objEntrega;
         try {
              $sql = "SELECT *
                 FROM direccion 
-                WHERE id_metodoentrega IN (1, 2, 3) AND id_persona = :id_persona";
+                WHERE id_metodoentrega IN (1, 2, 3) AND cedula = :cedula";
 
             $stmt = $conex->prepare($sql);
-            $stmt->bindParam(':id_persona', $_SESSION['id'], \PDO::PARAM_INT);
+            $stmt->bindParam(':cedula', $_SESSION['id'], \PDO::PARAM_INT);
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex = null;

@@ -18,7 +18,7 @@ $objdatos = new Catalogo_datos();
 
   $entrega = $objdatos->obtenerEntrega();
 
-//  $direccion = $objdatos->consultardireccion();
+$direccion = $objdatos->consultardireccion();
 
 if (isset($_POST['actualizar'])) {
      $datosCliente = [
@@ -111,7 +111,7 @@ if (isset($_POST['actualizar'])) {
         'operacion' => 'incluir',
         'datos' => [
             'id_metodoentrega' => $_POST['id_metodoentrega'],
-            'id_persona' => $_SESSION["id"],
+            'cedula' => $_SESSION["id"],
             'direccion_envio' => $_POST['direccion_envio'],
             'sucursal_envio' => $sucursal
         ]
@@ -125,7 +125,8 @@ if (isset($_POST['actualizar'])) {
     $datosCliente = [
         'operacion' => 'eliminar',
         'datos' => [
-            'id_persona' => $_POST['persona']
+            'id_usuario' => $_SESSION['id_usuario'],
+             'cedula' => $_POST['persona']
         ]
     ];
 

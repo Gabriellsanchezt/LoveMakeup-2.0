@@ -91,9 +91,9 @@ class Usuario extends Conexion
 
                  case 'verificarCorreo':
                     if ($this->verificarExistencia(['campo' => 'correo', 'valor' => $datosProcesar['correo']])) {
-                            return ['respuesta' => 1, 'accion' => 'verificar', 'text' => 'La correo ya está registrada' ];
+                            return ['respuesta' => 1, 'accion' => 'verificarcorreo', 'text' => 'La correo ya está registrada' ];
                         } else {
-                            return [ 'respuesta' => 0, 'accion' => 'verificar', 'text' => 'La correo no se encuentra registrada'  ];
+                            return [ 'respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => 'La correo no se encuentra registrada'  ];
                         } 
 
                 default:
