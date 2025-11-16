@@ -112,6 +112,52 @@ document.addEventListener('DOMContentLoaded', function() {
         pasoActual = 1;
         mostrarPaso(1);
         
+        // Limpiar filas de productos adicionales (mantener solo la primera)
+        if (contenedorProductos) {
+            const filas = contenedorProductos.querySelectorAll('tr.producto-fila');
+            // Eliminar todas las filas excepto la primera
+            for (let i = filas.length - 1; i > 0; i--) {
+                const select = filas[i].querySelector('.producto-select-venta');
+                if (select && $(select).hasClass('select2-hidden-accessible')) {
+                    $(select).select2('destroy');
+                }
+                filas[i].remove();
+            }
+            
+            // Asegurar que la primera fila tenga solo el botón de agregar visible
+            const primeraFila = contenedorProductos.querySelector('tr.producto-fila:first-child');
+            if (primeraFila) {
+                const btnEliminar = primeraFila.querySelector('.remover-producto-venta');
+                if (btnEliminar) {
+                    btnEliminar.style.display = 'none';
+                }
+                const btnAgregar = primeraFila.querySelector('.agregar-producto-venta');
+                if (btnAgregar) {
+                    btnAgregar.style.display = 'inline-block';
+                }
+                
+                // Limpiar valores de la primera fila
+                const select = primeraFila.querySelector('.producto-select-venta');
+                if (select) {
+                    select.value = '';
+                    if ($(select).hasClass('select2-hidden-accessible')) {
+                        $(select).val('').trigger('change');
+                    }
+                }
+                primeraFila.querySelector('.cantidad-input-venta').value = '1';
+                primeraFila.querySelector('.precio-input-venta').value = '0.00';
+                primeraFila.querySelector('.subtotal-venta').textContent = '0.00';
+                primeraFila.querySelector('.stock-info').textContent = '';
+                const marcaSpan = primeraFila.querySelector('.marca-producto-venta');
+                if (marcaSpan) {
+                    marcaSpan.textContent = 'no seleccionado';
+                }
+            }
+            
+            // Actualizar total
+            actualizarTotalVenta();
+        }
+        
         // Actualizar validación del botón siguiente
         actualizarBotonesNavegacion();
         
@@ -126,6 +172,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Los campos del cliente se mantienen ocultos hasta consultar la cédula
             if (camposCliente) {
                 camposCliente.style.display = 'none';
+            }
+            
+            // Ocultar el botón de eliminar de la primera fila
+            const primeraFila = contenedorProductos.querySelector('tr.producto-fila:first-child');
+            if (primeraFila) {
+                const btnEliminar = primeraFila.querySelector('.remover-producto-venta');
+                if (btnEliminar) {
+                    btnEliminar.style.display = 'none';
+                }
+                const btnAgregar = primeraFila.querySelector('.agregar-producto-venta');
+                if (btnAgregar) {
+                    btnAgregar.style.display = 'inline-block';
+                }
             }
         });
         
@@ -689,6 +748,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const selectOriginal = fila.querySelector('.producto-select-venta');
                 if (!selectOriginal) return;
                 
+                // PRESERVAR el valor seleccionado de la primera fila ANTES de clonar
+                let valorSeleccionadoOriginal = '';
+                let textoSeleccionadoOriginal = '';
+                if (typeof $ !== 'undefined' && $(selectOriginal).hasClass('select2-hidden-accessible')) {
+                    valorSeleccionadoOriginal = $(selectOriginal).val() || '';
+                    if (valorSeleccionadoOriginal) {
+                        const option = $(selectOriginal).find(`option[value="${valorSeleccionadoOriginal}"]`)[0];
+                        if (option) {
+                            textoSeleccionadoOriginal = option.textContent;
+                        }
+                    }
+                } else {
+                    valorSeleccionadoOriginal = selectOriginal.value || '';
+                    if (valorSeleccionadoOriginal && selectOriginal.options[selectOriginal.selectedIndex]) {
+                        textoSeleccionadoOriginal = selectOriginal.options[selectOriginal.selectedIndex].text;
+                    }
+                }
+                
                 // Obtener el select real (sin Select2) si está inicializado
                 let selectReal = selectOriginal;
                 if (typeof $ !== 'undefined' && $(selectOriginal).hasClass('select2-hidden-accessible')) {
@@ -738,19 +815,63 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // Clonar la fila
+                // Clonar la fila (sin clonar eventos de Select2)
+                // IMPORTANTE: Clonar ANTES de hacer cualquier modificación para no afectar la fila original
                 const nuevaFila = fila.cloneNode(true);
+                
+                // IMPORTANTE: Remover TODOS los contenedores de Select2 del clon ANTES de hacer cualquier otra cosa
+                // Esto previene que el clon interfiera con la primera fila
+                const contenedoresSelect2 = nuevaFila.querySelectorAll('.select2-container, .select2-dropdown, .select2-search');
+                contenedoresSelect2.forEach(contenedor => {
+                    contenedor.remove();
+                });
+                
+                // Obtener el select clonado
+                const selectClonado = nuevaFila.querySelector('.producto-select-venta');
+                
+                // Si el select clonado tiene Select2 inicializado, destruirlo CUIDADOSAMENTE
+                // Usar un try-catch para evitar que afecte la primera fila
+                if (selectClonado && typeof $ !== 'undefined') {
+                    try {
+                        // Verificar si tiene la clase de Select2 (pero sin afectar la primera fila)
+                        const tieneSelect2 = selectClonado.classList.contains('select2-hidden-accessible');
+                        if (tieneSelect2) {
+                            // Obtener el ID único del select clonado para asegurarse de que no afecte otros
+                            const select2Id = selectClonado.getAttribute('data-select2-id');
+                            if (select2Id) {
+                                // Remover la clase y el atributo sin destruir Select2 (porque puede afectar la primera fila)
+                                selectClonado.classList.remove('select2-hidden-accessible');
+                                selectClonado.removeAttribute('data-select2-id');
+                            }
+                        }
+                    } catch (e) {
+                        // Ignorar errores - es mejor no hacer nada que afectar la primera fila
+                        console.warn('Advertencia al limpiar Select2 del clon:', e);
+                    }
+                }
                 
                 // Reemplazar el select clonado con uno nuevo que tenga todas las opciones
                 const nuevoSelect = nuevaFila.querySelector('.producto-select-venta');
                 if (nuevoSelect) {
                     nuevoSelect.innerHTML = productosOptions;
+                    nuevoSelect.value = '';
+                    
+                    // Remover cualquier clase de Select2 que pueda haber quedado del clon
+                    nuevoSelect.classList.remove('select2-hidden-accessible');
+                    nuevoSelect.removeAttribute('data-select2-id');
+                    
+                    // Ocultar el select nativo inmediatamente para que no se vea
+                    // Esto se hace antes de agregar la fila al DOM
+                    nuevoSelect.style.display = 'none';
+                    nuevoSelect.style.visibility = 'hidden';
+                    nuevoSelect.style.position = 'absolute';
+                    nuevoSelect.style.width = '0';
+                    nuevoSelect.style.height = '0';
+                    nuevoSelect.style.opacity = '0';
+                    nuevoSelect.style.pointerEvents = 'none';
                 }
                 
                 // Limpiar valores de la nueva fila
-                if (nuevoSelect) {
-                    nuevoSelect.value = '';
-                }
                 nuevaFila.querySelector('.cantidad-input-venta').value = '1';
                 nuevaFila.querySelector('.precio-input-venta').value = '0.00';
                 nuevaFila.querySelector('.subtotal-venta').textContent = '0.00';
@@ -781,98 +902,143 @@ document.addEventListener('DOMContentLoaded', function() {
                 const btnEliminar = document.createElement('button');
                 btnEliminar.type = 'button';
                 btnEliminar.className = 'btn btn-danger btn-sm remover-producto-venta';
+                btnEliminar.title = 'Eliminar producto';
                 btnEliminar.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 contenedorBotones.appendChild(btnEliminar);
                 
+                // Agregar la fila al contenedor
                 contenedorProductos.appendChild(nuevaFila);
                 inicializarEventosFila(nuevaFila);
                 
-                // Inicializar Select2 en el nuevo select
-                const nuevoSelectParaInit = nuevaFila.querySelector('.producto-select-venta');
-                if (nuevoSelectParaInit) {
+                // RESTAURAR el valor seleccionado de la primera fila DESPUÉS de agregar la nueva fila
+                if (valorSeleccionadoOriginal && selectOriginal) {
                     setTimeout(() => {
-                        // Inicializar solo el nuevo select
-                        if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
-                            try {
-                                // Encontrar el modal padre si existe
-                                const modal = $(nuevoSelectParaInit).closest('.modal');
-                                const select2Config = {
-                                    theme: 'bootstrap-5',
-                                    placeholder: 'Seleccione un producto',
-                                    allowClear: true,
-                                    width: '100%',
-                                    minimumResultsForSearch: 0,
-                                    minimumInputLength: 0,
-                                    language: {
-                                        noResults: function() {
-                                            return "No se encontraron productos";
-                                        },
-                                        searching: function() {
-                                            return "Buscando...";
-                                        }
-                                    }
-                                };
-                                
-                                // Si está dentro de un modal, usar dropdownParent
-                                if (modal.length > 0) {
-                                    select2Config.dropdownParent = modal;
-                                }
-                                
-                                $(nuevoSelectParaInit).select2(select2Config);
-                                
-                                // Asegurar que el campo de búsqueda sea interactuable
-                                $(nuevoSelectParaInit).on('select2:open', function() {
-                                    setTimeout(function() {
-                                        const searchField = $('.select2-search__field');
-                                        if (searchField.length) {
-                                            searchField.prop('readonly', false);
-                                            searchField.prop('disabled', false);
-                                            searchField.css({
-                                                'pointer-events': 'auto',
-                                                'cursor': 'text'
-                                            });
-                                        }
-                                    }, 10);
-                                });
-                                
-                                // Configurar evento de cambio para Select2
-                                $(nuevoSelectParaInit).on('select2:select', function(e) {
-                                    const filaSelect = $(this).closest('tr')[0];
-                                    const selectedValue = $(this).val();
-                                    const option = $(this).find('option[value="' + selectedValue + '"]')[0];
-                                    
-                                    if (option) {
-                                        const precio = option.getAttribute('data-precio');
-                                        const stock = option.getAttribute('data-stock');
-                                        const marca = option.getAttribute('data-marca');
-                                        
-                                        if (precio && stock !== null) {
-                                            filaSelect.querySelector('.precio-input-venta').value = precio;
-                                            filaSelect.querySelector('.cantidad-input-venta').setAttribute('data-stock', stock);
-                                            filaSelect.querySelector('.stock-info').textContent = 'Stock: ' + stock;
-                                            if (marca) {
-                                                filaSelect.querySelector('.marca-producto-venta').textContent = marca;
-                                            }
-                                            calcularSubtotalVenta(filaSelect);
-                                        }
-                                    }
-                                });
-                                
-                                // Configurar evento cuando se limpia la selección
-                                $(nuevoSelectParaInit).on('select2:clear', function() {
-                                    const filaClear = $(this).closest('tr')[0];
-                                    filaClear.querySelector('.precio-input-venta').value = '0.00';
-                                    filaClear.querySelector('.cantidad-input-venta').removeAttribute('data-stock');
-                                    filaClear.querySelector('.stock-info').textContent = '';
-                                    filaClear.querySelector('.marca-producto-venta').textContent = 'no seleccionado';
-                                    filaClear.querySelector('.subtotal-venta').textContent = '0.00';
-                                    actualizarTotalVenta();
-                                });
-                            } catch (error) {
-                                console.error('Error al inicializar Select2 en nueva fila:', error);
-                            }
+                        if (typeof $ !== 'undefined' && $(selectOriginal).hasClass('select2-hidden-accessible')) {
+                            // Si Select2 está inicializado, restaurar el valor usando Select2
+                            $(selectOriginal).val(valorSeleccionadoOriginal).trigger('change');
+                        } else {
+                            // Si no está inicializado, restaurar directamente
+                            selectOriginal.value = valorSeleccionadoOriginal;
+                            // Disparar evento change para actualizar los campos relacionados
+                            const changeEvent = new Event('change', { bubbles: true });
+                            selectOriginal.dispatchEvent(changeEvent);
                         }
                     }, 100);
+                }
+                
+                // Inicializar Select2 en el nuevo select INMEDIATAMENTE
+                const nuevoSelectParaInit = nuevaFila.querySelector('.producto-select-venta');
+                if (nuevoSelectParaInit && typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+                    try {
+                        // Destruir Select2 si ya está inicializado (por si acaso)
+                        if ($(nuevoSelectParaInit).hasClass('select2-hidden-accessible')) {
+                            $(nuevoSelectParaInit).select2('destroy');
+                        }
+                        
+                        // Encontrar el modal padre si existe
+                        const modal = $(nuevoSelectParaInit).closest('.modal');
+                        const select2Config = {
+                            theme: 'bootstrap-5',
+                            placeholder: 'Seleccione un producto',
+                            allowClear: false,
+                            width: '100%',
+                            minimumResultsForSearch: 0,
+                            minimumInputLength: 0,
+                            language: {
+                                noResults: function() {
+                                    return "No se encontraron productos";
+                                },
+                                searching: function() {
+                                    return "Buscando...";
+                                }
+                            }
+                        };
+                        
+                        // Si está dentro de un modal, usar dropdownParent
+                        if (modal.length > 0) {
+                            select2Config.dropdownParent = modal;
+                        }
+                        
+                        // Asegurar que el valor esté vacío antes de inicializar
+                        nuevoSelectParaInit.value = '';
+                        
+                        // Asegurar que el select nativo esté completamente oculto antes de inicializar Select2
+                        nuevoSelectParaInit.style.display = 'none';
+                        nuevoSelectParaInit.style.visibility = 'hidden';
+                        nuevoSelectParaInit.style.position = 'absolute';
+                        nuevoSelectParaInit.style.width = '0';
+                        nuevoSelectParaInit.style.height = '0';
+                        nuevoSelectParaInit.style.opacity = '0';
+                        nuevoSelectParaInit.style.pointerEvents = 'none';
+                        
+                        // Inicializar Select2 inmediatamente después de agregar al DOM
+                        setTimeout(() => {
+                            $(nuevoSelectParaInit).select2(select2Config);
+                            
+                            // Asegurar que el valor esté vacío después de inicializar
+                            $(nuevoSelectParaInit).val('').trigger('change');
+                            
+                            // Asegurar que el select nativo esté completamente oculto después de inicializar Select2
+                            nuevoSelectParaInit.style.display = 'none';
+                            nuevoSelectParaInit.style.visibility = 'hidden';
+                            nuevoSelectParaInit.style.position = 'absolute';
+                            nuevoSelectParaInit.style.width = '0';
+                            nuevoSelectParaInit.style.height = '0';
+                            nuevoSelectParaInit.style.opacity = '0';
+                            nuevoSelectParaInit.style.pointerEvents = 'none';
+                        }, 50);
+                        
+                        // Asegurar que el campo de búsqueda sea interactuable
+                        $(nuevoSelectParaInit).on('select2:open', function() {
+                            setTimeout(function() {
+                                const searchField = $('.select2-search__field');
+                                if (searchField.length) {
+                                    searchField.prop('readonly', false);
+                                    searchField.prop('disabled', false);
+                                    searchField.css({
+                                        'pointer-events': 'auto',
+                                        'cursor': 'text'
+                                    });
+                                }
+                            }, 10);
+                        });
+                        
+                        // Configurar evento de cambio para Select2
+                        $(nuevoSelectParaInit).on('select2:select', function(e) {
+                            const filaSelect = $(this).closest('tr')[0];
+                            const selectedValue = $(this).val();
+                            const option = $(this).find('option[value="' + selectedValue + '"]')[0];
+                            
+                            if (option) {
+                                const precio = option.getAttribute('data-precio');
+                                const stock = option.getAttribute('data-stock');
+                                const marca = option.getAttribute('data-marca');
+                                
+                                if (precio && stock !== null) {
+                                    filaSelect.querySelector('.precio-input-venta').value = precio;
+                                    filaSelect.querySelector('.cantidad-input-venta').setAttribute('data-stock', stock);
+                                    filaSelect.querySelector('.stock-info').textContent = 'Stock: ' + stock;
+                                    if (marca) {
+                                        filaSelect.querySelector('.marca-producto-venta').textContent = marca;
+                                    }
+                                    calcularSubtotalVenta(filaSelect);
+                                }
+                            }
+                        });
+                        
+                        // Configurar evento cuando se limpia la selección
+                        $(nuevoSelectParaInit).on('select2:clear', function() {
+                            const filaClear = $(this).closest('tr')[0];
+                            filaClear.querySelector('.precio-input-venta').value = '0.00';
+                            filaClear.querySelector('.cantidad-input-venta').removeAttribute('data-stock');
+                            filaClear.querySelector('.stock-info').textContent = '';
+                            filaClear.querySelector('.marca-producto-venta').textContent = 'no seleccionado';
+                            filaClear.querySelector('.subtotal-venta').textContent = '0.00';
+                            actualizarTotalVenta();
+                        });
+                    } catch (error) {
+                        console.error('Error al inicializar Select2 en nueva fila:', error);
+                    }
                 }
             }
             
@@ -2579,7 +2745,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const select2Config = {
                 theme: 'bootstrap-5',
                 placeholder: 'Seleccione un producto',
-                allowClear: true,
+                allowClear: false,
                 width: '100%',
                 minimumResultsForSearch: 0,
                 minimumInputLength: 0,
@@ -2600,7 +2766,37 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Inicializar Select2
             try {
+                // Ocultar el select nativo antes de inicializar Select2
+                select.style.display = 'none';
+                select.style.visibility = 'hidden';
+                select.style.position = 'absolute';
+                select.style.width = '0';
+                select.style.height = '0';
+                select.style.opacity = '0';
+                select.style.pointerEvents = 'none';
+                
+                // Si el select no tiene valor, asegurar que esté vacío
+                if (!select.value || select.value === '') {
+                    select.value = '';
+                }
+                
                 $(select).select2(select2Config);
+                
+                // Si no había valor, asegurar que muestre el placeholder
+                if (!select.value || select.value === '') {
+                    $(select).val('').trigger('change');
+                }
+                
+                // Asegurar que el select nativo esté completamente oculto después de inicializar Select2
+                setTimeout(() => {
+                    select.style.display = 'none';
+                    select.style.visibility = 'hidden';
+                    select.style.position = 'absolute';
+                    select.style.width = '0';
+                    select.style.height = '0';
+                    select.style.opacity = '0';
+                    select.style.pointerEvents = 'none';
+                }, 10);
                 
                 // Asegurar que el campo de búsqueda sea interactuable
                 $(select).on('select2:open', function() {

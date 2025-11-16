@@ -214,8 +214,8 @@ function validarNombreBanco($banco, $campo = 'banco') {
         throw new \Exception("El campo {$campo} no puede exceder 100 caracteres");
     }
     
-    // Solo letras, espacios y algunos caracteres especiales
-    if (!preg_match('/^[A-Za-zÁáÉéÍíÓóÚúÑñÜü\s\-\.]+$/u', $banco)) {
+    // Solo números, letras, espacios y algunos caracteres especiales (guiones, puntos, comas)
+    if (!preg_match('/^[0-9A-Za-zÁáÉéÍíÓóÚúÑñÜü\s\-\.\,]+$/u', $banco)) {
         throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
     }
     
