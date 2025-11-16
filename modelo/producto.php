@@ -283,17 +283,21 @@ class Producto extends Conexion {
     public function consultar() {
     $conex = $this->getConex1();
     try {
-        $sql = "SELECT p.*, 
+        $sql = "SELECT p.*,
                        c.nombre AS nombre_categoria,
                        m.nombre AS nombre_marca,
-                       pi.url_imagen AS imagen
+                       (
+                         SELECT pi.url_imagen
+                         FROM producto_imagen pi
+                         WHERE pi.id_producto = p.id_producto
+                         ORDER BY pi.id_imagen ASC
+                         LIMIT 1
+                       ) AS imagen
                 FROM producto p
                 INNER JOIN categoria c ON p.id_categoria = c.id_categoria
                 INNER JOIN marca m ON p.id_marca = m.id_marca
-                LEFT JOIN producto_imagen pi 
-                       ON p.id_producto = pi.id_producto AND pi.tipo = 'principal'
                 WHERE p.estatus IN (1,2)";
-        
+
         $stmt = $conex->prepare($sql);
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);

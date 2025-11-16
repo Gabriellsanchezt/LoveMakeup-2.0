@@ -172,30 +172,29 @@ if (marcaSelect !== undefined) {
 
     $('#accion').val('modificar');
 
-    // **Corrección en la imagen**  
+    
    $.post('', { accion: 'obtenerImagenes', id_producto }, function(respuesta) {
   const data = JSON.parse(respuesta);
   if (data.respuesta == 1) {
     const preview = $('#preview');
-    preview.html(''); // limpia antes de pintar
+    preview.html(''); 
 
     if (data.imagenes.length > 0) {
       $('#imagen').hide();
 
       data.imagenes.forEach(item => {
-        // item = { id_imagen, url_imagen, tipo? }
-
+        
         const imgWrapper = $('<div class="position-relative d-inline-block m-1">');
 
         const imgTag = $('<img>')
           .attr('src', item.url_imagen)
-          .attr('data-id', item.id_imagen)              // guarda el id aquí
+          .attr('data-id', item.id_imagen)             
           .addClass('img-thumbnail')
           .css({ width: '100px', height: '100px', objectFit: 'cover' });
 
         const btnEliminar = $('<button type="button" class="btn-close position-absolute top-0 end-0"></button>');
         btnEliminar.on('click', function () {
-          const idImagen = imgTag.data('id');           // NO uses la variable "img"
+          const idImagen = imgTag.data('id');           
           imgWrapper.remove();
 
           let eliminadas = $('#imagenesEliminadas').val() ? JSON.parse($('#imagenesEliminadas').val()) : [];
@@ -375,14 +374,14 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
   function mostrarImagen(input) {
     const preview = $('#preview');
     const imagenPrincipal = $('#imagen');
-    preview.html(''); // limpiar previsualización anterior
-    imagenPrincipal.show(); // mostrar imagen principal por defecto
+    preview.html(''); 
+    imagenPrincipal.show(); 
 
     if (input.files && input.files.length > 0) {
         const archivos = Array.from(input.files);
 
         if (archivos.length === 1) {
-            // Una sola imagen
+            
             const file = archivos[0];
             if (file.size / 1024 > 1024) {
                 muestraMensaje("error", 2000, "Error", "La imagen debe ser igual o menor a 1024 K");
@@ -454,7 +453,7 @@ $("#archivo").on("change", function () {
   const reader = new FileReader();
   reader.onload = function (e) {
     if (imagenSeleccionadaParaReemplazar) {
-      const idImagen = imagenSeleccionadaParaReemplazar.data('id'); // ← correcto
+      const idImagen = imagenSeleccionadaParaReemplazar.data('id'); 
       imagenSeleccionadaParaReemplazar.attr("src", e.target.result);
 
       let reemplazos = JSON.parse($('#imagenesReemplazadas').val() || "[]");
