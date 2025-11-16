@@ -147,7 +147,8 @@ function desactivarLoaderBoton(idBoton) {
   
         const fd = new FormData($('#formPago')[0]);
         $.ajax({
-          url: 'controlador/Pedidopago.php',
+          async: true,
+           url: '',
           type: 'POST', 
           data: fd,
           processData: false,

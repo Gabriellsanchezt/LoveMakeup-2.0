@@ -333,7 +333,8 @@ $(document).ready(function() {
       
         // 6) AJAX
         $.ajax({
-          url: 'controlador/verpedidoweb.php',
+          async: true,
+         url: '',
           type: 'POST',
           data: fd,
           processData: false,

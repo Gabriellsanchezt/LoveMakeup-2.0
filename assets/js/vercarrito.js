@@ -47,7 +47,8 @@ $(document).ready(function () {
       const id = $(this).data("id");
   
       $.ajax({
-        url: 'controlador/vercarrito.php',
+        async: true,
+        url: '',
         type: 'POST',
         data: {
           accion: 'eliminar',
@@ -75,7 +76,8 @@ $(document).ready(function () {
   
     function actualizarCantidad(id, cantidad, fila) {
       $.ajax({
-        url: "controlador/vercarrito.php",
+        async: true,
+        url: '',
         type: "POST",
         data: {
           accion: "actualizar",

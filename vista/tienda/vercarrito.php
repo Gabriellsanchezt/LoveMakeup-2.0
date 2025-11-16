@@ -237,6 +237,164 @@ input[type="radio"]:checked + .opcion-custom {
   color: black;
 }
 
+/* ===== INDICADOR DE PASOS ===== */
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+  padding: 0 20px;
+}
+
+/* Línea base */
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  right: 40px;
+  height: 6px;
+  background: linear-gradient(90deg, #f3f4f6, #e5e7eb);
+  z-index: 1;
+  transform: translateY(-50%);
+  border-radius: 10px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+}
+
+/* Contenedor de barra rosada */
+.progress-bar-container {
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  height: 6px;
+  z-index: 2;
+  transform: translateY(-50%);
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    #f472b6 0%,
+    #ec4899 25%,
+    #f472b6 50%,
+    #ec4899 75%,
+    #f472b6 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-animation 2.5s ease-in-out infinite;
+  border-radius: 10px;
+  box-shadow:
+    0 0 20px rgba(236,72,153,0.4),
+    0 0 10px rgba(244,114,182,0.3),
+    0 2px 6px rgba(236,72,153,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.4),
+    transparent
+  );
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes progress-animation {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+/* ===== STEP ===== */
+
+.step {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  padding: 0.5rem;
+}
+
+.step-number {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.4s;
+  border: 3px solid transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.step-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Activo */
+.step.active .step-number {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  color: white;
+  border-color: #ec4899;
+  box-shadow:
+    0 0 20px rgba(236,72,153,0.4),
+    0 4px 12px rgba(236,72,153,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+.step.active .step-label {
+  color: #ec4899;
+  font-weight: 600;
+  transform: scale(1.05);
+}
+
+/* Completado */
+.step.completed .step-number {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+  border-color: #10b981;
+  box-shadow:
+    0 0 15px rgba(16,185,129,0.3),
+    0 3px 10px rgba(16,185,129,0.2);
+}
+
+.step.completed .step-label {
+  color: #10b981;
+  font-weight: 600;
+}
+
+
     </style>
 <?php
 $carritoVacio = empty($_SESSION['carrito']);
@@ -244,24 +402,38 @@ $carritoVacio = empty($_SESSION['carrito']);
         <!-- Step Indicator -->
  
 
-    <div class="detalle-compra-container">
-    <div class="container-lg">
-        <div class="pasos-container">
-    <div class="paso actual">
-      <div class="circulo">1</div>
-      <span>Producto</span>
-    </div>
-    <div class="paso pendiente">
-      <div class="circulo">2</div>
-      <span>Entrega</span>
-    </div>
-    <div class="paso pendiente">
-      <div class="circulo">3</div>
-      <span>Pago</span>
-    </div>
-    <div class="paso pendiente">
-      <div class="circulo">4</div>
-      <span>Confirmación</span>
+        <div class="modal-body bg-s">
+  <div class="mb-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="progress-steps">
+
+          <div class="progress-bar-container" id="progress-bar-pasos" style="width: 0%;">
+            <div class="progress-bar-fill"></div>
+          </div>
+
+          <div class="step active" id="step-cliente">
+            <div class="step-number">1</div>
+            <div class="step-label">Producto</div>
+          </div>
+
+          <div class="step" id="step-productos">
+            <div class="step-number">2</div>
+            <div class="step-label">Entrega</div>
+          </div>
+
+          <div class="step" id="step-pago">
+            <div class="step-number">3</div>
+            <div class="step-label">Pago</div>
+          </div>
+
+          <div class="step" id="step-confirmar">
+            <div class="step-number">4</div>
+            <div class="step-label">Confirmacion</div>
+          </div>
+
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -354,24 +526,97 @@ $carritoVacio = empty($_SESSION['carrito']);
 
         </div>
 
-        <div class="mt-3 text-end">
-         
-            <h4>Total: $<span id="total-carrito" class="total-general"><?= number_format($total, 2) ?></span></h4>
-        </div>
+       
+
+          <!-- Total general -->
+          <div class="row mt-3">
+            <style>
+.card-total {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.5rem; /* 8px */
+  box-shadow: 0 0.5rem 1.2rem rgb(189 197 209 / 20%);
+  border-color:#fff;
+}
+.card-body-total {
+  flex: 1 1 auto;
+  padding: 1.5rem; /* 24px */
+ 
+ 
+ 
+
+}
+
+.card-total, .card-body-total, h4, span {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.text-success {
+  color: #2dce89 !important; /* verde característico de Argon Dashboard */
+}
+
+
+            </style>
+                <div class="col-md-10"></div>
+                <div class="col-md-2">
+                  <div class="card-total">
+                    <div class=" card-body-total text-center ">
+                      <h4>Total: $<span id="total-carrito" class="total-general text-success"><?= number_format($total, 2) ?></span></h4>
+                    
+                    </div>
+                  </div>
+                  
     <?php endif; ?>
 </div>
 
-<div class="d-flex justify-content-between m-5">
-<a href="?pagina=catalogo_producto" class="btn btn-secondary"><i class="fa-solid fa-arrow-left me-2"></i> Atrás</a>
-
-<a href="?pagina=reserva_cliente" class="btn btn-primary me-2"> <i class="fa-solid fa-arrow-right"> </i> Reservar</a>
-
-  <a href="?pagina=Pedidoentrega" class="btn btn-primary me-2"> <i class="fa-solid fa-arrow-right"> </i> Comprar</a>
+<div class="d-flex justify-content-between container mt-3">
+<div>  
+<a href="?pagina=catalogo_producto"  class="btn btn-secondary "><i class="fa-solid fa-arrow-left me-1"></i> Atrás</a>
+</div>
+<div> 
+<a href="?pagina=reserva_cliente" class="btn btn-primary "> <i class="fa-solid fa-arrow-right"> </i> Reservar</a>
+</div>
+<div>  
+  <a  href="?pagina=Pedidoentrega" id="btn-siguiente" class="btn btn-primary"> <i class="fa-solid fa-arrow-right"> </i> Comprar</a>
+  </div>
 </div>
  </section>
 <!-- php Publicidad Insta, Publicidad calidad, footer y JS--> 
 <?php include 'vista/complementos/footer_catalogo.php' ?>
    <script src="assets/js/vercarrito.js"></script>
+   <script src="assets/js/pasos.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    setStep(1); // Inicializar barra
+
+    const totalSteps = 4;
+    let currentStep = 1;
+
+    const btnContinuar = document.getElementById("btn-siguiente");
+
+    if (btnContinuar) {
+        btnContinuar.addEventListener("click", function(e) {
+            e.preventDefault(); // Evita que navegue inmediatamente
+
+            // Avanzar la barra
+            if (currentStep < totalSteps) currentStep++;
+            setStep(currentStep);
+
+            // Esperar 800ms antes de navegar
+            setTimeout(() => {
+                window.location.href = btnContinuar.href;
+            }, 800); // 0.8 segundos de retardo
+        });
+    }
+});
+</script>
+
 </body>
 
 </html>

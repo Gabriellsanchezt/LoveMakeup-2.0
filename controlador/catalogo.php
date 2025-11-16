@@ -30,13 +30,13 @@ $categorias = $catalogo->obtenerCategorias();
 
 
 // Inicializar array vacío
-$idsProductosFavoritos = [];
+//$idsProductosFavoritos = [];
 
-if ($sesion_activa) {
-    $objListaDeseo = new ListaDeseo();
-    $lista = $objListaDeseo->obtenerListaDeseo($_SESSION['id']);
-    $idsProductosFavoritos = array_column($lista, 'id_producto');
-}
+//if ($sesion_activa) {
+  //  $objListaDeseo = new ListaDeseo();
+   // $lista = $objListaDeseo->obtenerListaDeseo($_SESSION['id']);
+   // $idsProductosFavoritos = array_column($lista, 'id_producto');
+//}
 
 
  if (isset($_POST['cerrar'])) {

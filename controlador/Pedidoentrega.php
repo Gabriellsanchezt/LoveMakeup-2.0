@@ -1,6 +1,10 @@
 <?php
 
+
+
 use LoveMakeup\Proyecto\Modelo\VentaWeb;
+use LoveMakeup\Proyecto\Modelo\Delivery;
+
 
 session_start();
 
@@ -96,8 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
     exit;
 }
 
+$delivery = new Delivery();
+$delivery_activos = $delivery->consultarActivos();
+
 // 4) Si llegamos aquí, no es AJAX: preparamos la vista
-$metodos_entrega = $venta->obtenerMetodosEntrega();
+
 
 // Incluimos la vista. Dentro de ella tendrás disponible $metodos_entrega
 require_once __DIR__ . '/../vista/tienda/Pedidoentrega.php';

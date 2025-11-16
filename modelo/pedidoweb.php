@@ -50,53 +50,147 @@ class PedidoWeb extends Conexion {
                 return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
         }
     }
+    public function consultarPedidosCompletos() {
 
-   public function consultarPedidosCompletos() {
-    $sql = "SELECT 
-                p.id_pedido,
-                p.tipo,
-                p.fecha,
-                p.estado,
-                p.precio_total_bs,
-                p.precio_total_usd,
-                p.tracking,
-                p.id_pago,
-                p.id_persona,
-                
-                cli.nombre AS nombre,
-                cli.apellido AS apellido,
-                 cli.correo AS correo,   
-                d.direccion_envio AS direccion,
-                d.sucursal_envio AS sucursal,
-                
-                me.nombre AS metodo_entrega,
-                me.descripcion AS descripcion_entrega,
-                
-                dp.referencia_bancaria,
-                dp.telefono_emisor,
-                dp.banco_destino,
-                dp.banco,
-                dp.monto,
-                dp.monto_usd,
-                dp.imagen,
-                
-                mp.nombre AS metodo_pago,
-                mp.descripcion AS descripcion_pago
-
-            FROM pedido p
-            LEFT JOIN cliente cli ON p.id_persona = cli.id_persona
-            LEFT JOIN direccion d ON p.id_direccion = d.id_direccion
-            LEFT JOIN metodo_entrega me ON d.id_metodoentrega = me.id_entrega
-            LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
-            LEFT JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
-
-            WHERE p.tipo = 2
-            ORDER BY p.fecha DESC";
-
-    $stmt = $this->getConex1()->prepare($sql);  
-    $stmt->execute();
-    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-}
+        $conex1 = $this->getConex1();
+    
+        try {
+            // ================================
+            // 1) CONSULTA PRINCIPAL (BD1)
+            // ================================
+            $sql = "SELECT 
+                        p.id_pedido,
+                        p.tipo,
+                        p.fecha,
+                        p.estatus,
+                        p.precio_total_bs,
+                        p.precio_total_usd,
+                        p.tracking,
+                        p.cedula,
+                        p.id_direccion,
+                        p.id_pago,
+                       
+    
+                        
+    
+                        d.direccion_envio AS direccion,
+                        d.sucursal_envio AS sucursal,
+                        
+                        me.nombre AS metodo_entrega,
+                        me.descripcion AS descripcion_entrega,
+                        
+                   
+                        
+                        mp.nombre AS metodo_pago,
+                        mp.descripcion AS descripcion_pago
+    
+                    FROM pedido p
+                   
+                    LEFT JOIN direccion d ON p.id_direccion = d.id_direccion
+                    LEFT JOIN metodo_entrega me ON d.id_metodoentrega = me.id_entrega
+                    LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                    LEFT JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
+    
+                    WHERE p.tipo = 2
+                    ORDER BY p.fecha DESC";
+    
+            $stmt = $conex1->prepare($sql);
+            $stmt->execute();
+            $pedidos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    
+            // Si no hay pedidos, regresar vacío
+            if (empty($pedidos)) {
+                return [];
+            }
+    
+            // ================================
+            // 2) CONSULTA CLIENTE EN BD2
+            // ================================
+    
+            $conex2 = $this->getConex2();
+    
+            $sqlCliente = "SELECT 
+                                u.id_usuario,
+                                per.cedula,
+                                per.nombre,
+                                per.apellido,
+                                per.telefono,
+                                per.correo,
+                                u.estatus
+                           FROM usuario u
+                           INNER JOIN persona per ON u.cedula = per.cedula
+                           WHERE u.id_usuario = :id_usuario";
+    
+          
+            $stmtCliente = $conex2->prepare($sqlCliente);
+    
+            // ================================
+            // 3) UNIR RESULTADOS
+            // ================================
+            foreach ($pedidos as &$p) {
+    
+                // Si no hay id_persona → no consultamos BD2
+                if (!empty($p['id_persona'])) {
+    
+                    try {
+                        // Buscamos el usuario en BD2
+                        $stmtCliente->execute([
+                            'id_usuario' => $p['id_persona']
+                        ]);
+    
+                        $cliente2 = $stmtCliente->fetch(\PDO::FETCH_ASSOC);
+    
+                        if ($cliente2) {
+                            // Información de BD2
+                            $p['cedula']            = $cliente2['cedula'];
+                            $p['nombre_cliente']    = $cliente2['nombre'];
+                            $p['apellido_cliente']  = $cliente2['apellido'];
+                            $p['telefono']          = $cliente2['telefono'];
+                            $p['correo_bd2']        = $cliente2['correo'];
+                            $p['estatus_usuario']   = $cliente2['estatus'];
+                        } else {
+                            // Si no existe en BD2, rellenar vacío
+                            $p['cedula']            = null;
+                            $p['nombre_cliente']    = $p['nombre_cliente_bd1'];
+                            $p['apellido_cliente']  = $p['apellido_cliente_bd1'];
+                            $p['telefono']          = null;
+                            $p['correo_bd2']        = null;
+                            $p['estatus_usuario']   = null;
+                        }
+                    } catch (\PDOException $e) {
+                        // Fallo en BD2 → Rellenar con valores por defecto
+                        $p['cedula']            = null;
+                        $p['nombre_cliente']    = $p['nombre_cliente_bd1'];
+                        $p['apellido_cliente']  = $p['apellido_cliente_bd1'];
+                        $p['telefono']          = null;
+                        $p['correo_bd2']        = null;
+                        $p['estatus_usuario']   = null;
+                    }
+    
+                } else {
+                    // Sin id_persona → datos vacíos
+                    $p['cedula']            = null;
+                    $p['nombre_cliente']    = $p['nombre_cliente_bd1'];
+                    $p['apellido_cliente']  = $p['apellido_cliente_bd1'];
+                    $p['telefono']          = null;
+                    $p['correo_bd2']        = null;
+                    $p['estatus_usuario']   = null;
+                }
+    
+                // Limpieza: eliminar duplicados innecesarios
+                unset($p['nombre_cliente_bd1'], $p['apellido_cliente_bd1'], $p['correo_cliente_bd1']);
+            }
+    
+            unset($p); // liberar referencia
+    
+            return $pedidos;
+    
+        } catch (\PDOException $e) {
+            error_log("Error en consultarPedidosCompletos: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
 
 public function consultarDetallesPedido($id_pedido) {
     $sql = "SELECT 
