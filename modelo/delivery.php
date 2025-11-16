@@ -218,4 +218,17 @@ class Delivery extends Conexion {
         $conex = null;
         return $data;
     }
+
+    public function consultarActivos() {
+        $conex = $this->getConex1();
+        $sql = "SELECT id_delivery, nombre , tipo, contacto
+                FROM delivery 
+                WHERE estatus = 1";
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+
 }

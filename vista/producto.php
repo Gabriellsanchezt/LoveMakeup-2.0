@@ -525,6 +525,7 @@
                       <div id="preview" class="d-flex flex-wrap mt-2"></div>
                     </label>
                     <input type="hidden" id="imagenesEliminadas" name="imagenesEliminadas" value="[]">
+                    <input type="hidden" id="imagenesReemplazadas" name="imagenesReemplazadas" value="[]">
                    <input id="archivo" type="file" style="display:none" accept=".png,.jpg,.jpeg,.webp" name="imagenarchivo[]" multiple />
                   </div>
                 </div>

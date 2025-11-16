@@ -193,7 +193,8 @@ $(document).ready(function() {
   
         const fd = new FormData($('#formEntrega')[0]);
         $.ajax({
-          url: 'controlador/Pedidoentrega.php',
+          async: true,
+           url: '',
           type: 'POST',
           data: fd,
           processData: false,

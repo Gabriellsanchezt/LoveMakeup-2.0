@@ -82,46 +82,81 @@ if (isset($_FILES['imagenarchivo'])) {
             echo json_encode($resultadoRegistro);
         }
     } else if(isset($_POST['actualizar'])) {
-        $rutaImagen = $_POST['imagenActual'];
-        $imagenes = [];
+       $imagenes = [];
+       $imagenesReemplazos = [];
 
-        if (!empty($_POST['imagenesEliminadas'])) {
+    
+    if (!empty($_POST['imagenesEliminadas'])) {
         $imagenesEliminar = json_decode($_POST['imagenesEliminadas'], true);
         $objproducto->eliminarImagenes($imagenesEliminar);
     }
-            
-        if (isset($_FILES['imagenarchivo'])) {
-    foreach ($_FILES['imagenarchivo']['name'] as $indice => $nombreArchivo) {
-        if ($_FILES['imagenarchivo']['error'][$indice] == 0) {
-            $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'][$indice];
-            $rutaDestino = 'assets/img/Imgproductos/' . $nombreArchivo;
-            move_uploaded_file($rutaTemporal, $rutaDestino);
-            $imagenes[] = $rutaDestino;
+
+    $mapReemplazos = [];
+if (!empty($_POST['imagenesReemplazadas'])) {
+    $tmp = json_decode($_POST['imagenesReemplazadas'], true);
+    if (is_array($tmp)) {
+        foreach ($tmp as $r) {
+            if (!empty($r['id_imagen']) && !empty($r['nombre'])) {
+                // clave por nombre de archivo
+                $mapReemplazos[$r['nombre']] = $r['id_imagen'];
+            }
         }
     }
 }
-            if (!empty($imagenes)) {
-                $rutaImagen = $imagenes[0]; // Usar la primera imagen como principal
-            }   
 
-        $datosProducto = [
-            'operacion' => 'actualizar',
-            'datos' => [
-                'id_producto' => $_POST['id_producto'],
-                'nombre' => ucfirst(strtolower($_POST['nombre'])),
-                'descripcion' => $_POST['descripcion'],
-                'id_marca' => $_POST['marca'],
-                'cantidad_mayor' => $_POST['cantidad_mayor'],
-                'precio_mayor' => $_POST['precio_mayor'],
-                'precio_detal' => $_POST['precio_detal'],
-                'stock_maximo' => $_POST['stock_maximo'],
-                'stock_minimo' => $_POST['stock_minimo'],
-                'id_categoria' => $_POST['categoria'],
-                'imagenes' => $imagenes
-            ]
-        ];
+    if (!empty($_POST['imagenesExistentes'])) {
+        $imagenesExistentes = json_decode($_POST['imagenesExistentes'], true);
+        foreach ($imagenesExistentes as $img) {
+            $imagenes[] = [
+                'id_imagen' => $img['id_imagen'],
+                'url_imagen' => $img['url_imagen']
+            ];
+        }
+    }
 
-        $resultado = $objproducto->procesarProducto(json_encode($datosProducto));
+    if (isset($_FILES['imagenarchivo'])) {
+    foreach ($_FILES['imagenarchivo']['name'] as $indice => $nombreArchivo) {
+        if ($_FILES['imagenarchivo']['error'][$indice] === 0) {
+            $rutaTemporal = $_FILES['imagenarchivo']['tmp_name'][$indice];
+            $nuevoNombre  = uniqid('img_') . "_" . basename($nombreArchivo);
+            $rutaDestino  = 'assets/img/Imgproductos/' . $nuevoNombre;
+
+            move_uploaded_file($rutaTemporal, $rutaDestino);
+
+            // Si el nombre original está en reemplazos → UPDATE
+            if (isset($mapReemplazos[$nombreArchivo])) {
+                $imagenesReemplazos[] = [
+                    'id_imagen'  => $mapReemplazos[$nombreArchivo],
+                    'url_imagen' => $rutaDestino
+                ];
+            } else {
+                // Si no, es imagen nueva → INSERT
+                $imagenes[] = ['url_imagen' => $rutaDestino];
+            }
+        }
+    }
+}
+
+    // 4️⃣ Preparar datos del producto
+   $datosProducto = [
+    'operacion' => 'actualizar',
+    'datos' => [
+        'id_producto'    => $_POST['id_producto'],
+        'nombre'         => ucfirst(strtolower($_POST['nombre'])),
+        'descripcion'    => $_POST['descripcion'],
+        'id_marca'       => $_POST['marca'],
+        'cantidad_mayor' => $_POST['cantidad_mayor'],
+        'precio_mayor'   => $_POST['precio_mayor'],
+        'precio_detal'   => $_POST['precio_detal'],
+        'stock_maximo'   => $_POST['stock_maximo'],
+        'stock_minimo'   => $_POST['stock_minimo'],
+        'id_categoria'   => $_POST['categoria'],
+        'imagenes_nuevas'      => $imagenes,
+        'imagenes_reemplazos'  => $imagenesReemplazos
+    ]
+];
+
+    $resultado = $objproducto->procesarProducto(json_encode($datosProducto));
 
         if ($resultado['respuesta'] == 1) {
             $bitacora = [
