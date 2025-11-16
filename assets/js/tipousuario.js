@@ -22,7 +22,7 @@ $(function(){
         if (res.accion=='incluir'    && res.respuesta==1) return mensajeOK('Rol registrado con éxito');
         if (res.accion=='actualizar' && res.respuesta==1) return mensajeOK('Rol modificado con éxito');
         if (res.accion=='eliminar'   && res.respuesta==1) return mensajeOK('Rol eliminado con éxito');
-        mostrarMensaje('error',2000,'Error',res.mensaje);
+        mostrarMensaje('error',2000,'Error',res.text || res.mensaje);
       },
       error() {
         mostrarMensaje('error',2000,'Error','Fallo de comunicación');
@@ -37,12 +37,17 @@ $(function(){
   $('#registrar').on('click', function(){
     const nombre = $('#nombre').val().trim();
     const nivel  = $('#nivel').val();
+    const estatus = $('#estatus').val();
     if (!nombre || !/^.{3,30}$/.test(nombre)) {
       mostrarMensaje('info',2000,'Nombre inválido','Debe tener entre 3 y 30 Caracteres');
       return;
     }
     if (nivel!=='2' && nivel!=='3') {
       mostrarMensaje('info',2000,'Nivel inválido','Seleccione nivel 2 o 3');
+      return;
+    }
+    if (estatus!=='1' && estatus!=='2') {
+      mostrarMensaje('info',2000,'Estatus inválido','Seleccione estatus válido');
       return;
     }
     const fd = new FormData($('#u')[0]);
@@ -54,7 +59,7 @@ $(function(){
   $('#modificar').on('show.bs.modal', function(e){
     const btn = e.relatedTarget;
     const id  = parseInt(btn.getAttribute('data-id'),10);
-    if (id===2) {
+    if (id===3) {
       e.preventDefault();
       mostrarMensaje('info',3000,'Acción no permitida',
         'El rol <strong>Administrador</strong><br>no puede modificarse.');
@@ -74,12 +79,17 @@ $(function(){
   $('#btnModificar').on('click', function(){
     const nombre = $('#nombre_modificar').val().trim();
     const nivel  = $('#nivel_modificar').val();
+    const estatus = $('#estatus_modificar').val();
     if (!nombre || !/^.{3,30}$/.test(nombre)) {
       mostrarMensaje('info',2000,'Nombre inválido','Debe tener entre 3 y 30 letras');
       return;
     }
     if (nivel!=='2' && nivel!=='3') {
       mostrarMensaje('info',2000,'Nivel inválido','Seleccione nivel 2 o 3');
+      return;
+    }
+    if (estatus!=='1' && estatus!=='2') {
+      mostrarMensaje('info',2000,'Estatus inválido','Seleccione estatus válido');
       return;
     }
     const fd = new FormData($('#formModificar')[0]);
@@ -90,7 +100,7 @@ $(function(){
   // —— 5) Eliminar ——  
   $('.eliminar').on('click', function(e){
     const id = parseInt($(this).val(),10);
-    if (id===2) {
+    if (id===3) {
       e.preventDefault();
       mostrarMensaje('info',3000,'Acción no permitida',
         'El rol <strong>Administrador</strong><br>no puede eliminarse.');

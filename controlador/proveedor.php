@@ -20,7 +20,33 @@ if ($_SESSION["nivel_rol"] == 1) {
 require_once 'permiso.php';
 $obj = new Proveedor();
 
-// Fijamos el rol en “Administrador”
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el tipo de documento sea válido
+ */
+function validarTipoDocumento($tipo_documento) {
+    $tipos_validos = ['V', 'J', 'E', 'G'];
+    return in_array($tipo_documento, $tipos_validos, true);
+}
+
+/**
+ * Valida que el ID del proveedor sea válido y exista en la base de datos
+ */
+function validarIdProveedor($id_proveedor, $proveedores) {
+    if (empty($id_proveedor) || !is_numeric($id_proveedor)) {
+        return false;
+    }
+    $id_proveedor = (int)$id_proveedor;
+    foreach ($proveedores as $proveedor) {
+        if ($proveedor['id_proveedor'] == $id_proveedor && $proveedor['estatus'] == 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Fijamos el rol en "Administrador"
 $rolText = 'Administrador';
 
 // 0) Registrar acceso al módulo (GET sin AJAX ni operaciones)
@@ -42,6 +68,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // a) Consultar proveedor para edición
     if (isset($_POST['consultar_proveedor'])) {
+        // Validar id_proveedor
+        $proveedores = $obj->consultar();
+        if (!validarIdProveedor($_POST['id_proveedor'], $proveedores)) {
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'El proveedor seleccionado no es válido']);
+            exit;
+        }
+        
         echo json_encode(
             $obj->consultarPorId((int)$_POST['id_proveedor'])
         );
@@ -50,6 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // b) Registrar nuevo proveedor
     if (isset($_POST['registrar'])) {
+        // Validar tipo_documento
+        if (!validarTipoDocumento($_POST['tipo_documento'])) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El tipo de documento seleccionado no es válido']);
+            exit;
+        }
+
         $d = [
             'numero_documento' => $_POST['numero_documento'],
             'tipo_documento'   => $_POST['tipo_documento'],
@@ -74,6 +113,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // c) Actualizar proveedor existente
     if (isset($_POST['actualizar'])) {
+        // Validar tipo_documento
+        if (!validarTipoDocumento($_POST['tipo_documento'])) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El tipo de documento seleccionado no es válido']);
+            exit;
+        }
+
+        // Validar id_proveedor
+        $proveedores = $obj->consultar();
+        if (!validarIdProveedor($_POST['id_proveedor'], $proveedores)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El proveedor seleccionado no es válido']);
+            exit;
+        }
+
         $d = [
             'id_proveedor'     => $_POST['id_proveedor'],
             'numero_documento' => $_POST['numero_documento'],
@@ -101,6 +153,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // d) Eliminar (desactivar) proveedor
     if (isset($_POST['eliminar'])) {
+        // Validar id_proveedor
+        $proveedores = $obj->consultar();
+        if (!validarIdProveedor($_POST['id_proveedor'], $proveedores)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'El proveedor seleccionado no es válido']);
+            exit;
+        }
+
         $id   = (int)$_POST['id_proveedor'];
         $prov = $obj->consultarPorId($id);
         $nombre = $prov['nombre'] ?? "ID $id";
@@ -134,6 +193,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         require_once 'vista/seguridad/privilegio.php';
 
 } 
-   
-
-
