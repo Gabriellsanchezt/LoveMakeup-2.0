@@ -477,13 +477,14 @@ public static function producto(
           SELECT DISTINCT
             p.nombre,
             p.descripcion,
-            p.marca,
+            m.nombre AS marca,
             p.precio_detal,
             p.precio_mayor,
             p.stock_disponible,
             cat.nombre AS categoria
           FROM producto p
           JOIN categoria cat ON cat.id_categoria = p.id_categoria
+          JOIN marca m ON m.id_marca = p.id_marca
           {$joinT}
          WHERE " . implode(' AND ', $whereT) . "
          ORDER BY p.stock_disponible DESC, p.nombre ASC
