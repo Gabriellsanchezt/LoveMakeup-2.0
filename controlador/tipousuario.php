@@ -83,33 +83,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['registrar'])) {
         $nombre = trim($_POST['nombre'] ?? '');
         $nivel  = (int)($_POST['nivel'] ?? 0);
-        $estatus= (int)($_POST['estatus'] ?? 0);
+        $estatus = (int)($_POST['estatus'] ?? 1);
 
         // Validar nivel
         if (!validarNivel($nivel)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El nivel seleccionado no es válido']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El nivel seleccionado no es válido']);
             exit;
         }
 
-        // Validar estatus (aunque el modelo lo ignore, debemos validarlo por seguridad)
+        // Validar estatus
         if (!validarEstatus($estatus)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El estatus seleccionado no es válido']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El estatus seleccionado no es válido']);
             exit;
         }
 
         $payload = [
             'operacion'=>'registrar',
-            'datos'    => ['nombre'=>$nombre,'nivel'=>$nivel]
+            'datos'    => ['nombre'=>$nombre,'nivel'=>$nivel,'estatus'=>$estatus]
         ];
         $res = $obj->procesarTipousuario(json_encode($payload));
 
         if ($res['respuesta'] == 1) {
+            $estatusText = $estatus == 1 ? 'Activo' : 'Inactivo';
             $bit = [
                 'id_persona' => $_SESSION['id'],
                 'accion'     => 'Registrar rol',
                 'descripcion'=> sprintf(
-                    'Registró rol "%s" con nivel %d',
-                    $nombre, $nivel
+                    'Registró rol "%s" con nivel %d, estatus %s',
+                    $nombre, $nivel, $estatusText
                 )
             ];
             $bitacoraObj = new Bitacora();
@@ -129,20 +130,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validar nivel
         if (!validarNivel($nivel)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El nivel seleccionado no es válido']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El nivel seleccionado no es válido']);
             exit;
         }
 
         // Validar estatus
         if (!validarEstatus($estatus)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El estatus seleccionado no es válido']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El estatus seleccionado no es válido']);
             exit;
         }
 
         // Validar id_tipo
         $tipos = $obj->consultar();
         if (!validarIdTipo($idTipo, $tipos)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El tipo de usuario seleccionado no es válido']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El tipo de usuario seleccionado no es válido']);
             exit;
         }
 
@@ -182,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Validar id_tipo
         $tipos = $obj->consultar();
         if (!validarIdTipo($idTipo, $tipos)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'El tipo de usuario seleccionado no es válido']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'El tipo de usuario seleccionado no es válido']);
             exit;
         }
 
