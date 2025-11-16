@@ -24,6 +24,33 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
     $roll = $objusuario->obtenerRol();
     $registro = $objusuario->consultar();
 
+    function puedeEliminarCedula($cedula, $registro) {
+        foreach ($registro as $usuario) {
+            if ($usuario['cedula'] === $cedula) {
+
+                if ($usuario['id_usuario'] == 1 || $usuario['id_usuario'] == 2) {
+                    return false; 
+                } else {
+                    return true; 
+                }
+            }
+        }
+            return false; // No existe la cédula, no se puede eliminar
+    }
+
+    function cedulaModificable($cedula, $registro) {
+        foreach ($registro as $usuario) {
+            if (trim((string)$usuario['cedula']) === trim((string)$cedula)) {
+                // Si está asociada a un usuario protegido
+                if ($usuario['id_usuario'] == 1 || $usuario['id_usuario'] == 2) {
+                    return false; // No se puede modificar
+                }
+                return true; // Existe y no es protegida
+            }
+        }
+        return false; // No existe la cédula
+    }
+    
     /*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
     
     /**
@@ -180,7 +207,7 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
          $_SESSION['registro_limite'] += 100;
     }
 
-if (isset($_POST['registrar'])) { /* -------  */
+if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| REGISTRAR USUARIO  */
     if (!empty($_POST['nombre']) && !empty($_POST['apellido']) && !empty($_POST['cedula']) && !empty($_POST['telefono']) && !empty($_POST['correo']) && !empty($_POST['id_rol']) && !empty($_POST['clave'])) {
 
         // Validar id_rol
@@ -223,97 +250,117 @@ if (isset($_POST['registrar'])) { /* -------  */
 
         echo json_encode($resultadoRegistro);
     }
-} else  if(isset($_POST['modificar'])){ /* -------  */
-     $id_usuario = $_POST['modificar'];    
-        
-     if ($id_usuario == $_SESSION['id']) {
+} else  if(isset($_POST['modificar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| PARA BUSCAR Y VER LOS PERMISOS  */
+
+    if (!empty($_POST['modificar']) && !empty($_POST['cedula'])) {   /* VACIOS   | VER LOS PERMISOS  */
+
+        $id_usuario = $_POST['modificar'];
+        $cedulaPermiso = trim($_POST['cedula']);
+      
+
+        if (cedulaModificable($cedulaPermiso, $registro)) {
+
+            if ($id_usuario == $_SESSION['id_usuario']) {
+                header("location:?pagina=usuario");
+                exit;
+            }
+
+            if ($id_usuario == 2) {
+                header("location:?pagina=usuario");
+                exit;
+            }
+
+            $modificar = $objusuario->buscar($cedulaPermiso);
+            $nivel_usuario = $objusuario->obtenerNivelPorId($cedulaPermiso);
+
+            $nombre_usuario = trim($_POST['permisonombre']);
+            $apellido_usuario = trim($_POST['permisoapellido']);
+
+      
+             require_once("vista/seguridad/permiso.php");
+
+        } else {
+            header("location:?pagina=usuario");
+            exit;
+        }
+
+    } else{  /* DATOS VACIOS | VER LOS PERMISOS  */
         header("location:?pagina=usuario");
-        exit;
-    }
-     if ($id_usuario == 10200300) {
-        header("location:?pagina=usuario");
-        exit;
-    }
+      exit;
+    }  
        
-        $modificar = $objusuario->buscar($id_usuario);
-        $nivel_usuario = $objusuario->obtenerNivelPorId($id_usuario);
-        
-        $nombre_usuario = trim($_POST['permisonombre']);
-        $apellido_usuario = trim($_POST['permisoapellido']);
-        
-        require_once ("vista/seguridad/permiso.php");
-       
-    }else if(isset($_POST['actualizar'])){ /* -------  */
+} else if(isset($_POST['actualizar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||| ACTULIZAR DATOS USUARIOS  */
     
-    // Validar id_rol
-    if (!validarIdRol($_POST['id_rol'], $roll)) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El rol seleccionado no es válido']);
-        exit;
-    }
-
-    // Validar tipo_documento
-    if (!validarTipoDocumento($_POST['tipo_documento'])) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El tipo de documento no es válido']);
-        exit;
-    }
-
-    // Validar estatus
-    if (!validarEstatus($_POST['estatus'])) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El estatus seleccionado no es válido']);
-        exit;
-    }
-
-    // Validar y corregir nivel según el id_rol (por seguridad, ignoramos el nivel enviado y usamos el del rol)
-    $nivel_valido = obtenerNivelPorRol($_POST['id_rol'], $roll);
-    if ($nivel_valido === null) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No se pudo obtener el nivel del rol']);
-        exit;
-    }
-
-    $datosUsuario = [
-        'operacion' => 'actualizar',
-        'datos' => [
-            'id_persona' => $_POST['id_persona'],
-            'cedula' => $_POST['cedula'],
-            'correo' => $_POST['correo'],
-            'id_rol' => (int)$_POST['id_rol'],
-            'estatus' => (int)$_POST['estatus'],
-            'cedula_actual' => $_POST['cedulaactual'],
-            'correo_actual' => $_POST['correoactual'],
-            'rol_actual' => $_POST['rol_actual'],
-            'tipo_documento' => $_POST['tipo_documento'],
-            'nivel' => $nivel_valido
-        ]
-    ]; 
-
-    if($datosUsuario['datos']['id_persona'] == 2) { 
-        if($datosUsuario['datos']['id_rol'] != 2) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el Rol del usuario administrador']);
+        // Validar id_rol
+        if (!validarIdRol($_POST['id_rol'], $roll)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El rol seleccionado no es válido']);
             exit;
         }
-        if($datosUsuario['datos']['estatus'] != 1) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el estatus del usuario administrador']);
+
+        // Validar tipo_documento
+        if (!validarTipoDocumento($_POST['tipo_documento'])) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El tipo de documento no es válido']);
             exit;
         }
-    }
 
-    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-/*
-    if ($resultado['respuesta'] == 1) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Modificación de usuario',
-            'descripcion' => 'Se modificó el usuario con ID: ' . $datosUsuario['datos']['id_persona'] . 
-                           ' Cédula: ' . $datosUsuario['datos']['cedula'] . 
-                           ' Correo: ' . $datosUsuario['datos']['correo']
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-    }
-*/
-    echo json_encode($resultado);
+        // Validar estatus
+        if (!validarEstatus($_POST['estatus'])) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El estatus seleccionado no es válido']);
+            exit;
+        }
 
-} else if (isset($_POST['actualizar_permisos'])) { /* -------  */
+        // Validar y corregir nivel según el id_rol (por seguridad, ignoramos el nivel enviado y usamos el del rol)
+        $nivel_valido = obtenerNivelPorRol($_POST['id_rol'], $roll);
+        if ($nivel_valido === null) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No se pudo obtener el nivel del rol']);
+            exit;
+        }
+
+        $datosUsuario = [
+            'operacion' => 'actualizar',
+            'datos' => [
+                'id_persona' => $_POST['id_persona'],
+                'cedula' => $_POST['cedula'],
+                'correo' => $_POST['correo'],
+                'id_rol' => (int)$_POST['id_rol'],
+                'estatus' => (int)$_POST['estatus'],
+                'cedula_actual' => $_POST['cedulaactual'],
+                'correo_actual' => $_POST['correoactual'],
+                'rol_actual' => $_POST['rol_actual'],
+                'tipo_documento' => $_POST['tipo_documento'],
+                'nivel' => $nivel_valido
+            ]
+        ]; 
+
+        if($datosUsuario['datos']['id_persona'] == 2) { 
+            if($datosUsuario['datos']['id_rol'] != 2) {
+                echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el Rol del usuario administrador']);
+                exit;
+            }
+            if($datosUsuario['datos']['estatus'] != 1) {
+                echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el estatus del usuario administrador']);
+                exit;
+            }
+        }
+
+        $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+        
+            if ($resultado['respuesta'] == 1) {
+                $bitacora = [
+                    'id_persona' => $_SESSION["id"],
+                    'accion' => 'Modificación de usuario',
+                    'descripcion' => 'Se modificó el usuario con ID: ' . $datosUsuario['datos']['id_persona'] . 
+                                ' Cédula: ' . $datosUsuario['datos']['cedula'] . 
+                                ' Correo: ' . $datosUsuario['datos']['correo']
+                ];
+                $bitacoraObj = new Bitacora();
+                $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
+            }
+
+        echo json_encode($resultado);
+        exit;
+
+} else if (isset($_POST['actualizar_permisos'])) { /*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  ACTUALIZAR PERMISOS */
     $permisosRecibidos = $_POST['permiso'] ?? [];
     $permisosId = $_POST['permiso_id'] ?? [];
 
@@ -358,77 +405,135 @@ if (isset($_POST['registrar'])) { /* -------  */
     }
 
     echo json_encode($resultado);
+    exit;
 
-} else if(isset($_POST['eliminar'])){ /* -------  */
-    $datosUsuario = [
-        'operacion' => 'eliminar',
-        'datos' => [
-            'cedula' => $_POST['eliminar']
-        ] 
-    ];
+} else if(isset($_POST['eliminar'])){ /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  METODO ELIMINAR  */
 
-    if ($datosUsuario['datos']['cedula'] == 10200300) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No se puede eliminar al usuario administrador']);
-        exit;
-    } 
+    if (!empty($_POST['eliminar']) ) {   /* VACIOS   | ELIMINAR  */
+        $cedula = $_POST['eliminar']; 
+        if (isset($cedula) && ctype_digit($cedula)) {
+            
+            if ($cedula == $_SESSION['id']) { /* NO ELIMINARSE ASI MISMO | ELIMINAR  */
+                echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No puedes eliminarte a ti mismo']);
+                exit;
+             }
+                if (puedeEliminarCedula($cedula, $registro)) { /* VERIFICAR SI EXISTE LA CEDULA Y NO QUE SEA ADMINISTRATIVA | ELIMINAR  */
+                    
+                    $datosUsuario = [
+                        'operacion' => 'eliminar',
+                        'datos' => [
+                            'cedula' => $cedula
+                        ] 
+                    ];
+
+                    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+
+                    if ($resultado['respuesta'] == 1) {
+                        $bitacora = [
+                            'id_persona' => $_SESSION["id"],
+                            'accion' => 'Eliminación de usuario',
+                            'descripcion' => 'Se eliminó el usuario con ID: ' . $cedula
+                        ];
+                        $bitacoraObj = new Bitacora();
+                        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
+                    }
+
+                    echo json_encode($resultado); /* RESPUESTA | ELIMINAR  */
+                    exit;
+
+                } else {  /* CEDULA PROTEGIDA ADMINISTRADOR O CEDULA NO EXISTE | ELIMINAR  */
+                    echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No se puede eliminar: cédula inexistente o protegida']);
+                    exit;
+                }
+
+        } else { /* CEDULA NO NUMERICA | ELIMINAR  */
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'La cédula no es válida. Debe contener solo números']);
+            exit; 
+        }
+    } else{  /* DATOS VACIOS | ELIMINAR  */
+       echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'Datos Vacios']);
+       exit; 
+    }
+
+} else if(isset($_POST['cedula'])){ /* ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  VERIFICAR CEDULA   */
+     
+    if (!empty($_POST['cedula']) ) {   /*  VACIOS   | VERIFICAR CEDULA   */
+        $cedulaValidar = $_POST['cedula'];
+        
+        if (isset($cedulaValidar) && ctype_digit($cedulaValidar)) {
+              $datosUsuario = [
+                'operacion' => 'verificar',
+                    'datos' => [
+                        'cedula' => $cedulaValidar
+                    ] 
+            ];
+
+            $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+            echo json_encode($resultado);
+            exit;
+        } else {
+            echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => 'La cédula no es válida. Debe contener solo números']);
+            exit; 
+        }
+
+     }else{ /* DATOS VACIOS | VERIFICAR CEDULA  */
+        echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => 'Datos Vacios']);
+        exit; 
+     }
+
+} else if(isset($_POST['correo'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| VERIFICAR CORREO */
     
-    if ($datosUsuario['datos']['cedula'] == $_SESSION['id']) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No puedes eliminarte a ti mismo']);
-        exit;
-    }
+     if (!empty($_POST['correo']) ) {   /*  VACIOS   | VERIFICAR CORREO   */
+        $correo = trim($_POST['correo']);
 
-    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-/*
-    if ($resultado['respuesta'] == 1) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Eliminación de usuario',
-            'descripcion' => 'Se eliminó el usuario con ID: ' . $datosUsuario['datos']['id_persona']
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-    }
-*/
-    echo json_encode($resultado);
+        if (filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+           $datosUsuario = [
+            'operacion' => 'verificarCorreo',
+                'datos' => [
+                    'correo' => $correo
+                ] 
+            ];
+            
+            $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+            echo json_encode($resultado);
+            exit; 
+        } else {
+            echo json_encode(['respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => 'Correo inválido']);
+            exit; 
+        }
+     }else{ /* DATOS VACIOS | VERIFICAR CEDULA  */
+        echo json_encode(['respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => 'Datos Vacios']);
+        exit; 
+     }
 
-} else if(isset($_POST['cedula'])){ /* -------  */
-    $datosUsuario = [
-        'operacion' => 'verificar',
-        'datos' => [
-            'cedula' => $_POST['cedula']
-        ] 
-    ];
+} else  if(isset($_POST['rol'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| VERIFICAR ROL   */
 
-    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-    echo json_encode($resultado);
+    if (!empty($_POST['rol']) ) {   /*  VACIOS   | VERIFICAR ROL  */
+        $rolValidar = $_POST['rol'];
 
-} else if(isset($_POST['correo'])){ /* -------  */
-    $datosUsuario = [
-        'operacion' => 'verificarCorreo',
-        'datos' => [
-            'correo' => $_POST['correo']
-        ] 
-    ];
+            if (isset($rolValidar) && ctype_digit($rolValidar)) {
+                    $datosUsuario = [
+                        'operacion' => 'verificarrol',
+                        'datos' => [
+                            'id_rol' =>  $rolValidar
+                        ] 
+                    ];
 
-    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-    echo json_encode($resultado);
-
-} else  if(isset($_POST['rol'])){ /* -------  */
-    $datosUsuario = [
-        'operacion' => 'verificarrol',
-        'datos' => [
-            'id_rol' => $_POST['rol']
-        ] 
-    ];
-
-    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
-    echo json_encode($resultado);
+                    $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
+                    echo json_encode($resultado);
+                    exit; 
+            } else {  /* FORMATO NO VALIDO | VERIFICAR ROL  */
+                echo json_encode(['respuesta' => 0, 'accion' => 'verifirol', 'text' => 'Formato inválido (ROL)']);
+                exit; 
+            }
+     }else{ /* DATOS VACIOS | VERIFICAR ROL  */
+        echo json_encode(['respuesta' => 0, 'accion' => 'verifirol', 'text' => 'Datos Vacios']);
+        exit; 
+     }
 
 }  else{
       $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
-        require_once 'vista/usuario.php';  
-        
-        
+      require_once 'vista/usuario.php';         
 } 
  
 
