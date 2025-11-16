@@ -36,12 +36,13 @@ class TipoUsuario extends Conexion {
 
             $c->beginTransaction();
             $sql = "INSERT INTO rol_usuario (id_rol, nombre, nivel, estatus)
-                    VALUES (:id_rol, :nombre, :nivel, 1)";
+                    VALUES (:id_rol, :nombre, :nivel, :estatus)";
             $stmt = $c->prepare($sql);
             $ok   = $stmt->execute([
                 'id_rol' => $nextId,
                 'nombre' => $d['nombre'],
-                'nivel'  => $d['nivel']
+                'nivel'  => $d['nivel'],
+                'estatus' => $d['estatus']
             ]);
 
             if ($ok) {

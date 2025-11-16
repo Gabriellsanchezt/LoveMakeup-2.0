@@ -282,7 +282,6 @@
                     <option value="Carro">Carro</option>
                     <option value="Moto">Moto</option>
                     <option value="Bicicleta">Bicicleta</option>
-                    <option value="Camión">Camión</option>
                   </select>
                 </div>
                 <span id="stipo" class="error-message"></span>
