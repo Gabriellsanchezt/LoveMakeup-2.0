@@ -174,31 +174,45 @@ if (marcaSelect !== undefined) {
 
     // **Corrección en la imagen**  
    $.post('', { accion: 'obtenerImagenes', id_producto }, function(respuesta) {
-        const data = JSON.parse(respuesta);
-        if(data.respuesta == 1) {
-            const preview = $('#preview');
-            if(data.imagenes.length > 0) {
-                $('#imagen').hide(); // Ocultar imagen principal si hay varias
-                data.imagenes.forEach(img => {
-                    const imgWrapper = $('<div class="position-relative d-inline-block m-1">');
-                    const imgTag = $('<img>').attr('src', img.url_imagen).addClass('img-thumbnail').css({width:'100px', height:'100px', objectFit:'cover'});
-                    const btnEliminar = $('<button type="button" class="btn-close position-absolute top-0 end-0"></button>');
-                    btnEliminar.on('click', function() {
-                        imgWrapper.remove();
-                        
-                        let eliminadas = $('#imagenesEliminadas').val() ? JSON.parse($('#imagenesEliminadas').val()) : [];
-                        eliminadas.push(img.id_imagen);
-                        $('#imagenesEliminadas').val(JSON.stringify(eliminadas));
-                        if(preview.children().length === 0) $('#imagen').show();
-                    });
-                    imgWrapper.append(imgTag).append(btnEliminar);
-                    preview.append(imgWrapper);
-                });
-            } else {
-                $('#imagen').show();
-            }
-        }
-    });
+  const data = JSON.parse(respuesta);
+  if (data.respuesta == 1) {
+    const preview = $('#preview');
+    preview.html(''); // limpia antes de pintar
+
+    if (data.imagenes.length > 0) {
+      $('#imagen').hide();
+
+      data.imagenes.forEach(item => {
+        // item = { id_imagen, url_imagen, tipo? }
+
+        const imgWrapper = $('<div class="position-relative d-inline-block m-1">');
+
+        const imgTag = $('<img>')
+          .attr('src', item.url_imagen)
+          .attr('data-id', item.id_imagen)              // guarda el id aquí
+          .addClass('img-thumbnail')
+          .css({ width: '100px', height: '100px', objectFit: 'cover' });
+
+        const btnEliminar = $('<button type="button" class="btn-close position-absolute top-0 end-0"></button>');
+        btnEliminar.on('click', function () {
+          const idImagen = imgTag.data('id');           // NO uses la variable "img"
+          imgWrapper.remove();
+
+          let eliminadas = $('#imagenesEliminadas').val() ? JSON.parse($('#imagenesEliminadas').val()) : [];
+          if (!eliminadas.includes(idImagen)) eliminadas.push(idImagen);
+          $('#imagenesEliminadas').val(JSON.stringify(eliminadas));
+
+          if (preview.children().length === 0) $('#imagen').show();
+        });
+
+        imgWrapper.append(imgTag).append(btnEliminar);
+        preview.append(imgWrapper);
+      });
+    } else {
+      $('#imagen').show();
+    }
+  }
+});
 
     // Abrir modal
     $('#modalTitle').text('Modificar Producto');
@@ -354,11 +368,6 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
   });
 }
 
-  
-  $("#archivo").on("change", function () {
-    mostrarImagen(this);
-});
-  
   $("#imagen").on("error", function () {
     $(this).prop("src", "assets/img/logo.PNG");
   });
@@ -425,7 +434,51 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
 }
 
 
+let imagenSeleccionadaParaReemplazar = null;
 
+$(document).on("click", ".img-thumbnail", function () {
+  $(".img-thumbnail").css("border", "none");
+  $(this).css("border", "3px solid #007bff");
+  imagenSeleccionadaParaReemplazar = $(this); // aquí ya tienes data-id
+  muestraMensaje("info", 1500, "Imagen seleccionada", "Ahora puedes subir otra imagen para reemplazarla.");
+});
+
+$("#archivo").on("change", function () {
+  const input = this;
+  if (!input.files || input.files.length === 0) return;
+
+  const file = input.files[0];
+  if (!file.type.match('image.*')) { /* valida tipo */ return; }
+  if (file.size / 1024 > 1024) { /* valida tamaño */ return; }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    if (imagenSeleccionadaParaReemplazar) {
+      const idImagen = imagenSeleccionadaParaReemplazar.data('id'); // ← correcto
+      imagenSeleccionadaParaReemplazar.attr("src", e.target.result);
+
+      let reemplazos = JSON.parse($('#imagenesReemplazadas').val() || "[]");
+      reemplazos.push({ id_imagen: idImagen, nombre: file.name });
+      $('#imagenesReemplazadas').val(JSON.stringify(reemplazos));
+
+      imagenSeleccionadaParaReemplazar.css("border", "none");
+      imagenSeleccionadaParaReemplazar = null;
+      return;
+    }
+    mostrarImagen(input);
+  };
+  reader.readAsDataURL(file);
+});
+
+
+$('#reemplazarImagenInput').on('change', function(e){
+    const file = e.target.files[0];
+    if(file){
+        $('#imagenesReemplazadas').val(JSON.stringify([file.name])); 
+        $('#imagen').attr('src', URL.createObjectURL(file)).show();
+        $('#preview').html(''); 
+    }
+});
 
 	$("#nombre").on("keypress",function(e){
 		validarkeypress(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]*$/,e);
