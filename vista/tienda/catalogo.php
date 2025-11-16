@@ -53,6 +53,15 @@
 </head>
 
 <body>
+  <script>
+  const tasaDolar = <?= json_encode($resultadoT) ?>;
+
+    // Guardar en localStorage con clave única
+    if (tasaDolar) {
+        localStorage.setItem('app_tasa_dolar', tasaDolar);
+        console.log(tasaDolar);
+   }
+  </script>
 
 <!-- |||||||||||||||| LOADER ||||||||||||||||||||-->
   <div class="preloader-wrapper">
@@ -60,7 +69,17 @@
     </div>
   </div>
 <!-- |||||||||||||||| LOADER ||||||||||||||||||||-->
+<script>
+  window.addEventListener('online', () => {
+    console.log("Conexión restaurada");
+    // Aquí podrías recargar la tasa desde el servidor
+});
 
+window.addEventListener('offline', () => {
+    console.log("Conexión perdida");
+    // Mostrar fallback si lo deseas
+});
+</script>
 <!-- php CARRITO--> 
 <?php include 'vista/complementos/carrito.php' ?>
 

@@ -127,7 +127,9 @@
                   <th class="text-white">Mensaje</th>
                   <th class="text-white">Estado</th>
                   <th class="text-white">Fecha</th>
-                  <th class="text-center text-white">Acciones</th>
+                  <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'especial')): ?>
+                      <th class="text-center text-white">Acciones</th>
+                   <?php endif; ?>
                 </tr>
               </thead>
 
@@ -166,6 +168,7 @@
             <?= date('d-m-Y g:i a', strtotime($n['fecha'])) ?>
           </span>
         </td>
+             <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'especial')): ?>
         <td>
           <?php if ($nivel === 3 && in_array((int)$n['estado'], [1, 4])): ?>
             <button
@@ -187,6 +190,7 @@
             </button>
           <?php endif; ?>
         </td>
+           <?php endif; ?>
       </tr>
     <?php endforeach; ?>
   <?php endif; ?>

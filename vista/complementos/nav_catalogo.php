@@ -65,7 +65,8 @@ nav {
   <header>
     <div class="container-lg">
       <div class="row py-4">
-      <p id="bcv" class=" slideb m-0 p-0"></p>   
+      <p id="bcv" class=" slideb m-0 p-0"></p> 
+      <p id="bcvFallback" style="display: none;" class="slideb m-0 p-0"></p> 
         <div class="col-sm-6 col-md-5 col-lg-3 justify-content-center justify-content-lg-between text-center text-sm-start d-flex gap-3">
           <div class="d-flex align-items-center">
             <a href="?pagina=catalogo">
@@ -276,4 +277,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
   </script>
  <script src="assets/js/Tasa.js"></script>
+ <script>
+// mostrarTasa
+document.addEventListener('DOMContentLoaded', () => {
+    const tasaGuardada = localStorage.getItem('app_tasa_dolar');
+
+    setTimeout(() => {
+        const bcvElement = document.getElementById('bcv');
+        const bcvFallback = document.getElementById('bcvFallback');
+
+        if (bcvElement) {
+            const contenido = bcvElement.textContent.trim().toLowerCase();
+            const esError = contenido === "" || contenido.includes("error al cargar la tasa");
+
+            if (esError) {
+                bcvElement.style.display = "none";
+
+                if (bcvFallback) {
+                    if (tasaGuardada) {
+                        bcvFallback.textContent = `Sin Conexión. Última tasa guardada: Bs ${tasaGuardada}`;
+                    } else {
+                        bcvFallback.textContent = "Sin Conexión. Tasa no disponible.";
+                    }
+                    bcvFallback.style.display = "block";
+                }
+            }
+        }
+    }, 1000); 
+});
+
+
+</script>
+
+
 

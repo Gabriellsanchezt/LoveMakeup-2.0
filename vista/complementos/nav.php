@@ -9,13 +9,13 @@
             <i class="fa-solid fa-circle-question texto-secundario" style="color: #004adf;"></i>
           </a>
 
-     
+         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'ver')): ?>
             <a href="?pagina=notificacion"
             class="notification-icon card-m1 me-2"
             style="background:white; padding:8px; border-radius:12px; text-decoration:none;">
             <i class="fa-solid fa-bell texto-secundario" style="color:black;"></i>
             </a>
-
+        <?php endif; ?>
   
         <div class="input-group">
           <span class="input-group-text t text-body dropdown-toggle card-m1" id="dropdownIcon" aria-expanded="false" style="cursor: pointer; padding: 12px;">
