@@ -436,12 +436,8 @@ if (isset($_POST['registrar'])) {
                                 'telefono_emisor' => null
                             ];
 
-                        // Obtener nombre del método de pago
-                        $sql = "SELECT nombre FROM metodo_pago WHERE id_metodopago = ? AND estatus = 1";
-                        $stmt = $salida->getConex1()->prepare($sql);
-                        $stmt->execute([$idMetodo]);
-                        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
-                        $nombreMetodo = $resultado ? $resultado['nombre'] : '';
+                        // Obtener nombre del método de pago usando el método del modelo
+                        $nombreMetodo = $salida->obtenerNombreMetodoPago($idMetodo);
 
                         // Procesar detalles según el método
                         switch($nombreMetodo) {
