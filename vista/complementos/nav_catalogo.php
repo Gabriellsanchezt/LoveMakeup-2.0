@@ -65,7 +65,8 @@ nav {
   <header>
     <div class="container-lg">
       <div class="row py-4">
-      <p id="bcv" class=" slideb m-0 p-0"></p>   
+      <p id="bcv" class=" slideb m-0 p-0"></p> 
+      <p id="bcvFallback" style="display: none;" class="slideb m-0 p-0"></p> 
         <div class="col-sm-6 col-md-5 col-lg-3 justify-content-center justify-content-lg-between text-center text-sm-start d-flex gap-3">
           <div class="d-flex align-items-center">
             <a href="?pagina=catalogo">
@@ -208,6 +209,18 @@ nav {
               <li class="nav-item border-end-0 border-lg-end-0 border-lg-end">
                 <a href="?pagina=catalogo_contacto" class="nav-link fw-bold px-4 py-3">Contactos</a>
               </li>
+              <style>
+                .dropdown-menu .dropdown-item {
+                    font-size: 1.2rem;
+                    padding-top: 0.75rem;
+                    padding-bottom: 0.75rem;
+                    line-height: 1.5;
+                }
+                .s{
+                  color:#ff71d8;
+                }
+                </style>
+
              <?php if ($sesion_activa): ?>
               <?php if($_SESSION["nivel_rol"] == 1) { ?>
               <li class="nav-item border-end-0 border-lg-end-0 border-lg-end">
@@ -221,10 +234,10 @@ nav {
                   <i class="fa-solid fa-laptop-file"></i> Ver </a>
                 <ul class="dropdown-menu px-3 px-lg-0 pb-2 mt-0 border-0 rounded-0 animate slide shadow" aria-labelledby="pages">
                   <li> <a href="?pagina=catalogo_datos"  class="dropdown-item text-dark" >
-                        <i class="fa-solid fa-user-gear"></i> Mis Datos </a>
+                        <i class="fa-solid fa-user-gear me-2 s"></i> Mis Datos </a>
                     </li>
                   <li><a href="?pagina=catalogo_pedido" class="dropdown-item text-dark">
-                  <i class="fa-solid fa-bag-shopping"></i> Mis Pedidos </a></li>
+                  <i class="fa-solid fa-bag-shopping me-2 s"></i> Mis Pedidos </a></li>
                 </ul>
               </li>
               <?php } ?>
@@ -276,4 +289,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
   </script>
  <script src="assets/js/Tasa.js"></script>
+ <script>
+// mostrarTasa
+document.addEventListener('DOMContentLoaded', () => {
+    const tasaGuardada = localStorage.getItem('app_tasa_dolar');
+
+    setTimeout(() => {
+        const bcvElement = document.getElementById('bcv');
+        const bcvFallback = document.getElementById('bcvFallback');
+
+        if (bcvElement) {
+            const contenido = bcvElement.textContent.trim().toLowerCase();
+            const esError = contenido === "" || contenido.includes("error al cargar la tasa");
+
+            if (esError) {
+                bcvElement.style.display = "none";
+
+                if (bcvFallback) {
+                    if (tasaGuardada) {
+                        bcvFallback.textContent = `Sin Conexión. Última tasa guardada: Bs ${tasaGuardada}`;
+                    } else {
+                        bcvFallback.textContent = "Sin Conexión. Tasa no disponible.";
+                    }
+                    bcvFallback.style.display = "block";
+                }
+            }
+        }
+    }, 1000); 
+});
+
+
+</script>
+
+
 

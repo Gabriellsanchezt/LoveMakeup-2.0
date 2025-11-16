@@ -18,7 +18,7 @@ if (!empty($_SESSION['id'])) {
 $catalogo = new Catalogo();
 
 $categorias = $catalogo->obtenerCategorias();
-
+$resultadoT = $catalogo->consultaTasaUltima();
 
  if (isset($_GET['categoria'])) {
     // Si no hay búsqueda, pero sí categoría

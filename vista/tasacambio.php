@@ -4,11 +4,11 @@
 <head> 
   <!-- php barra de navegacion-->
   <?php include 'complementos/head.php' ?> 
-  <link rel="stylesheet" href="assets/css/formulario.css">
   <title> Tasa de Cambio | LoveMakeup  </title> 
+  <link rel="stylesheet" href="assets/css/formulario.css">
 
   <style>
-.driver-popover.driverjs-theme {
+  .driver-popover.driverjs-theme {
   color: #000;
 }
 
@@ -73,6 +73,7 @@
 .driver-popover.driverjs-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
   border-bottom-color: #fde047;
 }
+
   </style>
 
   <script>
@@ -216,9 +217,9 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
               data-fecha="<?php echo date("Y-m-d", strtotime($dato['fecha'])); ?>" 
               data-tasa="<?php echo $dato['tasa_bs']; ?>"
             >
-            <td class="text-center text-dark"><i class="fa-solid fa-calendar-days me-2"></i><?php echo date("d/m/Y", strtotime($dato['fecha'])); ?></td>
-            <td class="text-center text-dark">  <span class="badge badge-pill badge-lg bg-primary fs-6"><?php echo ' Bs. '.$dato['tasa_bs']; ?></span></td>
-            <td class="text-center text-dark"><?php echo $dato['fuente']; ?></td>
+            <td class="text-center text-dark texto-secundario"><i class="fa-solid fa-calendar-days me-2"></i><?php echo date("d/m/Y", strtotime($dato['fecha'])); ?></td>
+            <td class="text-center text-dark texto-secundario">  <span class="badge badge-pill badge-lg bg-primary fs-6"><?php echo ' Bs. '.$dato['tasa_bs']; ?></span></td>
+            <td class="text-center text-dark texto-secundario"><?php echo $dato['fuente']; ?></td>
           </tr>
          
         </tbody>

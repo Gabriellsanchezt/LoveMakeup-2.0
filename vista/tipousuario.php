@@ -226,10 +226,8 @@
                   <div class="info-content">
                     <strong>Información sobre Niveles de Acceso:</strong>
                     <p><b>Nivel 2 - Acceso Limitado:</b><br>
-                      <span class="text-muted">Reporte, Producto, Venta, Reserva, Pedido Web.</span>
                     </p>
                     <p><b>Nivel 3 - Acceso Completo:</b><br>
-                      <span class="text-muted">Reporte, Compra, Producto, Venta, Reserva, Proveedor, Categoría, Cliente, Pedido Web, Método de Pago, Método de Entrega, Usuario, Tipo de Usuario.</span>
                     </p>
                     <p>Los permisos se asignan automáticamente según el nivel seleccionado.</p>
                   </div>
@@ -317,10 +315,8 @@
                   <div class="info-content">
                     <strong>Información sobre Niveles de Acceso:</strong>
                     <p><b>Nivel 2 - Acceso Limitado:</b><br>
-                      <span class="text-muted">Reporte, Producto, Venta, Reserva, Pedido Web.</span>
                     </p>
                     <p><b>Nivel 3 - Acceso Completo:</b><br>
-                      <span class="text-muted">Reporte, Compra, Producto, Venta, Reserva, Proveedor, Categoría, Cliente, Pedido Web, Método de Pago, Método de Entrega, Usuario, Tipo de Usuario.</span>
                     </p>
                     <p>Los permisos se asignan automáticamente según el nivel seleccionado.</p>
                   </div>

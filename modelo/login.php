@@ -306,6 +306,25 @@ class Login extends Conexion {
 }
 
 
+    public function consultaTasaUltima() {
+    $conex = $this->getConex1();
+    try {
+        $sql = "SELECT tasa_bs FROM tasa_dolar ORDER BY fecha DESC LIMIT 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute();
+
+        $resultado = $stmt->fetchColumn();
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex = null;
+        }
+        throw $e;
+    }
+}
+
+
     private function verificarFechaNoExiste($fecha) {
     $conex = $this->getConex1();
     try {

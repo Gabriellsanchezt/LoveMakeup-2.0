@@ -128,12 +128,23 @@ class Producto extends Conexion {
     $conex = $this->getConex1();
     try {
         $conex->beginTransaction();
-
-        // Guardar imágenes por separado
-        $imagenes = [];
-        if (isset($datos['imagenes']) && is_array($datos['imagenes'])) {
-            $imagenes = $datos['imagenes'];
-            unset($datos['imagenes']); // eliminar antes de pasar a PDO
+        $imagenesNuevas     = $datos['imagenes_nuevas']     ?? [];
+        $imagenesReemplazos = $datos['imagenes_reemplazos'] ?? [];
+        unset($datos['imagenes'], $datos['imagenes_nuevas'], $datos['imagenes_reemplazos']);
+        $params = [
+            'nombre'         => $datos['nombre'] ?? null,
+            'descripcion'    => $datos['descripcion'] ?? null,
+            'id_marca'       => $datos['id_marca'] ?? null,
+            'cantidad_mayor' => $datos['cantidad_mayor'] ?? null,
+            'precio_mayor'   => $datos['precio_mayor'] ?? null,
+            'precio_detal'   => $datos['precio_detal'] ?? null,
+            'stock_maximo'   => $datos['stock_maximo'] ?? null,
+            'stock_minimo'   => $datos['stock_minimo'] ?? null,
+            'id_categoria'   => $datos['id_categoria'] ?? null,
+            'id_producto'    => $datos['id_producto'] ?? null
+        ];
+        if (empty($params['id_producto'])) {
+            return ['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Falta id_producto'];
         }
 
         $sql = "UPDATE producto SET 
@@ -149,25 +160,39 @@ class Producto extends Conexion {
                 WHERE id_producto = :id_producto";
 
         $stmt = $conex->prepare($sql);
-        $stmt->execute($datos);
+        $stmt->execute($params);
 
-        // Actualizar imágenes si vienen
-        if (!empty($imagenes)) {
-            // Eliminar imágenes existentes
-            $sqlDel = "DELETE FROM producto_imagen WHERE id_producto = :id_producto";
-            $stmtDel = $conex->prepare($sqlDel);
-            $stmtDel->execute(['id_producto' => $datos['id_producto']]);
+        if (!empty($imagenesReemplazos) && is_array($imagenesReemplazos)) {
+            $sqlUpd = "UPDATE producto_imagen SET url_imagen = :url_imagen WHERE id_imagen = :id_imagen";
+            $stmtUpd = $conex->prepare($sqlUpd);
+            foreach ($imagenesReemplazos as $img) {
+                if (!empty($img['id_imagen']) && !empty($img['url_imagen'])) {
+                    $stmtUpd->execute([
+                        'url_imagen' => $img['url_imagen'],
+                        'id_imagen'  => $img['id_imagen']
+                    ]);
+                }
+            }
+        }
 
-            // Insertar nuevas imágenes
-            $sqlImg = "INSERT INTO producto_imagen(id_producto, url_imagen, tipo) VALUES(:id_producto, :url_imagen, :tipo)";
-            $stmtImg = $conex->prepare($sqlImg);
-            foreach ($imagenes as $indice => $rutaImagen) {
-                $tipo = $indice === 0 ? 'principal' : 'secundaria';
-                $stmtImg->execute([
-                    'id_producto' => $datos['id_producto'],
-                    'url_imagen' => $rutaImagen,
-                    'tipo' => $tipo
-                ]);
+        if (!empty($imagenesNuevas) && is_array($imagenesNuevas)) {
+            
+            $q = $conex->prepare("SELECT COUNT(*) FROM producto_imagen WHERE id_producto = :id AND tipo = 'principal'");
+            $q->execute(['id' => $params['id_producto']]);
+            $tienePrincipal = $q->fetchColumn() > 0;
+
+            $sqlIns = "INSERT INTO producto_imagen(id_producto, url_imagen, tipo) VALUES(:id_producto, :url_imagen, :tipo)";
+            $stmtIns = $conex->prepare($sqlIns);
+            foreach ($imagenesNuevas as $idx => $img) {
+                if (!empty($img['url_imagen'])) {
+                    $tipo = (!$tienePrincipal && $idx === 0) ? 'principal' : 'secundaria';
+                    if ($tipo === 'principal') $tienePrincipal = true;
+                    $stmtIns->execute([
+                        'id_producto' => $params['id_producto'],
+                        'url_imagen'  => $img['url_imagen'],
+                        'tipo'        => $tipo
+                    ]);
+                }
             }
         }
 
@@ -177,12 +202,10 @@ class Producto extends Conexion {
 
     } catch (\PDOException $e) {
         if ($conex) $conex->rollBack();
-        throw $e;
+        return ['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => $e->getMessage()];
     }
 }
 
-
-    
     private function ejecutarEliminacion($datos) {
         $conex = $this->getConex1();
         try {
@@ -260,17 +283,21 @@ class Producto extends Conexion {
     public function consultar() {
     $conex = $this->getConex1();
     try {
-        $sql = "SELECT p.*, 
+        $sql = "SELECT p.*,
                        c.nombre AS nombre_categoria,
                        m.nombre AS nombre_marca,
-                       pi.url_imagen AS imagen
+                       (
+                         SELECT pi.url_imagen
+                         FROM producto_imagen pi
+                         WHERE pi.id_producto = p.id_producto
+                         ORDER BY pi.id_imagen ASC
+                         LIMIT 1
+                       ) AS imagen
                 FROM producto p
                 INNER JOIN categoria c ON p.id_categoria = c.id_categoria
                 INNER JOIN marca m ON p.id_marca = m.id_marca
-                LEFT JOIN producto_imagen pi 
-                       ON p.id_producto = pi.id_producto AND pi.tipo = 'principal'
                 WHERE p.estatus IN (1,2)";
-        
+
         $stmt = $conex->prepare($sql);
         $stmt->execute();
         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);

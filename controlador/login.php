@@ -60,11 +60,11 @@ if (isset($_POST['ingresar'])) {
                 ];
 
                 $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
-        }
-
-         $resultadotasa = $objlogin->consultaTasa($fecha);
-        $_SESSION["tasa"] = $resultadotasa;
-
+        } 
+         
+        $resultadoT = $objlogin->consultaTasaUltima();
+        $_SESSION["tasa"] = $resultadoT;
+        
         if ($_SESSION["nivel_rol"] == 1) {
 
             echo json_encode(['respuesta' => 1, 'accion' => 'ingresar']);

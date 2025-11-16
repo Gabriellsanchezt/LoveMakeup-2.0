@@ -56,6 +56,15 @@ if(isset($_POST['modificar'])){
     ]; 
 
     $resultado = $objtasa->procesarTasa(json_encode($datosTasa));
+
+    if($resultado['respuesta'] == 1){
+         $resultado1 = $objtasa->consultaTasaUltima();
+            if (!empty($resultado1)) {
+                $_SESSION["tasa"]   = $resultado1;
+               
+            }
+    }
+
     echo json_encode($resultado);
 
 } else if(isset($_POST['sincronizar'])){
@@ -97,6 +106,13 @@ if(isset($_POST['modificar'])){
     ]; 
 
     $resultado = $objtasa->procesarTasa(json_encode($datosTasa));
+     if($resultado['respuesta'] == 1){
+         $resultado1 = $objtasa->consultaTasaUltima();
+            if (!empty($resultado1)) {
+                $_SESSION["tasa"]   = $resultado1;
+               
+            }
+    }
     echo json_encode($resultado);
     
 } else if(isset($_POST['obtener_tasa_actual']) || (isset($_GET['obtener_tasa_actual']) && $_GET['obtener_tasa_actual'] == '1')) {

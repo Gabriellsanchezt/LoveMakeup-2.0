@@ -101,7 +101,9 @@
                   <th class="text-white text-center">Nombre y Cédula</th>
                   <th class="text-white text-center">Telefono</th>
                   <th class="text-white text-center">Correo</th>
+                  <th class="text-white text-center">Contactar</th>
                   <th class="text-white text-center">Estatus</th>
+                  <th class="text-white text-center">Estadísticas</th>
                     <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <th class="text-white text-center">Acción</th>
                     <?php endif; ?>
@@ -161,9 +163,7 @@
                     $telefono_sin_cero = ltrim($telefono_limpio, '0');
                     $link_whatsapp = "https://wa.me/58" . $telefono_sin_cero;
                   ?>
-                  <a href="<?= $link_whatsapp ?>" target="_blank" class="btn btn-success btn-sm mt-1 Ayudatelefono" title="Contactar por WhatsApp">
-                             <i class="fab fa-whatsapp me-1"></i> WhatsApp
-                             </a>
+                  
                 </td>
 
                  <td>
@@ -172,9 +172,15 @@
                         <span class="btn-copiar" onclick="copiarCorreo(this)" title="Copiar">
                             <i class="fas fa-copy"></i>
                         </span>
-                      </div> <br>
-                        <a href="mailto:<?= $dato['correo'] ?>" class="btn btn-info btn-sm mt-1 Ayudacorreo" title="Enviar correo">
-                               <i class="fas fa-envelope me-1"></i> Enviar correo
+                      </div> 
+                </td>
+ 
+                <td class="text-center">
+                   <a href="<?= $link_whatsapp ?>" target="_blank" class="btn btn-success btn-sm mt-1 Ayudatelefono" title="Contactar por WhatsApp">
+                             <i class="fab fa-whatsapp me-1 "></i> 
+                             </a> 
+                   <a href="mailto:<?= $dato['correo'] ?>" class="btn btn-info btn-sm mt-1 Ayudacorreo" title="Enviar correo">
+                               <i class="fas fa-envelope me-1"></i> 
                             </a>
                 </td>
                     
@@ -182,6 +188,18 @@
                   <span class="<?= $estatus_classes[$dato['estatus']] ?>">
                     <?php echo $estatus_texto[$dato['estatus']] ?>
                   </span>
+                  </td>
+
+                  <td class="text-center">
+                    <button type="button" class="btn btn-info btn-sm ver-estadisticas text-dark"
+                        data-cedula="<?php echo $dato['cedula']; ?>"
+                        data-nombre="<?php echo $dato['nombre']; ?>"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalEstadisticas">
+                      <i class="fas fa-box-open me-1"></i> Ver
+                    </button>
+
+
                   </td>
                     
                   <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
@@ -201,11 +219,18 @@
                     </form>
                  </td>
                      <?php endif; ?>
+
+                     
                 </tr>
+
+
+                
                <?php } ?>
               </tbody>
                                
           </table> <!-- Fin tabla-->
+          
+
           <?php if ($total_registros > $limite): ?>
   <div class="text-center mt-3">
     <form method="POST">
@@ -215,6 +240,7 @@
     </form>
   </div>
 <?php endif; ?>
+
       </div>  <!-- Fin div table-->
 
 
@@ -223,6 +249,8 @@
     </div>  
     </div><!-- FIN CARD PRINCIPAL-->  
  </div>
+
+ 
 <style>
   .text-g{
     font-size:15px;
@@ -297,6 +325,9 @@
   </div>
 </div>
  </div>
+
+
+ 
  
 <!--FIN Modal -->
 <script>
@@ -326,6 +357,58 @@ function copiarCorreo(elemento) {
   });
 }
 </script>
+<script>
+  const pedidosData = <?php echo json_encode($pedidos); ?>;
+</script>
+<script>
+document.querySelectorAll('.ver-estadisticas').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const cedula = this.getAttribute('data-cedula');
+    const nombre = this.getAttribute('data-nombre');
+    const modalTitle = document.getElementById('modalEstadisticasLabel');
+    const contenedor = document.getElementById('contenido-estadisticas');
+
+    modalTitle.textContent = `Pedidos de ${nombre}`;
+
+    let venta = 0, pedido_web = 0, reserva = 0;
+    let total_usd_venta = 0, total_usd_web = 0, total_usd_reserva = 0;
+
+    pedidosData.forEach(p => {
+      if (p.cedula === cedula) {
+        const usd = parseFloat(p.precio_total_usd);
+        switch (parseInt(p.tipo)) {
+          case 1: venta++; total_usd_venta += usd; break;
+          case 2: pedido_web++; total_usd_web += usd; break;
+          case 3: reserva++; total_usd_reserva += usd; break;
+        }
+      }
+    });
+
+    contenedor.innerHTML = `
+      ${cardPedido('fas fa-shopping-cart', 'Compra en tienda física', venta, total_usd_venta, 'success')}
+      ${cardPedido('fas fa-globe', 'Pedidos Web', pedido_web, total_usd_web, 'info')}
+      ${cardPedido('fas fa-calendar-check', 'Reservas', reserva, total_usd_reserva, 'warning')}
+    `;
+  });
+});
+
+function cardPedido(icono, titulo, cantidad, total, color) {
+  return `
+    <div class='card mb-3 bg-${color} text-white'>
+      <div class='card-body d-flex align-items-center'>
+        <div class='me-3'>
+          <i class='${icono} fa-2x'></i>
+        </div>
+        <div class='flex-grow-1'>
+          <h6 class='mb-1'>${titulo}</h6>
+          <h2 class='mb-0'>${cantidad}</h2>
+          <h6>Total: $${total.toFixed(2)}</h6>
+        </div>
+      </div>
+    </div>
+  `;
+}
+</script>
 
 
 <!-- php barra de navegacion-->
@@ -333,6 +416,23 @@ function copiarCorreo(elemento) {
 <!-- para el datatable-->
 <script src="assets/js/demo/datatables-demo.js"></script>
 <script src="assets/js/cliente.js"></script>
+
+      <div class="modal fade" id="modalEstadisticas" tabindex="-1" aria-labelledby="modalEstadisticasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-producto">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEstadisticasLabel">Estadísticas del cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body bg-s" id="contenido-estadisticas">
+        <!-- Aquí se insertan las cards dinámicamente -->
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+
 </body>
 
 </html>

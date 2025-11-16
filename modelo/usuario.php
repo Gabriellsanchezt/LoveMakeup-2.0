@@ -96,6 +96,13 @@ class Usuario extends Conexion
                             return [ 'respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => 'La correo no se encuentra registrada'  ];
                         } 
 
+                case 'verificarrol':
+                  if ($this->verificarExistenciaROL($datosProcesar)) {
+                        return ['respuesta' => 1,'accion' => 'verifirol'];
+                    } else {
+                        return [ 'respuesta' => 0,'accion' => 'verifirol','text' => 'Error, no se encuentra un rol registrado'];
+                    }        
+
                 default:
                     return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
             }
@@ -289,6 +296,33 @@ class Usuario extends Conexion
         $conex->commit();
         $conex = null;
         return $existe;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
+
+
+private function verificarExistenciaROL($datos) {
+    $conex = $this->getConex2();
+    try {
+        $conex->beginTransaction();
+
+        $sql = "SELECT COUNT(*) FROM rol_usuario WHERE id_rol = :id_rol";
+
+         $paramUpdate = [
+            'id_rol' => $datos['id_rol']
+    
+        ];
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute($paramUpdate);
+        $existe = $stmt->fetchColumn() > 0;
+
+        $conex->commit();
+        $conex = null;
+        return $existe;
+
     } catch (\PDOException $e) {
         if ($conex) $conex = null;
         throw $e;

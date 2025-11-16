@@ -142,8 +142,11 @@ else {
 
 // 5) Cargar vista
 if ($nivel >= 2) {
-    require_once __DIR__ . '/../vista/notificacion.php';
-
+    if($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'ver')){
+        require_once __DIR__ . '/../vista/notificacion.php';
+    } else{
+        require_once 'vista/seguridad/privilegio.php';
+    }
 } elseif ($nivel === 1) {
     header("Location: ?pagina=catalogo");
     exit();
