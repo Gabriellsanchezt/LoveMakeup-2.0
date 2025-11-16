@@ -22,6 +22,48 @@ if ($_SESSION["nivel_rol"] == 1) {
 require_once 'permiso.php';
 $obj = new TipoUsuario();
 
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el nivel sea válido
+ */
+function validarNivel($nivel) {
+    if (empty($nivel) || !is_numeric($nivel)) {
+        return false;
+    }
+    $nivel = (int)$nivel;
+    $niveles_validos = [2, 3];
+    return in_array($nivel, $niveles_validos, true);
+}
+
+/**
+ * Valida que el estatus sea válido
+ */
+function validarEstatus($estatus) {
+    if (empty($estatus) || !is_numeric($estatus)) {
+        return false;
+    }
+    $estatus = (int)$estatus;
+    $estatus_validos = [1, 2];
+    return in_array($estatus, $estatus_validos, true);
+}
+
+/**
+ * Valida que el id_tipo sea válido y exista en la base de datos
+ */
+function validarIdTipo($id_tipo, $tipos) {
+    if (empty($id_tipo) || !is_numeric($id_tipo)) {
+        return false;
+    }
+    $id_tipo = (int)$id_tipo;
+    foreach ($tipos as $tipo) {
+        if ($tipo['id_rol'] == $id_tipo && $tipo['estatus'] >= 1 && $tipo['id_rol'] > 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // 0) Bitácora de acceso al módulo (GET)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $bit = [
@@ -41,6 +83,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['registrar'])) {
         $nombre = trim($_POST['nombre'] ?? '');
         $nivel  = (int)($_POST['nivel'] ?? 0);
+        $estatus= (int)($_POST['estatus'] ?? 0);
+
+        // Validar nivel
+        if (!validarNivel($nivel)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El nivel seleccionado no es válido']);
+            exit;
+        }
+
+        // Validar estatus (aunque el modelo lo ignore, debemos validarlo por seguridad)
+        if (!validarEstatus($estatus)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El estatus seleccionado no es válido']);
+            exit;
+        }
 
         $payload = [
             'operacion'=>'registrar',
@@ -71,6 +126,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nombre = trim($_POST['nombre'] ?? '');
         $nivel  = (int)($_POST['nivel'] ?? 0);
         $estatus= (int)($_POST['estatus'] ?? 1);
+
+        // Validar nivel
+        if (!validarNivel($nivel)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El nivel seleccionado no es válido']);
+            exit;
+        }
+
+        // Validar estatus
+        if (!validarEstatus($estatus)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El estatus seleccionado no es válido']);
+            exit;
+        }
+
+        // Validar id_tipo
+        $tipos = $obj->consultar();
+        if (!validarIdTipo($idTipo, $tipos)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El tipo de usuario seleccionado no es válido']);
+            exit;
+        }
 
         $payload = [
             'operacion'=>'actualizar',
@@ -104,6 +178,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // —— Eliminar (desactivar) rol ——  
     if (isset($_POST['eliminar'])) {
         $idTipo = (int)($_POST['id_tipo'] ?? 0);
+
+        // Validar id_tipo
+        $tipos = $obj->consultar();
+        if (!validarIdTipo($idTipo, $tipos)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'El tipo de usuario seleccionado no es válido']);
+            exit;
+        }
 
         // Obtiene nombre del rol
         $todos   = $obj->consultar();

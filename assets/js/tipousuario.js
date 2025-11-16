@@ -54,7 +54,7 @@ $(function(){
   $('#modificar').on('show.bs.modal', function(e){
     const btn = e.relatedTarget;
     const id  = parseInt(btn.getAttribute('data-id'),10);
-    if (id===2) {
+    if (id===3) {
       e.preventDefault();
       mostrarMensaje('info',3000,'Acción no permitida',
         'El rol <strong>Administrador</strong><br>no puede modificarse.');
@@ -90,7 +90,7 @@ $(function(){
   // —— 5) Eliminar ——  
   $('.eliminar').on('click', function(e){
     const id = parseInt($(this).val(),10);
-    if (id===2) {
+    if (id===3) {
       e.preventDefault();
       mostrarMensaje('info',3000,'Acción no permitida',
         'El rol <strong>Administrador</strong><br>no puede eliminarse.');
