@@ -1,195 +1,150 @@
 <?php
 
-namespace Tests;
+namespace Tests\PruebaPHPUnit;
 
 use PHPUnit\Framework\TestCase;
 use LoveMakeup\Proyecto\Modelo\Salida;
+use ReflectionClass;
 
-// Cargar el autoloader de Composer
-require_once __DIR__ . '/../../vendor/autoload.php';
-
-// Cargar configuración de base de datos si no está definida
-if (!defined('DB_HOST')) {
-    require_once __DIR__ . '/../../config/config.php';
-}
-
-/**
- * Clase testable que extiende Salida para exponer métodos privados/protected
- */
-class SalidaTestable extends Salida {
+/*|||||||||||||||||||||||||| CLASE TESTABLE CON REFLEXIÓN  |||||||||||||||||||||| */
+class SalidaTestable {
+    private $salida;
+    private $reflection;
     
-    public function testEjecutarRegistro($datos) {
-        return $this->ejecutarRegistro($datos);
+    public function __construct() {
+        $this->salida = new Salida();
+        $this->reflection = new ReflectionClass($this->salida);
+    }
+    
+    private function invokePrivateMethod($methodName, $args = []) {
+        $method = $this->reflection->getMethod($methodName);
+        $method->setAccessible(true);
+        return $method->invokeArgs($this->salida, $args);
+    }
+    
+    public function testEjecutarRegistro($datos) {  /*||| 1 ||| */
+        return $this->invokePrivateMethod('ejecutarRegistro', [$datos]);
     }
 
-    public function testEjecutarActualizacion($datos) {
-        return $this->ejecutarActualizacion($datos);
+    public function testEjecutarActualizacion($datos) {  /*||| 2 ||| */
+        return $this->invokePrivateMethod('ejecutarActualizacion', [$datos]);
     }
 
-    public function testEjecutarEliminacion($datos) {
-        return $this->ejecutarEliminacion($datos);
+    public function testEjecutarEliminacion($datos) {  /*||| 3 ||| */
+        return $this->invokePrivateMethod('ejecutarEliminacion', [$datos]);
     }
 
-    public function testVerificarStock($id_producto) {
-        return $this->verificarStock($id_producto);
+    public function testVerificarStock($id_producto) {  /*||| 4 ||| */
+        return $this->invokePrivateMethod('verificarStock', [$id_producto]);
     }
 
-    public function testConsultarVentas() {
-        return $this->consultarVentas();
+    public function testConsultarVentas() {  /*||| 5 ||| */
+        return $this->salida->consultarVentas();
     }
 
-    public function testConsultarCliente($datos) {
-        return $this->consultarCliente($datos);
+    public function testConsultarCliente($datos) {  /*||| 6 ||| */
+        return $this->salida->consultarCliente($datos);
     }
 
-    public function testRegistrarCliente($datos) {
-        return $this->registrarCliente($datos);
+    public function testRegistrarCliente($datos) {  /*||| 7 ||| */
+        return $this->salida->registrarCliente($datos);
     }
 
-    public function testConsultarProductos() {
-        return $this->consultarProductos();
+    public function testConsultarProductos() {  /*||| 8 ||| */
+        return $this->salida->consultarProductos();
     }
 
-    public function testConsultarMetodosPago() {
-        return $this->consultarMetodosPago();
+    public function testConsultarMetodosPago() {  /*||| 9 ||| */
+        return $this->salida->consultarMetodosPago();
     }
 
-    public function testConsultarDetallesPedido($id_pedido) {
-        return $this->consultarDetallesPedido($id_pedido);
+    public function testConsultarDetallesPedido($id_pedido) {  /*||| 10 ||| */
+        return $this->salida->consultarDetallesPedido($id_pedido);
     }
 
-    public function testConsultarClienteDetalle($id_pedido) {
-        return $this->consultarClienteDetalle($id_pedido);
+    public function testConsultarClienteDetalle($id_pedido) {  /*||| 11 ||| */
+        return $this->salida->consultarClienteDetalle($id_pedido);
     }
 
-    public function testConsultarMetodosPagoVenta($id_pedido) {
-        return $this->consultarMetodosPagoVenta($id_pedido);
+    public function testConsultarMetodosPagoVenta($id_pedido) {  /*||| 12 ||| */
+        return $this->salida->consultarMetodosPagoVenta($id_pedido);
     }
 
-    public function testRegistrarVentaPublico($datos) {
-        return $this->registrarVentaPublico($datos);
+    public function testRegistrarVentaPublico($datos) {  /*||| 13 ||| */
+        return $this->salida->registrarVentaPublico($datos);
     }
 
-    public function testActualizarVentaPublico($datos) {
-        return $this->actualizarVentaPublico($datos);
+    public function testActualizarVentaPublico($datos) {  /*||| 14 ||| */
+        return $this->salida->actualizarVentaPublico($datos);
     }
 
-    public function testEliminarVentaPublico($datos) {
-        return $this->eliminarVentaPublico($datos);
+    public function testEliminarVentaPublico($datos) {  /*||| 15 ||| */
+        return $this->salida->eliminarVentaPublico($datos);
     }
 
-    public function testConsultarClientePublico($datos) {
-        return $this->consultarClientePublico($datos);
+    public function testConsultarClientePublico($datos) {  /*||| 16 ||| */
+        return $this->salida->consultarClientePublico($datos);
     }
 
-    public function testRegistrarClientePublico($datos) {
-        return $this->registrarClientePublico($datos);
+    public function testRegistrarClientePublico($datos) {  /*||| 17 ||| */
+        return $this->salida->registrarClientePublico($datos);
+    }
+    
+    public function getSalida() {
+        return $this->salida;
     }
 }
 
-/**
- * Clase de test para Salida
- */
+/*||||||||||||||||||||||||||||||| CLASE DE TEST  |||||||||||||||||||||||||||||| */
 class SalidaTest extends TestCase {
-    
-    private ?SalidaTestable $salida = null;
-    private static bool $conexionDisponible = false;
-    private static bool $conexionVerificada = false;
-
-    /**
-     * Verifica si hay conexión a la base de datos disponible
-     */
-    private function verificarConexion(): bool {
-        if (self::$conexionVerificada) {
-            return self::$conexionDisponible;
-        }
-
-        try {
-            // Intentar conectar directamente sin usar la clase Conexion (que usa die)
-            $host = defined('DB_HOST') ? DB_HOST : 'localhost';
-            $dbname = defined('DB_NAME_1') ? DB_NAME_1 : 'lovemakeupbd';
-            $user = defined('DB_USER') ? DB_USER : 'root';
-            $pass = defined('DB_PASS') ? DB_PASS : '';
-            
-            $pdo = new \PDO(
-                "mysql:host={$host};dbname={$dbname};charset=utf8",
-                $user,
-                $pass,
-                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-            );
-            $pdo = null; // Cerrar conexión
-            self::$conexionDisponible = true;
-        } catch (\PDOException $e) {
-            self::$conexionDisponible = false;
-        }
-        
-        self::$conexionVerificada = true;
-        return self::$conexionDisponible;
-    }
-
-    /**
-     * Marca el test como skipped si no hay conexión
-     */
-    private function requiereConexion(): void {
-        if (!$this->verificarConexion()) {
-            $this->markTestSkipped('Base de datos no disponible. Asegúrate de que XAMPP/MySQL esté corriendo.');
-        }
-    }
+    private SalidaTestable $salida;
+    private $idProductoDisponible = null;
+    private $idPedidoDisponible = null;
+    private $idUsuarioDisponible = null;
+    private $cedulaClienteDisponible = null;
 
     protected function setUp(): void {
-        parent::setUp();
+        $this->salida = new SalidaTestable();
+        // Obtener datos reales de la base de datos
+        $this->obtenerDatosDisponibles();
+    }
+    
+    private function obtenerDatosDisponibles(): void {
+        // Obtener un producto disponible con stock
+        $productos = $this->salida->testConsultarProductos();
+        if (!empty($productos) && isset($productos[0]['id_producto'])) {
+            $this->idProductoDisponible = $productos[0]['id_producto'];
+        }
         
-        // Verificar conexión antes de crear la instancia
-        $this->requiereConexion();
-        
-        try {
-            $this->salida = new SalidaTestable();
-        } catch (\Exception $e) {
-            // Si falla la conexión al crear Salida, marcar como skipped
-            if (strpos($e->getMessage(), 'Conexión') !== false || 
-                strpos($e->getMessage(), 'connection') !== false) {
-                $this->markTestSkipped('No se pudo establecer conexión a la base de datos: ' . $e->getMessage());
+        // Obtener un pedido disponible y extraer datos del cliente
+        $ventas = $this->salida->testConsultarVentas();
+        if (!empty($ventas) && isset($ventas[0]['id_pedido'])) {
+            $this->idPedidoDisponible = $ventas[0]['id_pedido'];
+            
+            // Extraer datos del cliente si están disponibles en la venta
+            if (isset($ventas[0]['id_usuario'])) {
+                $this->idUsuarioDisponible = $ventas[0]['id_usuario'];
             }
-            throw $e;
+            if (isset($ventas[0]['cedula'])) {
+                $this->cedulaClienteDisponible = (string)$ventas[0]['cedula'];
+            }
         }
     }
 
-    protected function tearDown(): void {
-        parent::tearDown();
-        $this->salida = null;
-    }
-
-    /**
-     * Test: Operación inválida
-     * Este test no requiere conexión a BD
-     */
-    public function testOperacionInvalida(): void {
-        try {
-            $salidaDirecto = new Salida(); 
-        } catch (\Exception $e) {
-            // Si no hay conexión, marcar como skipped
-            $this->markTestSkipped('Base de datos no disponible para este test: ' . $e->getMessage());
-            return;
-        }
-        
+    public function testOperacionInvalida() { /*|||||| OPERACIONES |||| 1 || */
+        $salidaDirecto = new \LoveMakeup\Proyecto\Modelo\Salida(); 
         $json = json_encode([
             'operacion' => 'desconocido',
             'datos' => []
         ]);
 
         $resultado = $salidaDirecto->procesarVenta($json);
-        
-        $this->assertIsArray($resultado);
         $this->assertEquals(0, $resultado['respuesta']);
         $this->assertEquals('Operación no válida', $resultado['mensaje']);
     }
 
-    /**
-     * Test: Consultar ventas
-     */
-    public function testConsultarVentas(): void {
+    public function testConsultarVentas() { /*|||||| CONSULTAR VENTAS ||||| 2 | */
         $resultado = $this->salida->testConsultarVentas();
-        
         $this->assertIsArray($resultado);
 
         if (!empty($resultado)) {
@@ -197,16 +152,13 @@ class SalidaTest extends TestCase {
             $this->assertArrayHasKey('cliente', $resultado[0]);
             $this->assertArrayHasKey('fecha', $resultado[0]);
             $this->assertArrayHasKey('estado', $resultado[0]);
-            $this->assertArrayHasKey('precio_total', $resultado[0]);
+            $this->assertArrayHasKey('precio_total_usd', $resultado[0]);
+            $this->assertArrayHasKey('precio_total_bs', $resultado[0]);
         }
     }
 
-    /**
-     * Test: Consultar productos
-     */
-    public function testConsultarProductos(): void {
+    public function testConsultarProductos() { /*|||||| CONSULTAR PRODUCTOS ||||| 3 | */
         $resultado = $this->salida->testConsultarProductos();
-        
         $this->assertIsArray($resultado);
 
         if (!empty($resultado)) {
@@ -219,12 +171,8 @@ class SalidaTest extends TestCase {
         }
     }
 
-    /**
-     * Test: Consultar métodos de pago
-     */
-    public function testConsultarMetodosPago(): void {
+    public function testConsultarMetodosPago() { /*|||||| CONSULTAR MÉTODOS DE PAGO ||||| 4 | */
         $resultado = $this->salida->testConsultarMetodosPago();
-        
         $this->assertIsArray($resultado);
 
         if (!empty($resultado)) {
@@ -234,85 +182,81 @@ class SalidaTest extends TestCase {
         }
     }
 
-    /**
-     * Test: Consultar cliente por cédula
-     */
-    public function testConsultarClientePorCedula(): void {
-        $datos = ['cedula' => '12345678'];
-        
-        try {
-            $resultado = $this->salida->testConsultarCliente($datos);
-            
-            $this->assertIsArray($resultado);
-
-            if (!empty($resultado)) {
-                $this->assertArrayHasKey('id_persona', $resultado);
-                $this->assertArrayHasKey('cedula', $resultado);
-                $this->assertArrayHasKey('nombre', $resultado);
-                $this->assertArrayHasKey('apellido', $resultado);
-                $this->assertArrayHasKey('correo', $resultado);
-                $this->assertArrayHasKey('telefono', $resultado);
+    public function testConsultarClientePorCedula() { /*|||||| CONSULTAR CLIENTE ||||| 5 | */
+        if ($this->cedulaClienteDisponible === null) {
+            // Intentar con una cédula común o buscar en ventas
+            $ventas = $this->salida->testConsultarVentas();
+            if (!empty($ventas) && isset($ventas[0]['cedula'])) {
+                $this->cedulaClienteDisponible = (string)$ventas[0]['cedula'];
             }
-        } catch (\Exception $e) {
-            // Si el cliente no existe, el resultado puede ser false
-            $this->assertTrue(true, 'Cliente no encontrado o error esperado: ' . $e->getMessage());
+        }
+        
+        if ($this->cedulaClienteDisponible === null) {
+            $this->fail('ERROR: No hay clientes disponibles en la base de datos. Este test requiere al menos un cliente con cédula registrada para consultar sus datos.');
+        }
+        
+        $datos = ['cedula' => $this->cedulaClienteDisponible];
+        $resultado = $this->salida->testConsultarCliente($datos);
+        
+        if ($resultado === false) {
+            $this->fail('ERROR: El cliente con cédula ' . $this->cedulaClienteDisponible . ' no fue encontrado en la base de datos o está inactivo.');
+        }
+        
+        $this->assertIsArray($resultado);
+
+        if (!empty($resultado)) {
+            $this->assertArrayHasKey('id_persona', $resultado);
+            $this->assertArrayHasKey('cedula', $resultado);
+            $this->assertArrayHasKey('nombre', $resultado);
+            $this->assertArrayHasKey('apellido', $resultado);
+            $this->assertArrayHasKey('correo', $resultado);
+            $this->assertArrayHasKey('telefono', $resultado);
         }
     }
 
-    /**
-     * Test: Consultar detalles de pedido
-     */
-    public function testConsultarDetallesPedido(): void {
-        $id_pedido = 1;
+    public function testConsultarDetallesPedido() { /*|||||| CONSULTAR DETALLES PEDIDO ||||| 6 | */
+        if ($this->idPedidoDisponible === null) {
+            $this->fail('ERROR: No hay pedidos disponibles en la base de datos. Este test requiere al menos un pedido existente para consultar sus detalles.');
+        }
         
-        try {
-            $resultado = $this->salida->testConsultarDetallesPedido($id_pedido);
-            
-            $this->assertIsArray($resultado);
+        $resultado = $this->salida->testConsultarDetallesPedido($this->idPedidoDisponible);
+        $this->assertIsArray($resultado);
 
-            if (!empty($resultado)) {
-                $this->assertArrayHasKey('cantidad', $resultado[0]);
-                $this->assertArrayHasKey('precio_unitario', $resultado[0]);
-                $this->assertArrayHasKey('nombre_producto', $resultado[0]);
-            }
-        } catch (\Exception $e) {
-            // Si el pedido no existe, puede lanzar excepción
-            $this->assertTrue(true, 'Pedido no encontrado o error esperado: ' . $e->getMessage());
+        if (!empty($resultado)) {
+            $this->assertArrayHasKey('cantidad', $resultado[0]);
+            $this->assertArrayHasKey('precio_unitario', $resultado[0]);
+            $this->assertArrayHasKey('nombre_producto', $resultado[0]);
         }
     }
 
-    /**
-     * Test: Consultar cliente detalle
-     */
-    public function testConsultarClienteDetalle(): void {
-        $id_pedido = 1;
+    public function testConsultarClienteDetalle() { /*|||||| CONSULTAR CLIENTE DETALLE ||||| 7 | */
+        if ($this->idPedidoDisponible === null) {
+            $this->fail('ERROR: No hay pedidos disponibles en la base de datos. Este test requiere al menos un pedido existente para consultar los datos del cliente.');
+        }
         
-        try {
-            $resultado = $this->salida->testConsultarClienteDetalle($id_pedido);
-            
-            $this->assertIsArray($resultado);
+        $resultado = $this->salida->testConsultarClienteDetalle($this->idPedidoDisponible);
+        
+        if ($resultado === null) {
+            $this->fail('ERROR: El pedido ID ' . $this->idPedidoDisponible . ' o su cliente asociado no fue encontrado en la base de datos.');
+        }
+        
+        $this->assertIsArray($resultado);
 
-            if (!empty($resultado)) {
-                $this->assertArrayHasKey('cedula', $resultado);
-                $this->assertArrayHasKey('nombre', $resultado);
-                $this->assertArrayHasKey('apellido', $resultado);
-                $this->assertArrayHasKey('telefono', $resultado);
-                $this->assertArrayHasKey('correo', $resultado);
-            }
-        } catch (\Exception $e) {
-            // Si el pedido no existe, puede lanzar excepción
-            $this->assertTrue(true, 'Pedido no encontrado o error esperado: ' . $e->getMessage());
+        if (!empty($resultado)) {
+            $this->assertArrayHasKey('cedula', $resultado);
+            $this->assertArrayHasKey('nombre', $resultado);
+            $this->assertArrayHasKey('apellido', $resultado);
+            $this->assertArrayHasKey('telefono', $resultado);
+            $this->assertArrayHasKey('correo', $resultado);
         }
     }
 
-    /**
-     * Test: Consultar métodos de pago de venta
-     */
-    public function testConsultarMetodosPagoVenta(): void {
-        $id_pedido = 1;
+    public function testConsultarMetodosPagoVenta() { /*|||||| CONSULTAR MÉTODOS PAGO VENTA ||||| 8 | */
+        if ($this->idPedidoDisponible === null) {
+            $this->fail('ERROR: No hay pedidos disponibles en la base de datos. Este test requiere al menos un pedido existente para consultar sus métodos de pago.');
+        }
         
-        $resultado = $this->salida->testConsultarMetodosPagoVenta($id_pedido);
-        
+        $resultado = $this->salida->testConsultarMetodosPagoVenta($this->idPedidoDisponible);
         $this->assertIsArray($resultado);
 
         if (!empty($resultado)) {
@@ -322,132 +266,116 @@ class SalidaTest extends TestCase {
         }
     }
 
-    /**
-     * Test: Verificar stock de producto
-     */
-    public function testVerificarStockProducto(): void {
-        $id_producto = 1;
-        
-        try {
-            $resultado = $this->salida->testVerificarStock($id_producto);
-            
-            $this->assertIsInt($resultado);
-            $this->assertGreaterThanOrEqual(0, $resultado);
-        } catch (\Exception $e) {
-            // Si el producto no existe, puede lanzar excepción
-            $this->assertTrue(true, 'Producto no encontrado o error esperado: ' . $e->getMessage());
+    public function testVerificarStockProducto() { /*|||||| VERIFICAR STOCK ||||| 9 | */
+        if ($this->idProductoDisponible === null) {
+            $this->fail('ERROR: No hay productos disponibles en la base de datos. Este test requiere al menos un producto activo con stock para verificar su disponibilidad.');
         }
+        
+        $resultado = $this->salida->testVerificarStock($this->idProductoDisponible);
+        $this->assertIsInt($resultado);
+        $this->assertGreaterThanOrEqual(0, $resultado);
     }
 
-    /**
-     * Test: Consultar cliente público
-     */
-    public function testConsultarClientePublico(): void {
-        $datos = ['cedula' => '12345678'];
-        
-        try {
-            $resultado = $this->salida->testConsultarClientePublico($datos);
-            
-            $this->assertIsArray($resultado);
-            $this->assertArrayHasKey('respuesta', $resultado);
-            $this->assertArrayHasKey('cliente', $resultado);
-        } catch (\Exception $e) {
-            // Si el cliente no existe, puede lanzar excepción
-            $this->assertTrue(true, 'Cliente no encontrado o error esperado: ' . $e->getMessage());
+    public function testConsultarClientePublico() { /*|||||| CONSULTAR CLIENTE PÚBLICO ||||| 10 | */
+        if ($this->cedulaClienteDisponible === null) {
+            // Intentar obtener cédula de ventas
+            $ventas = $this->salida->testConsultarVentas();
+            if (!empty($ventas) && isset($ventas[0]['cedula'])) {
+                $this->cedulaClienteDisponible = (string)$ventas[0]['cedula'];
+            }
         }
+        
+        if ($this->cedulaClienteDisponible === null) {
+            $this->fail('ERROR: No hay clientes disponibles en la base de datos. Este test requiere al menos un cliente con cédula registrada para consultar mediante consultarClientePublico().');
+        }
+        
+        $datos = ['cedula' => $this->cedulaClienteDisponible];
+        $resultado = $this->salida->testConsultarClientePublico($datos);
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('respuesta', $resultado);
+        $this->assertArrayHasKey('cliente', $resultado);
     }
 
-    /**
-     * Test: Registrar cliente público
-     * Nota: Este test puede fallar si el cliente ya existe
-     */
-    public function testRegistrarClientePublico(): void {
+    public function testRegistrarClientePublico() { /*|||||| REGISTRAR CLIENTE PÚBLICO ||||| 11 | */
+        // Generar cédula única para evitar conflictos
+        $cedulaUnica = '1' . str_pad(rand(0, 9999999), 7, '0', STR_PAD_LEFT);
+        
         $datos = [
-            'cedula' => '99999999',
+            'cedula' => $cedulaUnica,
             'nombre' => 'Test',
             'apellido' => 'Usuario',
             'telefono' => '04141234567',
-            'correo' => 'test@example.com'
+            'correo' => 'test' . time() . '@example.com'
         ];
-        
-        try {
-            $resultado = $this->salida->testRegistrarClientePublico($datos);
-            
-            $this->assertIsArray($resultado);
-            $this->assertArrayHasKey('success', $resultado);
-            $this->assertArrayHasKey('message', $resultado);
-        } catch (\Exception $e) {
-            // Si el cliente ya existe, es un error esperado
-            $this->assertStringContainsString('cédula', strtolower($e->getMessage()));
-        }
+        $resultado = $this->salida->testRegistrarClientePublico($datos);
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('success', $resultado);
+        $this->assertArrayHasKey('message', $resultado);
     }
 
-    /**
-     * Test: Registrar venta público
-     * Nota: Este test requiere datos válidos en la base de datos
-     */
-    public function testRegistrarVentaPublico(): void {
+    public function testRegistrarVentaPublico() { /*|||||| REGISTRAR VENTA PÚBLICO ||||| 12 | */
+        if ($this->idProductoDisponible === null) {
+            $this->fail('ERROR: No hay productos disponibles en la base de datos. Este test requiere al menos un producto activo con stock disponible para registrar una venta.');
+        }
+        
+        if ($this->idUsuarioDisponible === null) {
+            // Intentar obtener un usuario de las ventas existentes
+            $ventas = $this->salida->testConsultarVentas();
+            if (!empty($ventas) && isset($ventas[0]['id_usuario'])) {
+                $this->idUsuarioDisponible = $ventas[0]['id_usuario'];
+            } else {
+                $this->fail('ERROR: No hay usuarios/clientes disponibles en la base de datos. Este test requiere al menos un usuario activo (estatus = 1) para registrar una venta.');
+            }
+        }
+        
+        // Verificar stock antes de registrar
+        $stock = $this->salida->testVerificarStock($this->idProductoDisponible);
+        if ($stock < 1) {
+            $this->fail('ERROR: El producto ID ' . $this->idProductoDisponible . ' no tiene stock suficiente (stock actual: ' . $stock . '). Este test requiere al menos 1 unidad disponible.');
+        }
+        
         $datos = [
-            'id_persona' => 1,
+            'id_persona' => $this->idUsuarioDisponible,
             'precio_total' => 100.00,
             'precio_total_bs' => 2500.00,
             'detalles' => [
                 [
-                    'id_producto' => 1,
-                    'cantidad' => 2,
-                    'precio_unitario' => 50.00
+                    'id_producto' => $this->idProductoDisponible,
+                    'cantidad' => 1,
+                    'precio_unitario' => 100.00
                 ]
             ]
         ];
-        
-        try {
-            $resultado = $this->salida->testRegistrarVentaPublico($datos);
-            
-            $this->assertIsArray($resultado);
-            $this->assertArrayHasKey('respuesta', $resultado);
-        } catch (\Exception $e) {
-            // Puede fallar si no hay stock, cliente no existe, etc.
-            $this->assertTrue(true, 'Error esperado en registro de venta: ' . $e->getMessage());
-        }
+        $resultado = $this->salida->testRegistrarVentaPublico($datos);
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('respuesta', $resultado);
     }
 
-    /**
-     * Test: Actualizar venta público
-     * Nota: Este test requiere que exista un pedido con ID 1
-     */
-    public function testActualizarVentaPublico(): void {
+    public function testActualizarVentaPublico() { /*|||||| ACTUALIZAR VENTA PÚBLICO ||||| 13 | */
+        if ($this->idPedidoDisponible === null) {
+            $this->fail('ERROR: No hay pedidos disponibles en la base de datos. Este test requiere al menos un pedido existente para actualizar su estado.');
+        }
+        
         $datos = [
-            'id_pedido' => 1,
+            'id_pedido' => $this->idPedidoDisponible,
             'estado' => '2'
         ];
-        
-        try {
-            $resultado = $this->salida->testActualizarVentaPublico($datos);
-            
-            $this->assertIsArray($resultado);
-            $this->assertArrayHasKey('respuesta', $resultado);
-        } catch (\Exception $e) {
-            // Puede fallar si el pedido no existe
-            $this->assertTrue(true, 'Error esperado en actualización de venta: ' . $e->getMessage());
-        }
+        $resultado = $this->salida->testActualizarVentaPublico($datos);
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('respuesta', $resultado);
     }
 
-    /**
-     * Test: Eliminar venta público
-     * Nota: Este test requiere que exista un pedido con ID 1
-     */
-    public function testEliminarVentaPublico(): void {
-        $datos = ['id_pedido' => 1];
-        
-        try {
-            $resultado = $this->salida->testEliminarVentaPublico($datos);
-            
-            $this->assertIsArray($resultado);
-            $this->assertArrayHasKey('respuesta', $resultado);
-        } catch (\Exception $e) {
-            // Puede fallar si el pedido no existe
-            $this->assertTrue(true, 'Error esperado en eliminación de venta: ' . $e->getMessage());
+    public function testEliminarVentaPublico() { /*|||||| ELIMINAR VENTA PÚBLICO ||||| 14 | */
+        if ($this->idPedidoDisponible === null) {
+            $this->fail('ERROR: No hay pedidos disponibles en la base de datos. Este test requiere al menos un pedido existente para eliminarlo.');
         }
+        
+        $datos = ['id_pedido' => $this->idPedidoDisponible];
+        $resultado = $this->salida->testEliminarVentaPublico($datos);
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('respuesta', $resultado);
+        
+        // Limpiar la referencia ya que el pedido fue eliminado
+        $this->idPedidoDisponible = null;
     }
 }
-

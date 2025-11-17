@@ -503,7 +503,7 @@ class Salida extends Conexion {
         }
     }
 
-    private function verificarStock($id_producto) {
+    protected function verificarStock($id_producto) {
         if (!$id_producto || $id_producto <= 0) {
             throw new \Exception('ID de producto no válido');
         }
