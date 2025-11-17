@@ -273,9 +273,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
     } catch (\Throwable $e) {
         // Log y responder JSON de error para que el frontend no entre en catch genérico
         error_log('reporte.php GET EXCEPTION: ' . $e->getMessage());
+        error_log($e->getTraceAsString());
         http_response_code(500);
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Error interno al verificar los datos']);
+        // Incluir mensaje de error en la respuesta para depuración local
+        echo json_encode([
+            'error' => 'Error interno al verificar los datos',
+            'message' => $e->getMessage()
+        ]);
         exit;
     }
 }
