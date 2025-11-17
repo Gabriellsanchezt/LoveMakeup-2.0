@@ -332,7 +332,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
         ]; 
 
             if($datosUsuario['datos']['id_persona'] == 2) { 
-                if($datosUsuario['datos']['id_rol'] != 2) {
+                if($datosUsuario['datos']['id_rol'] != 3) {
                     echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el Rol del usuario administrador']);
                     exit;
                 }
