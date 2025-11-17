@@ -30,9 +30,9 @@
         "symfony/process": "^6.0"
     },
     "scripts": {
-        "test": "phpunit",
-        "test-phpunit": "phpunit --testsuite=\"PHPUnit Tests\"",
-        "test-selenium": "phpunit --testsuite=\"Selenium Tests\"",
-        "test-all": "phpunit"
+        "test": "@php vendor/bin/phpunit --configuration tests/phpunit.xml",
+        "test-phpunit": "@php vendor/bin/phpunit --configuration tests/phpunit.xml --testsuite=\"PHPUnit Tests\"",
+        "test-selenium": "@php vendor/bin/phpunit --configuration tests/phpunit.xml --testsuite=\"Selenium Tests\"",
+        "test-all": "@php vendor/bin/phpunit --configuration tests/phpunit.xml"
     }
 }

@@ -171,8 +171,8 @@
                     <td class="text-center">
                         <form action="?pagina=usuario" method="POST">
                             <?php
-                                $idActual = $_SESSION["id"];
-                                $idFila = $dato['cedula'];
+                                $idActual = $_SESSION["id_usuario"];
+                                $idFila = $dato['id_usuario'];
                                 $deshabilitado = ($idActual == $idFila || $idFila == 2) ? 'disabled' : '';
                             ?>
                             <button type="submit" class="btn btn-warning btn-sm permisotur" name="modificar" title="Modificar Permiso del usuario" value="<?php echo $idFila ?>" <?php echo $deshabilitado ?>>
@@ -180,6 +180,7 @@
                             </button> 
                             <input type="hidden" name="permisonombre" value=" <?php echo $dato['nombre']; ?>">
                             <input type="hidden" name="permisoapellido" value=" <?php echo $dato['apellido']; ?>">  
+                            <input type="hidden" name="cedula" value=" <?php echo $dato['cedula']; ?>">  
                         </form>      
                     </td>
                 <?php endif; ?>
@@ -238,6 +239,7 @@
                             <i class="fas fa-trash-alt" title="Eliminar"></i>
                           </button>
                           <input type="hidden" name="eliminar" value="<?php echo $dato['cedula']; ?>">
+                          <input type="hidden" name="id_usuario" value="<?php echo $dato['id_usuario']; ?>">
                         <?php endif; ?>
 
 
@@ -521,34 +523,26 @@
         <button type="button" class="btn-close" title="(CONTROL + ALT + X) Cerrar" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body bg-s">
-         <div class="seccion-formulario table-responsive">
-        <table class="table">
-          <tr>
-            <th class="texto-secundario">Nombre Completo</th>
-            <td id="modalNombreCompleto" class="texto-secundario"></td>
-          </tr>
-          <tr>
-            <th class="texto-secundario">N° Cedula</th>
-            <td id="modalcedula" class="texto-secundario"></td>
-          </tr>
-          <tr>
-            <th class="texto-secundario">Rol</th>
-            <td id="modalRol" class="texto-secundario"></td>
-          </tr>
-          <tr>
-            <th class="texto-secundario">Teléfono</th>
-            <td id="modalTelefonoss" class="texto-secundario"></td>
-          </tr>
-          <tr>
-            <th class="texto-secundario">Correo</th>
-            <td id="modalCorreoss" class="texto-secundario"></td>
-          </tr>
-          <tr>
-            <th class="texto-secundario">Estatus</th>
-            <td id="modalEstatus" class="texto-secundario"></td>
-          </tr>
-        </table>
+        <div class="seccion-formulario" style="max-width: 500px; margin: auto;">
+        
+        <div class="card-body d-flex align-items-center">
+          <!-- Icono FontAwesome -->
+          <div class="me-3">
+            <i class="fas fa-user-circle fa-5x text-primary"></i>
+          </div>
+
+          <!-- Información del usuario -->
+          <div>
+            <h5 id="modalNombreCompleto" class="mb-1 fw-bold texto-secundario">Nombre del Usuario</h5>
+            <p id="modalRol" class="mb-2 text-muted texto-secundario">Rol</p>
+            <p class="mb-1"><i class="fas fa-envelope me-2 text-secondary"></i><span id="modalCorreoss"> </span></p>
+            <p class="mb-1"><i class="fas fa-phone me-2 text-secondary"></i><span id="modalTelefonoss"> </span></p>
+            <p class="mb-1"><i class="fas fa-id-card me-2 text-secondary"></i><span id="modalcedula"> </span></p>
+            <p class="mb-0"><i class="fas fa-check-circle me-2 text-secondary"></i><span id="modalEstatus"> </span></p>
+          </div>
         </div>
+      </div>
+ 
       </div>
     </div>
   </div>

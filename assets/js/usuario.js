@@ -541,18 +541,7 @@ function enviaAjax(datos) {
                        manejarAlerta('rolSelect', 'alertRol', true);
 
                   }
-              } else if (lee.accion == 'verifirolEditar') {
-                  if (lee.respuesta == 1) {
-                  
-                      desactivarLoaderBoton('#actualizar');
-                      manejarAlerta('rolSelectedit', 'alertRolEditar', false);
-                  } else {
-                       muestraMensaje("error", 2000, lee.text,"" );
-                       desactivarLoaderBoton('#actualizar');
-                       manejarAlerta('rolSelectedit', 'alertRolEditar', true);
-
-                  }
-              }
+              } 
   
         } catch (e) {
           alert("Error en JSON " + e.name);
@@ -596,53 +585,6 @@ $('#ayuda').on("click", function () {
 
   driverObj.drive();
 });
-
-/*
-let tiempoInactivo = 0;
-const tiempoLimite = 60; // 10 minutos en segundos
-let alertaMostrada = false;
-
-function reiniciarContador() {
-  tiempoInactivo = 0;
-  alertaMostrada = false;
-    console.log('no entro');
-}
-
-setInterval(() => {
-  tiempoInactivo++; 
-
-  // Mostrar alerta 1 minuto antes de cerrar sesión
-  if (tiempoInactivo === tiempoLimite - 10 && !alertaMostrada) {
-    alertaMostrada = true;
-
-    Swal.fire({
-      title: '¿Seguir conectado?',
-      text: 'Tu sesión está por expirar. ¿Deseas extender el tiempo?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, continuar',
-      cancelButtonText: 'Cerrar sesión',
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        reiniciarContador(); // Reinicia el contador si el usuario quiere seguir
-      } else {
-        window.location.href = "?pagina=login"; // Cierra sesión
-      }
-    });
-  }
-
-  // Cierre automático si no responde
-  if (tiempoInactivo >= tiempoLimite) {
-    window.location.href = "?pagina=login";
-  }
-}, 1000);
-
-['mousemove', 'keydown', 'click'].forEach(event => {
-  document.addEventListener(event, reiniciarContador);
-});
-*/
 
 
 $(document).on('keydown', function(e) {

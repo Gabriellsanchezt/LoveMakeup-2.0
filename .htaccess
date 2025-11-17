@@ -1,1 +1,9 @@
+RewriteEngine On
+
+# Asegura que el archivo o directorio físico exista antes de redirigir
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Reescribe la URL para que se procese por index.php
+RewriteRule ^([a-zA-Z0-9_-]+)$ index.php?pagina=$1 [QSA,L]
 
