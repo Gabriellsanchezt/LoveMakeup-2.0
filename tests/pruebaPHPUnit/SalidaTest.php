@@ -102,11 +102,43 @@ class SalidaTest extends TestCase {
     private $idPedidoDisponible = null;
     private $idUsuarioDisponible = null;
     private $cedulaClienteDisponible = null;
+    private $originalErrorLog = null;
+    private $errorLogFile = null;
 
     protected function setUp(): void {
+        // Silenciar error_log temporalmente para no contaminar la salida de tests
+        // Guardar configuración original
+        $this->originalErrorLog = [
+            'log_errors' => ini_get('log_errors'),
+            'error_log' => ini_get('error_log'),
+            'display_errors' => ini_get('display_errors')
+        ];
+        
+        // Crear un archivo temporal para redirigir los error_log
+        // En Windows usamos 'nul', en Linux '/dev/null'
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->errorLogFile = 'nul';
+        } else {
+            $this->errorLogFile = '/dev/null';
+        }
+        
+        // Redirigir error_log a un archivo que descarta todo
+        ini_set('log_errors', '1');
+        ini_set('error_log', $this->errorLogFile);
+        ini_set('display_errors', '0');
+        
         $this->salida = new SalidaTestable();
         // Obtener datos reales de la base de datos
         $this->obtenerDatosDisponibles();
+    }
+    
+    protected function tearDown(): void {
+        // Restaurar la configuración original de error_log
+        if ($this->originalErrorLog !== null) {
+            ini_set('log_errors', $this->originalErrorLog['log_errors']);
+            ini_set('error_log', $this->originalErrorLog['error_log']);
+            ini_set('display_errors', $this->originalErrorLog['display_errors']);
+        }
     }
     
     private function obtenerDatosDisponibles(): void {
