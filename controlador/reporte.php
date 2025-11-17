@@ -29,7 +29,7 @@ $objProd = new Producto();
  * Valida que el ID del producto sea válido y exista en la base de datos
  */
 function validarIdProducto($id_producto, $productos) {
-    if (empty($id_producto)) {
+    if ($id_producto === '' || $id_producto === null) {
         return true; // Valor vacío es válido (significa "todos")
     }
     if (!is_numeric($id_producto)) {
@@ -48,7 +48,7 @@ function validarIdProducto($id_producto, $productos) {
  * Valida que el ID del proveedor sea válido y exista en la base de datos
  */
 function validarIdProveedor($id_proveedor, $proveedores) {
-    if (empty($id_proveedor)) {
+    if ($id_proveedor === '' || $id_proveedor === null) {
         return true; // Valor vacío es válido (significa "todos")
     }
     if (!is_numeric($id_proveedor)) {
@@ -67,7 +67,7 @@ function validarIdProveedor($id_proveedor, $proveedores) {
  * Valida que el ID de la categoría sea válido y exista en la base de datos
  */
 function validarIdCategoria($id_categoria, $categorias) {
-    if (empty($id_categoria)) {
+    if ($id_categoria === '' || $id_categoria === null) {
         return true; // Valor vacío es válido (significa "todas")
     }
     if (!is_numeric($id_categoria)) {
@@ -75,8 +75,12 @@ function validarIdCategoria($id_categoria, $categorias) {
     }
     $id_categoria = (int)$id_categoria;
     foreach ($categorias as $categoria) {
-        if ($categoria['id_categoria'] == $id_categoria && $categoria['estatus'] == 1) {
-            return true;
+        // Algunas consultas de categoría retornan sólo `id_categoria` y `nombre` (sin `estatus`).
+        // Consideramos válida la categoría si el id coincide y, si existe `estatus`, debe ser 1.
+        if (isset($categoria['id_categoria']) && $categoria['id_categoria'] == $id_categoria) {
+            if (!isset($categoria['estatus']) || (int)$categoria['estatus'] === 1) {
+                return true;
+            }
         }
     }
     return false;
@@ -86,7 +90,7 @@ function validarIdCategoria($id_categoria, $categorias) {
  * Valida que el método de pago sea válido
  */
 function validarMetodoPago($metodo_pago) {
-    if (empty($metodo_pago)) {
+    if ($metodo_pago === '' || $metodo_pago === null) {
         return true; // Valor vacío es válido (significa "todos")
     }
     if (!is_numeric($metodo_pago)) {
@@ -101,7 +105,7 @@ function validarMetodoPago($metodo_pago) {
  * Valida que el método de pago web sea válido
  */
 function validarMetodoPagoWeb($metodo_pago_web) {
-    if (empty($metodo_pago_web)) {
+    if ($metodo_pago_web === '' || $metodo_pago_web === null) {
         return true; // Valor vacío es válido (significa "todos")
     }
     if (!is_numeric($metodo_pago_web)) {
@@ -116,7 +120,7 @@ function validarMetodoPagoWeb($metodo_pago_web) {
  * Valida que el estado del producto sea válido
  */
 function validarEstadoProducto($estado) {
-    if (empty($estado)) {
+    if ($estado === '' || $estado === null) {
         return true; // Valor vacío es válido (significa "todos")
     }
     if (!is_numeric($estado)) {
@@ -131,7 +135,7 @@ function validarEstadoProducto($estado) {
  * Valida que el estado del pedido web sea válido
  */
 function validarEstadoPedidoWeb($estado) {
-    if (empty($estado)) {
+    if ($estado === '' || $estado === null) {
         return true; // Valor vacío es válido (significa "todos")
     }
     if (!is_numeric($estado)) {
@@ -200,40 +204,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
     $proveedores_lista = (new Proveedor())->consultar();
     $categorias_lista = (new Categoria())->consultar();
     
-    // Validar parámetros
+    try {
+    // Validar parámetros comunes
     if (!validarIdProducto($prodRaw, $productos_lista)) {
         echo json_encode(['count' => 0]);
         exit;
     }
-    
+
     if (!validarIdProveedor($provRaw, $proveedores_lista)) {
         echo json_encode(['count' => 0]);
         exit;
     }
-    
+
     if (!validarIdCategoria($catRaw, $categorias_lista)) {
         echo json_encode(['count' => 0]);
         exit;
     }
-    
-    if (!validarMetodoPago($metodoPagoRaw)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
-    
-    if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
-    
-    if (!validarEstadoProducto($estadoRaw)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
-    
-    if (!validarEstadoPedidoWeb($estadoRaw)) {
-        echo json_encode(['count' => 0]);
-        exit;
+
+    // Validaciones específicas por acción
+    switch ($accion) {
+        case 'countProducto':
+            if (!validarEstadoProducto($estadoRaw)) {
+                echo json_encode(['count' => 0]);
+                exit;
+            }
+            break;
+        case 'countVenta':
+            if (!validarMetodoPago($metodoPagoRaw)) {
+                echo json_encode(['count' => 0]);
+                exit;
+            }
+            break;
+        case 'countPedidoWeb':
+            if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
+                echo json_encode(['count' => 0]);
+                exit;
+            }
+            if (!validarEstadoPedidoWeb($estadoRaw)) {
+                echo json_encode(['count' => 0]);
+                exit;
+            }
+            break;
+        case 'countCompra':
+        default:
+            // No validations extra
+            break;
     }
 
     switch ($accion) {
@@ -255,6 +270,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
 
     echo json_encode(['count' => (int)$cnt]);
     exit;
+    } catch (\Throwable $e) {
+        // Log y responder JSON de error para que el frontend no entre en catch genérico
+        error_log('reporte.php GET EXCEPTION: ' . $e->getMessage());
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Error interno al verificar los datos']);
+        exit;
+    }
 }
 
 // 3) POST → generar PDF y registrar bitácora
@@ -339,8 +362,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         exit;
     }
     
-    if (!validarMetodoPago($metodoPagoRaw)) {
-        echo '<!DOCTYPE html>
+    // Validaciones específicas por acción (POST)
+    if ($accion === 'venta') {
+        if (!validarMetodoPago($metodoPagoRaw)) {
+            echo '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -360,11 +385,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     </div>
 </body>
 </html>';
-        exit;
+            exit;
+        }
     }
-    
-    if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
-        echo '<!DOCTYPE html>
+
+    if ($accion === 'pedidoWeb') {
+        if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
+            echo '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -384,35 +411,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     </div>
 </body>
 </html>';
-        exit;
-    }
-    
-    if (!validarEstadoProducto($estadoRaw)) {
-        echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El estado del producto seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-        exit;
-    }
-    
-    if (!validarEstadoPedidoWeb($estadoRaw)) {
-        echo '<!DOCTYPE html>
+            exit;
+        }
+        if (!validarEstadoPedidoWeb($estadoRaw)) {
+            echo '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -432,7 +434,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     </div>
 </body>
 </html>';
-        exit;
+            exit;
+        }
+    }
+
+    if ($accion === 'producto') {
+        if (!validarEstadoProducto($estadoRaw)) {
+            echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Error al generar reporte</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { color: #721c24; }
+        p { color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h1>Error al generar el reporte</h1>
+        <p>El estado del producto seleccionado no es válido.</p>
+        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
+    </div>
+</body>
+</html>';
+            exit;
+        }
     }
 
     $userId = $_SESSION['id'];
@@ -441,6 +470,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
             : 'Administrador';
 
     try {
+        // Log de diagnóstico: volcar parámetros recibidos antes de generar el reporte
+        error_log(sprintf(
+            "reporte.php: accion=%s start=%s end=%s prodRaw=%s prodId=%s catRaw=%s catId=%s provRaw=%s provId=%s metodoPagoRaw=%s metodoPago=%s metodoPagoWebRaw=%s metodoPagoWeb=%s montoMin=%s montoMax=%s estadoRaw=%s estado=%s",
+            $accion,
+            var_export($startRaw, true),
+            var_export($endRaw, true),
+            var_export($prodRaw, true),
+            var_export($prodId, true),
+            var_export($catRaw, true),
+            var_export($catId, true),
+            var_export($provRaw, true),
+            var_export($provId, true),
+            var_export($metodoPagoRaw, true),
+            var_export($metodoPago, true),
+            var_export($metodoPagoWebRaw, true),
+            var_export($metodoPagoWeb, true),
+            var_export($montoMinRaw, true),
+            var_export($montoMaxRaw, true),
+            var_export($estadoRaw, true),
+            var_export($estado, true)
+        ));
+
         switch ($accion) {
             case 'compra':
                 Reporte::compra($start, $end, $prodId, $catId, $provId, $montoMin, $montoMax);
@@ -462,6 +513,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
                 $desc = '';
         }
     } catch (\Exception $e) {
+        // Log del error para diagnóstico
+        error_log('reporte.php EXCEPTION: ' . $e->getMessage());
         // Si hay un error (por ejemplo, GD no está habilitado), mostrar mensaje al usuario
         header('Content-Type: text/html; charset=utf-8');
         echo '<!DOCTYPE html>

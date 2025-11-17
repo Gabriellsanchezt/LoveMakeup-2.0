@@ -5,32 +5,18 @@ namespace LoveMakeup\Proyecto\Modelo;
 use LoveMakeup\Proyecto\Config\Conexion;
 
 class Catalogo extends Conexion {
-    private $conex1;
-    private $conex2;
+    private $objcategoria;
+    private $objproducto;
 
     public function __construct() {
-        parent::__construct(); // Llama al constructor de la clase padre
-
-        // Obtener las conexiones de la clase padre
-        $this->conex1 = $this->getConex1();
-        $this->conex2 = $this->getConex2();
-    
-         // Verifica si las conexiones son exitosas
-        if (!$this->conex1) {
-            die('Error al conectar con la primera base de datos');
-        }
-
-        if (!$this->conex2) {
-            die('Error al conectar con la segunda base de datos');
-        }
+        parent::__construct();
+        $this->objcategoria = new Categoria();
+        $this->objproducto = new Producto();
     }
     
 
     public function obtenerProductosActivos() {
-        $sql = "SELECT * FROM producto WHERE estatus = 1";  // Filtra por productos activos (estatus = 1)
-        $consulta = $this->conex1->prepare($sql);
-        $consulta->execute();
-        return $consulta->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->objproducto->ProductosActivos();
     }
     
 
@@ -54,29 +40,43 @@ class Catalogo extends Conexion {
     
     
     public function obtenerCategorias() {
-      $sql = "SELECT id_categoria, nombre FROM categoria WHERE estatus = 1"; // Solo lo necesario
-      $consulta = $this->conex1->prepare($sql);
-      $consulta->execute();
-      return $consulta->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->objcategoria->consultar();
     }
    
     public function buscarProductos($termino) {
+    $conex = $this->getConex1();
+    try {
         $sql = "
-            SELECT * 
-            FROM producto 
-            WHERE estatus = 1 
-              AND (nombre LIKE :busqueda OR marca LIKE :busqueda)
+            SELECT p.*,
+                   c.nombre AS nombre_categoria,
+                   m.nombre AS nombre_marca,
+                   (
+                     SELECT pi.url_imagen
+                     FROM producto_imagen pi
+                     WHERE pi.id_producto = p.id_producto
+                     ORDER BY pi.id_imagen ASC
+                     LIMIT 1
+                   ) AS imagen
+            FROM producto p
+            INNER JOIN categoria c ON p.id_categoria = c.id_categoria
+            INNER JOIN marca m ON p.id_marca = m.id_marca
+            WHERE p.estatus = 1
+              AND (p.nombre LIKE :busqueda OR m.nombre LIKE :busqueda)
         ";
-        $consulta = $this->conex1->prepare($sql);
+        $stmt = $conex->prepare($sql);
         $busqueda = '%' . $termino . '%';
-        $consulta->bindParam(':busqueda', $busqueda, \PDO::PARAM_STR);
-        $consulta->execute();
-        return $consulta->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt->bindParam(':busqueda', $busqueda, \PDO::PARAM_STR);
+        $stmt->execute();
+        $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex = null;
+        }
+        throw $e;
     }
 }
 
-
-
-
-
+}
 ?>

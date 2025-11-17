@@ -17,7 +17,8 @@ class VentaWeb extends Conexion
                 'id_metodoentrega' => $d['id_metodoentrega'],
                 'cedula' => $d['id_persona'], // tu controlador manda id_persona = CÉDULA
                 'direccion_envio' => $d['direccion_envio'],
-                'sucursal_envio' => $d['sucursal_envio']
+                'sucursal_envio' => $d['sucursal_envio'],
+                'id_delivery'      => $d['id_delivery']
             ]);
 
             // 2) Registrar pedido  
@@ -68,8 +69,8 @@ class VentaWeb extends Conexion
     private function registrarDireccion($d)
     {
         $conex = $this->getConex1();
-        $sql = "INSERT INTO direccion(id_metodoentrega, cedula, direccion_envio, sucursal_envio)
-                VALUES(:id_metodoentrega, :cedula, :direccion_envio, :sucursal_envio)";
+        $sql = "INSERT INTO direccion(id_metodoentrega, cedula, direccion_envio, sucursal_envio,id_delivery)
+                VALUES(:id_metodoentrega, :cedula, :direccion_envio, :sucursal_envio,:id_delivery)";
         $stmt = $conex->prepare($sql);
         $stmt->execute($d);
         return $conex->lastInsertId();

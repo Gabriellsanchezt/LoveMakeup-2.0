@@ -144,7 +144,7 @@
                 <tr>
                   <th class="text-white">ID</th>
                   <th class="text-white">Fecha</th>
-                  <th class="text-white"style="">Estado</th>
+                  <th class="text-white"style="">estatus</th>
                   <th class="text-white">Total</th>
                   <th class="text-white">Referencia</th>
                   <th class="text-white">usuario</th>
@@ -154,11 +154,11 @@
               <tbody id="pedidowebTableBody">
     
               <?php foreach ($pedidos as $pedido): 
-    // Define clases y deshabilitar botones si estado es 0 o 2
-    if ($pedido['estado'] == 2) {
+    // Define clases y deshabilitar botones si estatus es 0 o 2
+    if ($pedido['estatus'] == 2) {
       $claseFila = "pedido-confirmado";
         $botonesDeshabilitados = "disabled";
-    } elseif ($pedido['estado'] == 0) {
+    } elseif ($pedido['estatus'] == 0) {
         $botonesDeshabilitados = "disabled";
     } else {
         $claseFila = "";
@@ -176,7 +176,7 @@
     );
 
     $badgeClass = '';
-    switch (strtolower($pedido['estado'])) {
+    switch (strtolower($pedido['estatus'])) {
       case '0': $badgeClass = 'bg-danger'; break;
       case '1': $badgeClass = 'bg-warning'; break;
       case '2': $badgeClass = 'bg-primary'; break;
@@ -190,21 +190,21 @@
     <tr style="text-align:center;">
     <td class="texto-secundario"><?= $pedido['id_pedido']?></td>
     <td class="texto-secundario"><?= $pedido['fecha'] ?></td>
-    <td class=" m-3 text-white badge <?php echo $badgeClass; ?>"><?php echo $estatus_texto[$pedido['estado']] ?></td>
+    <td class=" m-3 text-white badge <?php echo $badgeClass; ?>"><?php echo $estatus_texto[$pedido['estatus']] ?></td>
     <td class="texto-secundario"><?= $pedido['precio_total_bs'] ?>$</td>
     <td class="texto-secundario"><?= $pedido['referencia_bancaria'] ?></td>
-    <td class="texto-secundario"><?= $pedido['nombre'] ?></td>
+    <td class="texto-secundario"><?= $pedido['nombre_cliente'] ?></td>
 
     <td>
     <button class="btn btn-info " title="ver detalles" data-bs-toggle="modal" 
     data-bs-target="#verDetallesModal<?= $pedido['id_pedido']; ?>">
  <i class="fa fa-eye"></i> </button>
 
- <?php if (!in_array($pedido['estado'], [0])): ?>
+ <?php if (!in_array($pedido['estatus'], [0])): ?>
 
 <!-- Botón Tracking: solo si método de entrega es 2 o 3 -->
 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(9, 'especial') && in_array($pedido['metodo_entrega'], ['MRW','	ZOOM' ])&&
-  in_array($pedido['estado'], [2, 3])): ?>
+  in_array($pedido['estatus'], [2, 3])): ?>
   <button type="button"  title="Enviar Codigo Tracking " class="btn btn-primary btn-tracking" data-bs-toggle="modal" data-bs-target="#modalTracking<?php echo $pedido['id_pedido']; ?>">
     <i class="fa-regular fa-envelope"></i>
   </button>
@@ -212,7 +212,7 @@
 
 <?php 
 $metodo = trim($pedido['metodo_entrega']);
-if ($pedido['estado'] == 3 && $metodo !== 'MRW' && $metodo !== 'ZOOM'): ?>
+if ($pedido['estatus'] == 3 && $metodo !== 'MRW' && $metodo !== 'ZOOM'): ?>
   <button type="button" style="background-color:rgb(197, 174, 56);" title="Enviar Pedido" class="btn btn-secondary btn-enviar" data-id="<?= $pedido['id_pedido'] ?>">
     <i class="fa-solid fa-motorcycle"></i>
   </button>
@@ -222,10 +222,10 @@ if ($pedido['estado'] == 3 && $metodo !== 'MRW' && $metodo !== 'ZOOM'): ?>
 <?php 
 $metodo = trim($pedido['metodo_entrega']);
 if (
-    $pedido['estado'] != 1 &&       // No pendiente de pago
-    $pedido['estado'] != 5 &&       // No entregado
+    $pedido['estatus'] != 1 &&       // No pendiente de pago
+    $pedido['estatus'] != 5 &&       // No entregado
     (
-        $pedido['estado'] == 4 ||
+        $pedido['estatus'] == 4 ||
         $metodo === 'Retiro en Tienda Fisica' ||
         $metodo === 'MRW' ||
         $metodo === 'ZOOM'
@@ -240,8 +240,8 @@ if (
 
 
 
-<!-- Botones Validar y Eliminar: solo si estado es 1 -->
-<?php if ($pedido['estado'] == 1): ?>
+<!-- Botones Validar y Eliminar: solo si estatus es 1 -->
+<?php if ($pedido['estatus'] == 1): ?>
   <button type="button" title="Confirmar Pago" class="btn btn-secundary btn-validar btn-success" data-id="<?= $pedido['id_pedido'] ?>">
     <i class="fa-solid fa-check"></i>
   </button>
@@ -316,19 +316,19 @@ if (
                   </div>
                   <div class="collapse" id="collapseCliente<?php echo $pedido['id_pedido']; ?>">
                     <div class="card-body card-m">
-                      <p><strong>Nombre:</strong> <?php echo htmlspecialchars($pedido['nombre']); ?> <?php echo htmlspecialchars($pedido['apellido']); ?></p>
+                      <p><strong>Nombre:</strong> <?php echo htmlspecialchars($pedido['nombre_cliente']); ?> <?php echo htmlspecialchars($pedido['apellido_cliente']); ?></p>
                       
-                      <p><strong>Estado del pedido:</strong>
+                      <p><strong>estatus del pedido:</strong>
                         <span class="badge 
                           <?php
                             $badge = [
                               '0' => 'bg-danger', '1' => 'bg-warning', '2' => 'bg-primary',
                               '3' => 'bg-success', '4' => 'bg-info', '5' => 'bg-secondary'
                             ];
-                            echo $badge[$pedido['estado']] ?? 'bg-dark';
+                            echo $badge[$pedido['estatus']] ?? 'bg-dark';
                           ?>">
                           <?php
-                            $estados_texto = [
+                            $estatuss_texto = [
                               '0' => 'Rechazado',
                               '1' => 'Verificar pago',
                               '2' => 'Pago Verificado',
@@ -336,7 +336,7 @@ if (
                               '4' => 'En camino',
                               '5' => 'Entregado',
                             ];
-                            echo htmlspecialchars($estados_texto[$pedido['estado']] ?? 'Desconocido');
+                            echo htmlspecialchars($estatuss_texto[$pedido['estatus']] ?? 'Desconocido');
                           ?>
                         </span>
                       </p>
@@ -553,16 +553,16 @@ function desactivarLoaderBoton(idBoton) {
 <?php if (!empty($pedidos)): ?>
   <?php foreach ($pedidos as $pedido):
     $entrega   = $pedido['metodo_entrega'];
-    $estado    = $pedido['estado'];
+    $estatus    = $pedido['estatus'];
     $idPedido  = $pedido['id_pedido'];
     $direccion = htmlspecialchars($pedido['direccion'] ?? '');
 
-    // Solo Delivery / MRW / Zoom y no estados finales
+    // Solo Delivery / MRW / Zoom y no estatuss finales
     if (!in_array($entrega, ['Delivery','MRW','Zoom'])) continue;
     if (
-      ($entrega==='Delivery' && $estado==5) ||
-      (in_array($entrega,['MRW','Zoom']) && $estado==4) ||
-      $estado==0
+      ($entrega==='Delivery' && $estatus==5) ||
+      (in_array($entrega,['MRW','Zoom']) && $estatus==4) ||
+      $estatus==0
     ) continue;
   ?>
     <div class="modal fade" id="deliveryModal<?= $idPedido ?>" tabindex="-1" aria-labelledby="deliveryModalLabel<?= $idPedido ?>" aria-hidden="true">
@@ -581,10 +581,10 @@ function desactivarLoaderBoton(idBoton) {
               <input type="hidden" name="id_pedido"        value="<?= $idPedido ?>">
 
               <div class="mb-3">
-                <label for="estado_delivery<?= $idPedido ?>" class="form-label">Estado del Pedido</label>
-                <select class="form-select" name="estado_delivery" id="estado_delivery<?= $idPedido ?>" required>
+                <label for="estatus_delivery<?= $idPedido ?>" class="form-label">estatus del Pedido</label>
+                <select class="form-select" name="estatus_delivery" id="estatus_delivery<?= $idPedido ?>" required>
                   <?php
-                  // Array de estados válidos
+                  // Array de estatuss válidos
                   $opciones = [
                     '0' => 'Cancelado',
                     '2' => 'Enviado',
@@ -592,7 +592,7 @@ function desactivarLoaderBoton(idBoton) {
                     '4' => 'Entregado'
                   ];
                   foreach ($opciones as $val => $label): ?>
-                    <option value="<?= $val ?>" <?= $estado == $val ? 'selected' : '' ?>>
+                    <option value="<?= $val ?>" <?= $estatus == $val ? 'selected' : '' ?>>
                       <?= $label ?>
                     </option>
                   <?php endforeach; ?>
@@ -616,7 +616,7 @@ function desactivarLoaderBoton(idBoton) {
               </div>
 
               <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+                <button type="submit" class="btn btn-primary">Actualizar estatus</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
               </div>
             </form>

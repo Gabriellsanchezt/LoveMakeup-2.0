@@ -55,9 +55,10 @@ class PedidoWeb extends Conexion {
         $conex1 = $this->getConex1();
     
         try {
-            // ================================
-            // 1) CONSULTA PRINCIPAL (BD1)
-            // ================================
+    
+            // ======================================================
+            // 1) CONSULTA PRINCIPAL (BD1) - INCLUYE REFERENCIA Y COMPROBANTE
+            // ======================================================
             $sql = "SELECT 
                         p.id_pedido,
                         p.tipo,
@@ -66,29 +67,41 @@ class PedidoWeb extends Conexion {
                         p.precio_total_bs,
                         p.precio_total_usd,
                         p.tracking,
-                        p.cedula,
+                        p.cedula,                  -- viene del cliente (persona)
                         p.id_direccion,
                         p.id_pago,
-                       
-    
-                        
     
                         d.direccion_envio AS direccion,
                         d.sucursal_envio AS sucursal,
-                        
+    
+                        me.id_entrega AS id_metodoentrega,
                         me.nombre AS metodo_entrega,
                         me.descripcion AS descripcion_entrega,
-                        
-                   
-                        
+    
+                        dp.id_pago AS detalle_pago_id,
+                        dp.monto AS pago_monto,
+                        dp.monto_usd AS pago_monto_usd,
+                        dp.id_metodopago AS id_metodopago,
+    
+                        rp.referencia AS referencia_bancaria,
+                        rp.banco_emisor,
+                        rp.banco_receptor,
+                        rp.telefono_emisor,
+    
+                        cp.imagen AS comprobante_imagen,
+    
+                        mp.id_metodopago AS mp_id,
                         mp.nombre AS metodo_pago,
                         mp.descripcion AS descripcion_pago
     
                     FROM pedido p
-                   
                     LEFT JOIN direccion d ON p.id_direccion = d.id_direccion
                     LEFT JOIN metodo_entrega me ON d.id_metodoentrega = me.id_entrega
+    
                     LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                    LEFT JOIN referencia_pago rp ON dp.id_pago = rp.id_pago
+                    LEFT JOIN comprobante_pago cp ON dp.id_pago = cp.id_pago
+    
                     LEFT JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
     
                     WHERE p.tipo = 2
@@ -98,19 +111,16 @@ class PedidoWeb extends Conexion {
             $stmt->execute();
             $pedidos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
     
-            // Si no hay pedidos, regresar vacío
             if (empty($pedidos)) {
                 return [];
             }
     
-            // ================================
-            // 2) CONSULTA CLIENTE EN BD2
-            // ================================
-    
+            // ======================================================
+            // 2) CONSULTA CLIENTE EN BD2 - CORREGIDA
+            // ======================================================
             $conex2 = $this->getConex2();
     
             $sqlCliente = "SELECT 
-                                u.id_usuario,
                                 per.cedula,
                                 per.nombre,
                                 per.apellido,
@@ -119,69 +129,74 @@ class PedidoWeb extends Conexion {
                                 u.estatus
                            FROM usuario u
                            INNER JOIN persona per ON u.cedula = per.cedula
-                           WHERE u.id_usuario = :id_usuario";
+                           WHERE per.cedula = :cedula";
     
-          
             $stmtCliente = $conex2->prepare($sqlCliente);
     
-            // ================================
-            // 3) UNIR RESULTADOS
-            // ================================
+            // ======================================================
+            // 3) ASOCIAR CLIENTE Y LIMPIEZA DE CAMPOS
+            // ======================================================
             foreach ($pedidos as &$p) {
     
-                // Si no hay id_persona → no consultamos BD2
-                if (!empty($p['id_persona'])) {
+                // Mapear campos de pago/referencia/comprobante (si vienen)
+                $p['id_pago'] = $p['id_pago'] ?? null;
+                $p['detalle_pago_id'] = $p['detalle_pago_id'] ?? null;
+                $p['pago_monto'] = isset($p['pago_monto']) ? $p['pago_monto'] : null;
+                $p['pago_monto_usd'] = isset($p['pago_monto_usd']) ? $p['pago_monto_usd'] : null;
+                $p['id_metodopago'] = $p['id_metodopago'] ?? null;
     
+                $p['referencia_bancaria'] = $p['referencia_bancaria'] ?? null;
+                $p['banco_emisor'] = $p['banco_emisor'] ?? null;
+                $p['banco_receptor'] = $p['banco_receptor'] ?? null;
+                $p['telefono_emisor'] = $p['telefono_emisor'] ?? null;
+                $p['comprobante_imagen'] = $p['comprobante_imagen'] ?? null;
+    
+                // Cliente: si existe cédula en pedido, buscamos en BD2
+                if (!empty($p['cedula'])) {
                     try {
-                        // Buscamos el usuario en BD2
                         $stmtCliente->execute([
-                            'id_usuario' => $p['id_persona']
+                            'cedula' => $p['cedula']
                         ]);
     
                         $cliente2 = $stmtCliente->fetch(\PDO::FETCH_ASSOC);
     
                         if ($cliente2) {
-                            // Información de BD2
-                            $p['cedula']            = $cliente2['cedula'];
-                            $p['nombre_cliente']    = $cliente2['nombre'];
-                            $p['apellido_cliente']  = $cliente2['apellido'];
-                            $p['telefono']          = $cliente2['telefono'];
-                            $p['correo_bd2']        = $cliente2['correo'];
-                            $p['estatus_usuario']   = $cliente2['estatus'];
+                            $p['nombre_cliente']   = $cliente2['nombre'];
+                            $p['apellido_cliente'] = $cliente2['apellido'];
+                            $p['telefono']         = $cliente2['telefono'];
+                            $p['correo_cliente']   = $cliente2['correo'];
+                            $p['estatus_usuario']  = $cliente2['estatus'];
                         } else {
-                            // Si no existe en BD2, rellenar vacío
-                            $p['cedula']            = null;
-                            $p['nombre_cliente']    = $p['nombre_cliente_bd1'];
-                            $p['apellido_cliente']  = $p['apellido_cliente_bd1'];
-                            $p['telefono']          = null;
-                            $p['correo_bd2']        = null;
-                            $p['estatus_usuario']   = null;
+                            // No existe en BD2 — dejar la info mínima que haya en BD1
+                            $p['nombre_cliente']   = $p['nombre_cliente'] ?? 'No registrado';
+                            $p['apellido_cliente'] = $p['apellido_cliente'] ?? '';
+                            $p['telefono']         = $p['telefono'] ?? null;
+                            $p['correo_cliente']   = $p['correo_cliente'] ?? null;
+                            $p['estatus_usuario']  = null;
                         }
                     } catch (\PDOException $e) {
-                        // Fallo en BD2 → Rellenar con valores por defecto
-                        $p['cedula']            = null;
-                        $p['nombre_cliente']    = $p['nombre_cliente_bd1'];
-                        $p['apellido_cliente']  = $p['apellido_cliente_bd1'];
-                        $p['telefono']          = null;
-                        $p['correo_bd2']        = null;
-                        $p['estatus_usuario']   = null;
+                        // Error consultando BD2 → valores por defecto
+                        $p['nombre_cliente']   = $p['nombre_cliente'] ?? 'No registrado';
+                        $p['apellido_cliente'] = $p['apellido_cliente'] ?? '';
+                        $p['telefono']         = $p['telefono'] ?? null;
+                        $p['correo_cliente']   = $p['correo_cliente'] ?? null;
+                        $p['estatus_usuario']  = null;
                     }
-    
                 } else {
-                    // Sin id_persona → datos vacíos
-                    $p['cedula']            = null;
-                    $p['nombre_cliente']    = $p['nombre_cliente_bd1'];
-                    $p['apellido_cliente']  = $p['apellido_cliente_bd1'];
-                    $p['telefono']          = null;
-                    $p['correo_bd2']        = null;
-                    $p['estatus_usuario']   = null;
+                    // Pedido sin cédula
+                    $p['nombre_cliente']   = $p['nombre_cliente'] ?? 'Desconocido';
+                    $p['apellido_cliente'] = $p['apellido_cliente'] ?? '';
+                    $p['telefono']         = $p['telefono'] ?? null;
+                    $p['correo_cliente']   = $p['correo_cliente'] ?? null;
+                    $p['estatus_usuario']  = null;
                 }
     
-                // Limpieza: eliminar duplicados innecesarios
-                unset($p['nombre_cliente_bd1'], $p['apellido_cliente_bd1'], $p['correo_cliente_bd1']);
+                // (opcional) Normalizar nombre del método de pago/entrega
+                $p['metodo_entrega'] = $p['metodo_entrega'] ?? null;
+                $p['metodo_pago'] = $p['metodo_pago'] ?? null;
             }
     
-            unset($p); // liberar referencia
+            unset($p);
     
             return $pedidos;
     
@@ -190,6 +205,7 @@ class PedidoWeb extends Conexion {
             throw $e;
         }
     }
+    
     
 
 public function consultarDetallesPedido($id_pedido) {
@@ -224,7 +240,7 @@ public function consultarDetallesPedido($id_pedido) {
                 $stmtStock->execute([$detalle['cantidad'], $detalle['id_producto']]);
             }
 
-            $sqlEliminar = "UPDATE pedido SET estado = 0 WHERE id_pedido = ?";
+            $sqlEliminar = "UPDATE pedido SET estatus = 0 WHERE id_pedido = ?";
             $stmtEliminar = $conex->prepare($sqlEliminar);
             $stmtEliminar->execute([$id_pedido]);
 
@@ -260,15 +276,15 @@ public function consultarDetallesPedido($id_pedido) {
                 return ['respuesta' => 0, 'msg' => 'No se encontró el método de entrega'];
             }
     
-            // Decidir el nuevo estado según método de entrega
-            $nuevoEstado = 2;  // Default
+            // Decidir el nuevo estatus según método de entrega
+            $nuevoestatus = 2;  // Default
             if (strtolower($metodo['nombre']) === 'delivery' || $metodo['id_entrega'] == 2) {
-                $nuevoEstado = 3;
+                $nuevoestatus = 3;
             }
     
-            $sql = "UPDATE pedido SET estado = ? WHERE id_pedido = ?";
+            $sql = "UPDATE pedido SET estatus = ? WHERE id_pedido = ?";
             $stmt = $conex->prepare($sql);
-            if ($stmt->execute([$nuevoEstado, $id_pedido])) {
+            if ($stmt->execute([$nuevoestatus, $id_pedido])) {
                 $conex->commit();
                 $conex = null;
                 return ['respuesta' => 1, 'msg' => 'Pedido confirmado'];
@@ -290,7 +306,7 @@ public function consultarDetallesPedido($id_pedido) {
         $conex = $this->getConex1();
         try {
             $conex->beginTransaction();
-            $sql = "UPDATE pedido SET estado = 4 WHERE id_pedido = ?";
+            $sql = "UPDATE pedido SET estatus = 4 WHERE id_pedido = ?";
             $stmt = $conex->prepare($sql);
             if ($stmt->execute([$id_pedido])) {
                 $conex->commit();  // <-- Aquí debes confirmar la transacción
@@ -314,7 +330,7 @@ public function consultarDetallesPedido($id_pedido) {
         $conex = $this->getConex1();
         try {
             $conex->beginTransaction();
-            $sql = "UPDATE pedido SET estado = 5 WHERE id_pedido = ?";
+            $sql = "UPDATE pedido SET estatus = 5 WHERE id_pedido = ?";
             $stmt = $conex->prepare($sql);
             if ($stmt->execute([$id_pedido])) {
                 $conex->commit();  // <-- Aquí debes confirmar la transacción
@@ -344,16 +360,16 @@ public function consultarDetallesPedido($id_pedido) {
         try {
             $conex->beginTransaction();
     
-            $sql = "UPDATE pedido SET estado = ?, direccion = ? WHERE id_pedido = ?";
+            $sql = "UPDATE pedido SET estatus = ?, direccion = ? WHERE id_pedido = ?";
             $stmt = $conex->prepare($sql);
-            $stmt->execute([$datos['estado_delivery'], $datos['direccion'], $datos['id_pedido']]);
+            $stmt->execute([$datos['estatus_delivery'], $datos['direccion'], $datos['id_pedido']]);
     
             $conex->commit();
-            return ['respuesta' => 1, 'msg' => 'Estado actualizado correctamente'];
+            return ['respuesta' => 1, 'msg' => 'estatus actualizado correctamente'];
         } catch (\Exception $e) {
             $conex->rollBack();
             error_log("Error al actualizar delivery: " . $e->getMessage());
-            return ['respuesta' => 0, 'msg' => 'Error al actualizar estado'];
+            return ['respuesta' => 0, 'msg' => 'Error al actualizar estatus'];
         }
     }
     
