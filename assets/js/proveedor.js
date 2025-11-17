@@ -42,7 +42,7 @@ $(function(){
   $('#btnAbrirRegistrar').click(()=>{ 
     $('#formProveedor')[0].reset();
     $('#formProveedor').find('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
-    $('#formProveedor').find('span.error-message').text('');
+    $('#formProveedor').find('.error-message').text('');
     $('#accion').val('registrar');
     $('#modalTitleText').text('Registrar Proveedor');
     $('#btnText').text('Registrar');
@@ -62,7 +62,7 @@ $(function(){
       $('#direccion').val(data.direccion);
 
       $('#formProveedor').find('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
-      $('#formProveedor').find('span.error-message').text('');
+      $('#formProveedor').find('.error-message').text('');
 
       $('#accion').val('actualizar');
       $('#modalTitleText').text('Modificar Proveedor');

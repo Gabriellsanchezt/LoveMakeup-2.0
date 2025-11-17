@@ -5,7 +5,9 @@
 
 // Recuperar datos de entrega y carrito
 $entrega = $_SESSION['pedido_entrega'];
+var_dump($entrega);
 $carrito = $_SESSION['carrito'];
+
 
 
 
@@ -18,10 +20,6 @@ foreach ($carrito as $item) {
     $total += $cantidad * $precioUnitario;
 }
 
-// Obtener métodos de pago
-require_once __DIR__ . '/../../modelo/verpedidoweb.php';
-$venta = new VentaWeb();
-$metodos_pago = $venta->obtenerMetodosPago();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -142,21 +140,208 @@ input[type="radio"]:checked + .opcion-custom {
   color: black;
 }
 
+/* ===== INDICADOR DE PASOS ===== */
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+  padding: 0 20px;
+}
+
+/* Línea base */
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  right: 40px;
+  height: 6px;
+  background: linear-gradient(90deg, #f3f4f6, #e5e7eb);
+  z-index: 1;
+  transform: translateY(-50%);
+  border-radius: 10px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+}
+
+/* Contenedor de barra rosada */
+.progress-bar-container {
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  height: 6px;
+  z-index: 2;
+  transform: translateY(-50%);
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    #f472b6 0%,
+    #ec4899 25%,
+    #f472b6 50%,
+    #ec4899 75%,
+    #f472b6 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-animation 2.5s ease-in-out infinite;
+  border-radius: 10px;
+  box-shadow:
+    0 0 20px rgba(236,72,153,0.4),
+    0 0 10px rgba(244,114,182,0.3),
+    0 2px 6px rgba(236,72,153,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.4),
+    transparent
+  );
+  animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes progress-animation {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+/* ===== STEP ===== */
+
+.step {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  padding: 0.5rem;
+}
+
+.step-number {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.4s;
+  border: 3px solid transparent;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.step-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Activo */
+.step.active .step-number {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+  color: white;
+  border-color: #ec4899;
+  box-shadow:
+    0 0 20px rgba(236,72,153,0.4),
+    0 4px 12px rgba(236,72,153,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+.step.active .step-label {
+  color: #ec4899;
+  font-weight: 600;
+  transform: scale(1.05);
+}
+
+/* Completado */
+.step.completed .step-number {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+  border-color: #10b981;
+  box-shadow:
+    0 0 15px rgba(16,185,129,0.3),
+    0 3px 10px rgba(16,185,129,0.2);
+}
+
+.step.completed .step-label {
+  color: #10b981;
+  font-weight: 600;
+}
+
+
   </style>
 
   <section class="section-padding pt-0">
  
     <div class="container-lg "> 
-      <!-- Pasos -->
-      <div class="pasos-container mb-5">
-        <div class="paso completado"><div class="circulo">1</div><span>Producto</span></div>
-        <div class="paso completado"><div class="circulo">2</div><span>Entrega</span></div>
-        <div class="paso actual"><div class="circulo">3</div><span>Pago</span></div>
-        <div class="paso pendiente"><div class="circulo">4</div><span>Confirmación</span></div>
-      </div>
+    <div class="modal-body bg-s">
+    <div class="mb-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="progress-steps">
+
+                    <!-- BARRA ANIMADA -->
+                    <div class="progress-bar-container" id="progress-bar-pasos">
+                        <div class="progress-bar-fill"></div>
+                    </div>
+
+                    <div class="step active" id="step-cliente">
+            <div class="step-number">1</div>
+            <div class="step-label">Producto</div>
+          </div>
+
+          <div class="step" id="step-productos">
+            <div class="step-number">2</div>
+            <div class="step-label">Entrega</div>
+          </div>
+
+          <div class="step" id="step-pago">
+            <div class="step-number">3</div>
+            <div class="step-label">Pago</div>
+          </div>
+
+          <div class="step" id="step-confirmar">
+            <div class="step-number">4</div>
+            <div class="step-label">Confirmacion</div>
+          </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
       <div class="row g-5 m-5 ">
-     
+
      <div class="col-md-6 sombra-suave card mb-3" style="background-color:#ffff;">    <!-- D1 -->
        <br>
        <h4 class="mb-3">Completar pago | Pago Movil</h4>
@@ -461,5 +646,6 @@ input[type="radio"]:checked + .opcion-custom {
    
   <?php include 'vista/complementos/footer_catalogo.php'?>
   <script src="assets/js/Pedidopago.js"></script>
+  <script src="assets/js/pasos.js"></script>
 </body>
 </html>

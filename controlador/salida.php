@@ -214,8 +214,8 @@ function validarNombreBanco($banco, $campo = 'banco') {
         throw new \Exception("El campo {$campo} no puede exceder 100 caracteres");
     }
     
-    // Solo letras, espacios y algunos caracteres especiales
-    if (!preg_match('/^[A-Za-zÁáÉéÍíÓóÚúÑñÜü\s\-\.]+$/u', $banco)) {
+    // Solo números, letras, espacios y algunos caracteres especiales (guiones, puntos, comas)
+    if (!preg_match('/^[0-9A-Za-zÁáÉéÍíÓóÚúÑñÜü\s\-\.\,]+$/u', $banco)) {
         throw new \Exception("El campo {$campo} contiene caracteres no permitidos");
     }
     
@@ -436,12 +436,8 @@ if (isset($_POST['registrar'])) {
                                 'telefono_emisor' => null
                             ];
 
-                        // Obtener nombre del método de pago
-                        $sql = "SELECT nombre FROM metodo_pago WHERE id_metodopago = ? AND estatus = 1";
-                        $stmt = $salida->getConex1()->prepare($sql);
-                        $stmt->execute([$idMetodo]);
-                        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
-                        $nombreMetodo = $resultado ? $resultado['nombre'] : '';
+                        // Obtener nombre del método de pago usando el método del modelo
+                        $nombreMetodo = $salida->obtenerNombreMetodoPago($idMetodo);
 
                         // Procesar detalles según el método
                         switch($nombreMetodo) {

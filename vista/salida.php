@@ -470,6 +470,78 @@
     .select2-container--bootstrap-5 .select2-selection__rendered {
       padding-left: 12px;
     }
+    
+    /* Ocultar select nativo cuando Select2 está activo */
+    .producto-select-venta.select2-hidden-accessible {
+      display: none !important;
+      visibility: hidden !important;
+      position: absolute !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
+    /* Asegurar que el select nativo esté oculto antes de inicializar Select2 */
+    .producto-select-venta:not(.select2-hidden-accessible) {
+      /* Solo aplicar si no está inicializado Select2 aún */
+    }
+    
+    /* Forzar ocultamiento del select nativo en todas las filas */
+    table .producto-select-venta.select2-hidden-accessible,
+    table .producto-select-venta[style*="display: none"],
+    table .producto-select-venta[style*="visibility: hidden"] {
+      display: none !important;
+      visibility: hidden !important;
+      position: absolute !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
+    /* Estilos para la tabla de productos en el modal */
+    #productos-container-venta tr.producto-fila td {
+      vertical-align: middle;
+      padding: 0.75rem;
+    }
+    
+    #productos-container-venta tr.producto-fila td:last-child {
+      text-align: center;
+      white-space: nowrap;
+    }
+    
+    /* Estilos para los botones de acción */
+    #productos-container-venta .agregar-producto-venta,
+    #productos-container-venta .remover-producto-venta {
+      margin: 0 2px;
+      min-width: 38px;
+    }
+    
+    /* Asegurar que Select2 se vea correctamente en la tabla */
+    #productos-container-venta .select2-container {
+      width: 100% !important;
+    }
+    
+    /* Estilos para mejorar la apariencia del modal */
+    #registroModal .modal-body {
+      padding: 1.5rem;
+    }
+    
+    #registroModal .table-responsive {
+      border-radius: 0.375rem;
+      overflow: hidden;
+    }
+    
+    /* Asegurar que las celdas tengan el mismo alto */
+    #productos-container-venta tr.producto-fila {
+      height: auto;
+    }
+    
+    #productos-container-venta tr.producto-fila td {
+      height: auto;
+      min-height: 50px;
+    }
   </style>
 </head>
 
@@ -1013,10 +1085,10 @@
                         <span class="subtotal-venta texto-secundario">0.00</span>
                       </td>
                       <td class="text-center">
-                        <button type="button" class="btn btn-success btn-sm agregar-producto-venta">
+                        <button type="button" class="btn btn-success btn-sm agregar-producto-venta" title="Agregar producto">
                           <i class="fas fa-plus"></i>
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm remover-producto-venta">
+                        <button type="button" class="btn btn-danger btn-sm remover-producto-venta" style="display: none;" title="Eliminar producto">
                           <i class="fas fa-trash-alt"></i>
                         </button>
                       </td>

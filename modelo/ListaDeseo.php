@@ -70,30 +70,30 @@ class ListaDeseo extends Conexion {
         return ['status' => 'error', 'message' => 'No se pudo vaciar la lista'];
     }
 
-    public function obtenerListaDeseo($id_persona) {
+    public function obtenerListaDeseo($id_usuario) {
         $conex = $this->getConex1();
-        try {
-            $sql = "
-                SELECT ld.id_lista, ld.id_persona, ld.id_producto, 
-                       p.nombre, p.marca, p.descripcion, p.imagen, 
-                       p.precio_detal, p.precio_mayor, 
-                       p.cantidad_mayor, p.stock_disponible
-                FROM lista_deseo ld
-                JOIN producto p ON ld.id_producto = p.id_producto
-                WHERE ld.id_persona = :id_persona
-            ";
-            $stmt = $conex->prepare($sql);
-            $stmt->bindParam(':id_persona', $id_persona, \PDO::PARAM_INT);
-            $stmt->execute();
-            $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $conex = null;
-            return $resultado;
-        } catch (\PDOException $e) {
-            if ($conex) {
-                $conex = null;
-            }
-            throw $e;
-        }
+     //   try {
+    //        $sql = "
+               /// SELECT ld.id_lista, ld.id_usuario, ld.id_producto, 
+      //                 p.nombre, p.marca, p.descripcion, p.imagen, 
+       //                p.precio_detal, p.precio_mayor, 
+         //              p.cantidad_mayor, p.stock_disponible
+           //     FROM lista_deseo ld
+             //   JOIN producto p ON ld.id_producto = p.id_producto
+            //    WHERE ld.id_usuario = :id_usuario
+           // ";
+           // $stmt = $conex->prepare($sql);
+           // $stmt->bindParam(':id_usuario', $id_usuario, \PDO::PARAM_INT);
+           // $stmt->execute();
+           // $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+           // $conex = null;
+           // return $resultado;
+       // } catch (\PDOException $e) {
+         //   if ($conex) {
+           //     $conex = null;
+           // }
+           // throw $e;
+        //}
     }
 
     private function eliminarProductoLista($id_lista) {
