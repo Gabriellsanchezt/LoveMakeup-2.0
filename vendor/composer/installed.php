@@ -3,7 +3,7 @@
         'name' => 'lovemakeup/proyecto',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'c06f5008d60f9844f6f2e304c8c2c723548a9dc8',
+        'reference' => '14ed86970f2255bc430dcdc9a40932c0fa57656f',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -28,7 +28,7 @@
         'lovemakeup/proyecto' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'c06f5008d60f9844f6f2e304c8c2c723548a9dc8',
+            'reference' => '14ed86970f2255bc430dcdc9a40932c0fa57656f',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
