@@ -412,7 +412,7 @@ input[type="radio"]:checked + .opcion-custom {
 
 
 <template id="form-op1">
-  <div class="card p-3 sombra-rosada">
+  <div class="card p-3 sombra-rosada seccion-formulario">
      <div class="mb-3">
       <p class="text-center text-color1">Retiro en Tienda fisica</p>
     <label for="retira" class="form-label text-dark">Tienda física ubicada en la av 20 con calles 29 y 30 CC Barquisimeto plaza, Estado Lara, Venezuela </label>
@@ -422,7 +422,7 @@ input[type="radio"]:checked + .opcion-custom {
 </template>
 
 <template id="form-op2">
-  <div class="card p-3 sombra-rosada">
+  <div class="card p-3 sombra-rosada seccion-formulario">
      <div class="row g-3 mb-3">
       <p class="text-center text-color1">Envios Nacionales</p>
       <div class="col-md-6">
