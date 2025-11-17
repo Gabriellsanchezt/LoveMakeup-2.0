@@ -458,16 +458,24 @@ input[type="radio"]:checked + .opcion-custom {
     
                              <div class="col-md-3">
                              <label for="delivery" class="labeldel">Delivery:</label>
-                                <select id="delivery" name="id_delivery" class="form-select">
-                                <option value="">Seleccione un Delivery</option>
-                                <?php foreach ($delivery_activos as $d): ?>
-                                    <option value="<?= $d['id_delivery'] ?>">
-                                        <?= $d['tipo'] ?> ---
-                                        <?= $d['nombre'] ?>
-                                      
-                                    </option>
-                                <?php endforeach; ?>
-                                </select>
+                             <select id="delivery" name="id_delivery" class="form-select">
+    <option value="">Seleccione un Delivery</option>
+    <?php foreach ($delivery_activos as $d): ?>
+        <option value="<?= $d['id_delivery'] ?>"
+            data-nombre="<?= $d['nombre'] ?>"
+            data-tipo="<?= $d['tipo'] ?>"
+            data-contacto="<?= $d['contacto'] ?>"
+        >
+            <?= $d['tipo'] ?> --- <?= $d['nombre'] ?>
+        </option>
+    <?php endforeach; ?>
+</select>
+
+<input type="hidden" id="id_delivery">
+<input type="hidden" name="delivery_nombre" id="delivery_nombre">
+<input type="hidden" name="delivery_tipo" id="delivery_tipo">
+<input type="hidden" name="delivery_contacto" id="delivery_contacto">
+
                               </div>
      
   

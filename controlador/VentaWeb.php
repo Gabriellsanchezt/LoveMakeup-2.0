@@ -64,6 +64,7 @@ if (!empty($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
                 'imagen'            =>$rutaImagen,
             
                 // **Dirección**
+                  'id_delivery'      => $_SESSION['pedido_entrega']['id_delivery'] ?? null,
                 'direccion_envio'     => $_POST['direccion_envio'] ?? '',
                 'sucursal_envio'      => $_POST['sucursal_envio'] ?? '',
                 'id_metodoentrega'    => $_POST['id_metodoentrega'] ?? '',

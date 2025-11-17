@@ -5,7 +5,6 @@
 
 // Recuperar datos de entrega y carrito
 $entrega = $_SESSION['pedido_entrega'];
-var_dump($entrega);
 $carrito = $_SESSION['carrito'];
 
 
@@ -297,6 +296,50 @@ input[type="radio"]:checked + .opcion-custom {
   font-weight: 600;
 }
 
+/* Estilos para las secciones del formulario */
+.seccion-formulario {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #f578d4;
+  transition: all 0.3s ease;
+}
+
+.seccion-formularioo {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #f786de;
+  transition: all 0.3s ease;
+}
+
+.seccion-formulario:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.seccion-formulario h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seccion-formulario h6 i {
+  color: #f6c5b4;
+  font-size: 1.2rem;
+}
+
+.text-success {
+  color: #2dce89 !important; /* verde característico de Argon Dashboard */
+}
 
   </style>
 
@@ -340,19 +383,14 @@ input[type="radio"]:checked + .opcion-custom {
     </div>
 </div>
 
-      <div class="row g-5 m-5 ">
+   <div class="row g-5 m-5 ">
 
-     <div class="col-md-6 sombra-suave card mb-3" style="background-color:#ffff;">    <!-- D1 -->
+     <div class="col-md-6 sombra-suave seccion-formulario card mb-3" style="background-color:#ffff;">    <!-- D1 -->
        <br>
        <h4 class="mb-3">Completar pago | Pago Movil</h4>
           <form id="formPago" class="row g-4" enctype="multipart/form-data">
             <!-- flag para AJAX -->
-            <div class="mb-3">
-             <p class="mb-1 text-primary"><b>Datos del pago movil</b></p>
-            <p class="mb-1">• Venezuela (0102)  C.I.: V-30.352.937  Telf.: 0414-509.49.59</p>
-             <p class="mb-1">• Mercantil (0105)  C.I.: V-11.787.299  Telf.: 0426-554.13.64</p>
-           <p></p>
-          </div>
+           
             <input type="hidden" name="continuar_pago" value="1">
 
             <!-- Datos ocultos de entrega -->
@@ -467,12 +505,35 @@ input[type="radio"]:checked + .opcion-custom {
 
         </div>
 
+
+    <div class="col-md-6 mr-5">   
+
+  <div class="col-md-10">
+  <div class="card  sombra-suave seccion-formulario">
+        <h5 style="color: #ec4899;">Datos del Delivery</h5>
+        
+        <p><strong>Nombre:</strong> <?= htmlspecialchars($entrega['delivery_nombre'] ?? '—') ?></p>
+        <p><strong>Transporte:</strong> <?= htmlspecialchars($entrega['delivery_tipo'] ?? '-') ?></p>
+        <p><strong>Contacto:</strong> <?= htmlspecialchars($entrega['delivery_contacto']?? '-') ?></p>
+
+  </div>
+  </div>
+
+        <div class="col-md-10 ">
+          <div class="card  sombra-suave seccion-formulario">
+             <p class="mb-1 " style="color: #ec4899;"><b>Datos del pago movil</b></p>
+            <p class="mb-1">• Venezuela (0102)  C.I.: V-30.352.937  Telf.: 0414-509.49.59</p>
+             <p class="mb-1">• Mercantil (0105)  C.I.: V-11.787.299  Telf.: 0426-554.13.64</p>
+           <p></p>
+            </div>
+          </div>
+
      
 
         <!-- Resumen del Pedido -->
-        <div class="col-md-5 ">
-          <div class="card p-3 sombra-suave">
-            <h5>Resumen del Pedido</h5>
+        <div class="col-md-10 ">
+          <div class="card p-3 sombra-suave seccion-formulario">
+            <h5 style="color: #ec4899;">Resumen del Pedido</h5>
             <p><?= count($carrito) ?> producto<?= count($carrito)!==1?'s':'' ?></p>
             <?php foreach($carrito as $item): 
               $precio = $item['cantidad'] >= $item['cantidad_mayor']
@@ -492,18 +553,18 @@ input[type="radio"]:checked + .opcion-custom {
             <hr>
             <div class="d-flex justify-content-between">
               <strong>Total USD:</strong>
-              <strong>$<?= number_format($total,2) ?></strong>
+              <strong class="text-success">$<?= number_format($total,2) ?></strong>
             </div>
             <div class="d-flex justify-content-between">
               <strong>Total Bs:</strong>
-              <strong id="bs">0</strong>
+              <strong class="text-success" id="bs">0</strong>
             </div>
             
           </div>
         </div>
       </div>
     </div>
-
+</div> 
     <div class="col-6 text-end">
 
 <a href="?pagina=Pedidoentrega" class="btn btn-secondary">

@@ -56,6 +56,7 @@ $(document).ready(function() {
       ok = validarSelect($('#parroquia'), "Seleccione una parroquia") && ok;
       ok = validarSelect($('#sector'), "Seleccione un sector") && ok;
       ok = validarDireccion($('#direccion')) && ok;
+      ok = validarSelect($('#delivery'), "Seleccione un delivery") && ok;
     }
     else if (me === '2') {
       // empresa → validamos sólo los inputs de envío
@@ -80,6 +81,9 @@ $(document).ready(function() {
     validarSelect($('#parroquia'), "Seleccione una parroquia");
     validarSelect($('#sector'), "Seleccione un sector");
   });
+  $(document).on('change', '#delivery', function() {
+    $('#id_delivery').val($(this).val());
+});
 
     // Función que asigna validaciones en tiempo real según los campos presentes
     function bindValidations() {
@@ -129,7 +133,18 @@ $(document).ready(function() {
 
 
     if (id === 'op3') {
-      // Definimos los datos
+
+      $(document).on("change", "#delivery", function() {
+        const nombre = $(this).find("option:selected").data("nombre");
+        const tipo = $(this).find("option:selected").data("tipo");
+        const contacto = $(this).find("option:selected").data("contacto");
+    
+        $('#id_delivery').val($(this).val());
+        $('#delivery_nombre').val(nombre);
+        $('#delivery_tipo').val(tipo);
+        $('#delivery_contacto').val(contacto);
+    });
+
       const parroquiasPorZonaloc = {
         norte: ["El Cují","Tamaca"],
         sur: ["Juan de Villegas","Unión"],

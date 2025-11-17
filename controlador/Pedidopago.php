@@ -2,6 +2,7 @@
 
 use LoveMakeup\Proyecto\Modelo\VentaWeb;
 
+
 session_start();
 $nombre = isset($_SESSION["nombre"]) && !empty($_SESSION["nombre"]) ? $_SESSION["nombre"] : "Estimado Cliente";
 $apellido = isset($_SESSION["apellido"]) && !empty($_SESSION["apellido"]) ? $_SESSION["apellido"] : ""; 
@@ -46,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_pago'])) {
             'id_metodoentrega'  => $_POST['id_metodoentrega'],
             'direccion_envio'   => $_POST['direccion_envio'] ?? '',
             'sucursal_envio'    => $_POST['sucursal_envio'] ?? '',
+            'id_delivery' => $_SESSION['pedido_entrega']['id_delivery'] ?? null,
             // pago
             'id_metodopago'       => $_POST['id_metodopago'] ?? '',
             'referencia_bancaria' => $_POST['referencia_bancaria'] ?? '',

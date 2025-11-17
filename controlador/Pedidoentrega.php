@@ -66,7 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
      
 
         case '1': // Delivery propio
-                
+
+            if (empty($_POST['id_delivery'])) {
+                echo json_encode(['success'=>false,'message'=>'Debe seleccionar un delivery.']);
+                exit;
+            }
                 foreach (['zona','parroquia','sector','direccion_envio'] as $f) {
                     if (empty($_POST[$f])) {
                         echo json_encode(['success'=>false,'message'=>"Falta el campo $f."]);
@@ -79,10 +83,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
                 $parroquia = trim($_POST['parroquia']);
                 $sector    = trim($_POST['sector']);
                 $dirDetall = trim($_POST['direccion_envio']);
+
             
                 // Concatenamos en una sola dirección
                 $entrega['direccion_envio'] = "Zona: {$zona}, Parroquia: {$parroquia}, Sector: {$sector}, Dirección: {$dirDetall}";
-            
+
+              $entrega['id_delivery'] = $_POST['id_delivery'];
+              $entrega['delivery_nombre'] = $_POST['delivery_nombre'];
+              $entrega['delivery_tipo'] = $_POST['delivery_tipo'];
+              $entrega['delivery_contacto'] = $_POST['delivery_contacto'];
+              
                 // Para uniformidad, dejamos nulo el campo sucursal_envio
                 $entrega['sucursal_envio'] = null;
                 break;
