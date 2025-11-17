@@ -204,6 +204,52 @@ public static function compra(
         $stmtT->execute($paramsT);
         $rows  = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
 
+        // Si hay cedula en las filas, obtener datos del cliente desde la BD2 (igual que en Salida::consultarVentas)
+        if (!empty($rows)) {
+            try {
+                $conex2 = (new Conexion())->getConex2();
+                foreach ($rows as &$ventaRow) {
+                    if (!empty($ventaRow['cliente_cedula'])) {
+                        try {
+                            $cedula_str = strval($ventaRow['cliente_cedula']);
+                            $sqlCliente = "SELECT u.id_usuario, per.cedula, per.nombre, per.apellido, per.telefono, per.correo, u.estatus as estatus_usuario
+                                          FROM usuario u
+                                          INNER JOIN persona per ON u.cedula = per.cedula
+                                          WHERE per.cedula = :cedula AND u.estatus = 1";
+                            $stmtCliente = $conex2->prepare($sqlCliente);
+                            $stmtCliente->execute(['cedula' => $cedula_str]);
+                            $cliente = $stmtCliente->fetch(\PDO::FETCH_ASSOC);
+                            if ($cliente) {
+                                $ventaRow['cliente'] = $cliente['nombre'] . ' ' . $cliente['apellido'];
+                                $ventaRow['cedula'] = $cliente['cedula'];
+                                $ventaRow['id_usuario'] = $cliente['id_usuario'];
+                            } else {
+                                $ventaRow['cliente'] = 'Sin cliente';
+                                $ventaRow['cedula'] = null;
+                                $ventaRow['id_usuario'] = null;
+                            }
+                        } catch (\PDOException $e) {
+                            $ventaRow['cliente'] = 'Sin cliente';
+                            $ventaRow['cedula'] = null;
+                            $ventaRow['id_usuario'] = null;
+                        }
+                    } else {
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        $ventaRow['id_usuario'] = null;
+                    }
+                }
+                unset($ventaRow);
+                $conex2 = null;
+            } catch (\Exception $e) {
+                // Si falla la conexión secundaria, dejar los valores de cliente como 'Sin cliente'
+                foreach ($rows as &$ventaRow) {
+                    $ventaRow['cliente'] = $ventaRow['cliente'] ?? 'Sin cliente';
+                }
+                unset($ventaRow);
+            }
+        }
+
         // — Texto de filtros —
         if (!$origStart && !$origEnd) {
             $filtro = 'Registro general';
@@ -392,8 +438,13 @@ public static function producto(
             $paramsG[':stockMaxG'] = $stockMax;
         }
         if ($estado !== null) {
-            $whereG[]          = 'p.estatus = :estadoG';
-            $paramsG[':estadoG'] = $estado;
+            if ($estado == 1) {
+                // Disponible: stock > 0 AND estatus = 1
+                $whereG[] = 'p.stock_disponible > 0 AND p.estatus = 1';
+            } else {
+                // No disponible: stock = 0 OR estatus = 2
+                $whereG[] = '(p.stock_disponible = 0 OR p.estatus = 2)';
+            }
         }
 
         $sqlG = "
@@ -469,8 +520,13 @@ public static function producto(
             $paramsT[':stockMaxT'] = $stockMax;
         }
         if ($estado !== null) {
-            $whereT[]         = 'p.estatus = :estadoT';
-            $paramsT[':estadoT'] = $estado;
+            if ($estado == 1) {
+                // Disponible: stock > 0 AND estatus = 1
+                $whereT[] = 'p.stock_disponible > 0 AND p.estatus = 1';
+            } else {
+                // No disponible: stock = 0 OR estatus = 2
+                $whereT[] = '(p.stock_disponible = 0 OR p.estatus = 2)';
+            }
         }
 
         $sqlT = "
@@ -752,23 +808,22 @@ public static function venta(
         }
 
         $sqlT = "
-          SELECT
-            CONCAT(c.nombre,' ',c.apellido) AS cliente,
-            pe.fecha,
-            pe.precio_total_usd             AS total_usd,
-            GROUP_CONCAT(
-              pr.nombre,' (',pd.cantidad,'u)'
-              ORDER BY pd.cantidad DESC
-              SEPARATOR ', '
-            ) AS producto,
-            cat.nombre                      AS categoria
-          FROM pedido pe
-          JOIN cliente         c   ON c.id_persona     = pe.id_persona
-          JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
-          JOIN producto       pr  ON pr.id_producto   = pd.id_producto
-          JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
-         WHERE " . implode(' AND ', $whereT) . "
-        GROUP BY cliente, pe.fecha, total_usd, cat.nombre
+                    SELECT
+                        pe.cedula AS cliente_cedula,
+                        pe.fecha,
+                        pe.precio_total_usd             AS total_usd,
+                        GROUP_CONCAT(
+                            pr.nombre,' (',pd.cantidad,'u)'
+                            ORDER BY pd.cantidad DESC
+                            SEPARATOR ', '
+                        ) AS producto,
+                        cat.nombre                      AS categoria
+                    FROM pedido pe
+                    JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
+                    JOIN producto       pr  ON pr.id_producto   = pd.id_producto
+                    JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
+                 WHERE " . implode(' AND ', $where) . "
+                GROUP BY pe.cedula, pe.fecha, total_usd, cat.nombre
         ORDER BY total_usd DESC
         ";
         $stmtT = $conex->prepare($sqlT);
@@ -1297,8 +1352,13 @@ public static function countProducto($prodId = null, $provId = null, $catId = nu
       $params[':stockMax'] = $stockMax;
     }
     if ($estado !== null) {
-      $where[]          = 'p.estatus = :estado';
-      $params[':estado'] = $estado;
+        if ($estado == 1) {
+            // Disponible: stock > 0 AND estatus = 1
+            $where[] = 'p.stock_disponible > 0 AND p.estatus = 1';
+        } else {
+            // No disponible: stock = 0 OR estatus = 2
+            $where[] = '(p.stock_disponible = 0 OR p.estatus = 2)';
+        }
     }
 
     $w   = implode(' AND ', $where);
@@ -1376,22 +1436,21 @@ public static function countVenta(
     }
 
     // Usar la misma estructura que en el PDF para contar exactamente lo mismo
-    $sql = "
-      SELECT COUNT(*) FROM (
-        SELECT
-          CONCAT(c.nombre,' ',c.apellido) AS cliente,
-          pe.fecha,
-          pe.precio_total_usd             AS total_usd,
-          cat.nombre                      AS categoria
-        FROM pedido pe
-        JOIN cliente         c   ON c.id_persona     = pe.id_persona
-        JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
-        JOIN producto       pr  ON pr.id_producto   = pd.id_producto
-        JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
-        WHERE " . implode(' AND ', $where) . "
-        GROUP BY cliente, pe.fecha, total_usd, cat.nombre
-      ) AS subquery
-    ";
+        $sql = "
+            SELECT COUNT(*) FROM (
+                SELECT
+                    pe.cedula AS cliente_cedula,
+                    pe.fecha,
+                    pe.precio_total_usd             AS total_usd,
+                    cat.nombre                      AS categoria
+                FROM pedido pe
+                JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
+                JOIN producto       pr  ON pr.id_producto   = pd.id_producto
+                JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
+                WHERE " . implode(' AND ', $where) . "
+                GROUP BY pe.cedula, pe.fecha, total_usd, cat.nombre
+            ) AS subquery
+        ";
     
     $stmt = $conex->prepare($sql);
     $stmt->execute($params);

@@ -23,10 +23,10 @@ $objdatos = new Datos();
 
    
      //Valida que el tipo_documento sea válido
-    function validarTipoDocumento($tipo_documento) {
-        $tipos_validos = ['V', 'E'];
-        return in_array($tipo_documento, $tipos_validos, true);
-    }
+function validarTipoDocumento($tipo_documento) {
+    $tipos_validos = ['V', 'E'];
+    return in_array($tipo_documento, $tipos_validos, true);
+}
 
 if (isset($_POST['actualizar'])) {
 
