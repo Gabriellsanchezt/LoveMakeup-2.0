@@ -2,6 +2,7 @@
 
 use LoveMakeup\Proyecto\Modelo\Salida;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
+use LoveMakeup\Proyecto\Modelo\MetodoPago;
 
 session_start();
 if (empty($_SESSION["id"])) {
@@ -31,7 +32,9 @@ if ($_SESSION["nivel_rol"] == 1) {
 }
     
 require_once 'modelo/salida.php';
+require_once 'modelo/metodopago.php';
 $salida = new Salida();
+$metodoPago = new MetodoPago();
 
 // Detectar si la solicitud es AJAX
 function esAjax() {
@@ -846,7 +849,14 @@ if (!isset($_SESSION['csrf_token'])) {
         // Consultar datos
         $ventas = $salida->consultarVentas();
         $productos_lista = $salida->consultarProductos();
-        $metodos_pago = $salida->consultarMetodosPago();
+        // Usar el modelo MetodoPago para obtener métodos de pago de forma transaccional
+        $metodos_pago = $metodoPago->consultar();
+        // Ordenar métodos de pago por nombre (manteniendo la misma funcionalidad que antes)
+        if (is_array($metodos_pago) && !empty($metodos_pago)) {
+            usort($metodos_pago, function($a, $b) {
+                return strcmp($a['nombre'], $b['nombre']);
+            });
+        }
         
         // Asegurar que las variables estén definidas y sean arrays
         if (!isset($ventas) || !is_array($ventas)) {
