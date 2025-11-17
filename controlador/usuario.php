@@ -257,7 +257,6 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
         $id_usuario = $_POST['modificar'];
         $cedulaPermiso = trim($_POST['cedula']);
       
-
         if (cedulaModificable($cedulaPermiso, $registro)) {
 
             if ($id_usuario == $_SESSION['id_usuario']) {
@@ -332,16 +331,16 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
             ]
         ]; 
 
-        if($datosUsuario['datos']['id_persona'] == 2) { 
-            if($datosUsuario['datos']['id_rol'] != 2) {
-                echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el Rol del usuario administrador']);
-                exit;
+            if($datosUsuario['datos']['id_persona'] == 2) { 
+                if($datosUsuario['datos']['id_rol'] != 2) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el Rol del usuario administrador']);
+                    exit;
+                }
+                if($datosUsuario['datos']['estatus'] != 1) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el estatus del usuario administrador']);
+                    exit;
+                }
             }
-            if($datosUsuario['datos']['estatus'] != 1) {
-                echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el estatus del usuario administrador']);
-                exit;
-            }
-        }
 
         $resultado = $objusuario->procesarUsuario(json_encode($datosUsuario));
         

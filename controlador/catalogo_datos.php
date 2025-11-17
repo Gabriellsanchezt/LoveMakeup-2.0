@@ -5,9 +5,7 @@ use LoveMakeup\Proyecto\Modelo\catalogo_datos;
 session_start();
 $nombre = isset($_SESSION["nombre"]) && !empty($_SESSION["nombre"]) ? $_SESSION["nombre"] : "Estimado Cliente";
 $apellido = isset($_SESSION["apellido"]) && !empty($_SESSION["apellido"]) ? $_SESSION["apellido"] : ""; 
-
 $nombreCompleto = trim($nombre . " " . $apellido);
-
 $sesion_activa = isset($_SESSION["id"]) && !empty($_SESSION["id"]);
 
 if (!empty($_SESSION['id'])) {
@@ -18,7 +16,18 @@ $objdatos = new Catalogo_datos();
 
   $entrega = $objdatos->obtenerEntrega();
 
-$direccion = $objdatos->consultardireccion();
+  $direccion = $objdatos->consultardireccion();
+
+ function existeMetodoEntrega($id_metodo, $entregas) {
+    foreach ($entregas as $entrega) {
+        if (isset($entrega['id_entrega']) && (int)$entrega['id_entrega'] == (int)$id_metodo) {
+            return true; // Existe
+        }
+
+    }
+    return false; // No existe
+}
+
 
 if (isset($_POST['actualizar'])) {
      $datosCliente = [
@@ -88,68 +97,119 @@ if (isset($_POST['actualizar'])) {
       
 } else if (isset($_POST['actualizardireccion'])) {
     
-    $datosCliente = [
-        'operacion' => 'actualizardireccion',
-        'datos' => [
-            'direccion_envio' => $_POST['direccion_envio'],
-            'sucursal_envio' => $_POST['sucursal_envio'],
-            'id_direccion' => $_POST['id_direccion'],
-            'id_metodoentrega' => $_POST['id_metodoentrega']
-        ]
-    ];
+ if(!empty($_POST['direccion_envio']) && !empty($_POST['direccion_envio']) && !empty($_POST['id_direccion']) && !empty($_POST['id_metodoentrega'])){
 
-   $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
-   echo json_encode($resultado);
+        $id_metodo = $_POST['id_metodoentrega'];     $direccion = $_POST['direccion_envio']; 
+        $sucursal = $_POST['sucursal_envio'];
+           
+        if (existeMetodoEntrega($id_metodo, $entrega)) {
+                $datosCliente = [
+                    'operacion' => 'actualizardireccion',
+                    'datos' => [
+                        'direccion_envio' => $_POST['direccion_envio'],
+                        'sucursal_envio' => $_POST['sucursal_envio'],
+                        'id_direccion' => $_POST['id_direccion'],
+                        'id_metodoentrega' => $_POST['id_metodoentrega']
+                    ]
+                ];
 
+            $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
+            echo json_encode($resultado);
+        } else {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El método de entrega no existe.']);
+            exit; 
+        }
+
+    }else{
+        echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'datos vacios']);
+        exit; 
+    }
+   
    
       
-} else if (isset($_POST['incluir'])) {
+} else if (isset($_POST['incluir'])) { // |||||||||||||||||||||||||||||||||||||||||||||||||||| Agregar dirreccion
+    if(!empty($_POST['id_metodoentrega']) && !empty($_POST['direccion_envio'])){
+        $id_metodo = $_POST['id_metodoentrega'];     $direccion = $_POST['direccion_envio']; 
+        $sucursal = !empty($_POST['sucursal_envio']) ? $_POST['sucursal_envio'] : "no aplica";
+           
+        if (existeMetodoEntrega($id_metodo, $entrega)) {
+            $datosCliente = [
+                'operacion' => 'incluir',
+                    'datos' => [
+                        'id_metodoentrega' => $id_metodo,
+                        'cedula' => $_SESSION["id"],
+                        'direccion_envio' => $direccion,
+                        'sucursal_envio' => $sucursal
+                    ]
+            ];
 
-    $sucursal = !empty($_POST['sucursal_envio']) ? $_POST['sucursal_envio'] : "no aplica";
+            $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
+            echo json_encode($resultado);
+        } else {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El método de entrega no existe.']);
+            exit; 
+        }
 
-    $datosCliente = [
-        'operacion' => 'incluir',
-        'datos' => [
-            'id_metodoentrega' => $_POST['id_metodoentrega'],
-            'cedula' => $_SESSION["id"],
-            'direccion_envio' => $_POST['direccion_envio'],
-            'sucursal_envio' => $sucursal
-        ]
-    ];
-
-   $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
-   echo json_encode($resultado);
+    }else{
+        echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'datos vacios']);
+        exit; 
+    }
    
-} else if(isset($_POST['eliminar'])){
+   
+} else if(isset($_POST['eliminar'])){ // ||||||||||||||||||||||||||||||||||||||||||||||||||||||| ELIMINAR CLIENTE 
+    if(!empty($_POST['persona'])){
+        $persona = $_POST['persona']; 
     
-    $datosCliente = [
-        'operacion' => 'eliminar',
-        'datos' => [
-            'id_usuario' => $_SESSION['id_usuario'],
-             'cedula' => $_POST['persona']
-        ]
-    ];
+        if (ctype_digit($persona)) {
+            if($persona === $_SESSION['id']){
+                $datosCliente = [
+                        'operacion' => 'eliminar',
+                        'datos' => [
+                            'id_usuario' => $_SESSION['id_usuario'],
+                            'cedula' => $persona
+                        ]
+                    ];
 
-      $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
-      echo json_encode($resultado);
+                    $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
+                    echo json_encode($resultado);
 
-      session_destroy();
+                    session_destroy();
+                    exit;
+            } else{
+                echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'La datos no encontrados']);
+                exit; 
+            }
+        } else {
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'el formato no es valido']);
+            exit; 
+        }
+
+    } else{
+        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'datos vacios']);
+        exit; 
+    }
     
-
-} else if(isset($_POST['actualizarclave'])){
-    $datosCliente = [
-        'operacion' => 'actualizarclave',
-        'datos' => [
-            'id_usuario' => $_SESSION["id_usuario"],
-            'clave_actual' => $_POST['clave'],
-            'clave' => $_POST["clavenueva"]
-        ]
-    ];
-
-  $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
-    echo json_encode($resultado);
-
  
+} else if(isset($_POST['actualizarclave'])){ //||||||||||||||||||||||||||||||||||||||||||||||||||||| ACTUALIZAR CLAVE
+
+    if(!empty($_POST['clave'])&&!empty($_POST['clavenueva'])){ 
+
+        $datosCliente = [
+        'operacion' => 'actualizarclave',
+            'datos' => [
+                'id_usuario' => $_SESSION["id_usuario"],
+                'clave_actual' => $_POST['clave'],
+                'clave' => $_POST["clavenueva"]
+            ]
+        ];
+
+        $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
+        echo json_encode($resultado);
+    }else{ // datos vacios
+        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'Datos Vacios']);
+        exit;
+    }
+    
 } if ($sesion_activa) {
      if($_SESSION["nivel_rol"] == 1) { 
       require_once('vista/tienda/catalogo_datos.php');
