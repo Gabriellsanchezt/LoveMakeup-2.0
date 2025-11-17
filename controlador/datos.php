@@ -21,114 +21,117 @@ require_once 'permiso.php';
 
 $objdatos = new Datos();
 
-if (isset($_POST['actualizar'])) {
-     $datosUsuario = [
-        'operacion' => 'actualizar',
-        'datos' => [
-
-            'nombre' => ucfirst(strtolower($_POST['nombre'])),
-            'apellido' => ucfirst(strtolower($_POST['apellido'])),
-            'cedula' => $_POST['cedula'],
-            'correo' => strtolower($_POST['correo']),
-            'telefono' => $_POST['telefono'],
-            'cedula_actual' => $_SESSION["id"],
-            'correo_actual' => $_SESSION["correo"],
-            'tipo_documento' => $_POST['tipo_documento']
-        ]
-    ];
-
-    $nombre_actual = ucfirst(strtolower($_SESSION["nombre"]));
-    $apellido_actual = ucfirst(strtolower($_SESSION["apellido"]));
-    $telefono_actual = $_SESSION["telefono"];
-     $documento_actual = $_SESSION["documento"];
    
+     //Valida que el tipo_documento sea válido
+function validarTipoDocumento($tipo_documento) {
+    $tipos_validos = ['V', 'E'];
+    return in_array($tipo_documento, $tipos_validos, true);
+}
 
-    $datos = $datosUsuario['datos'];
+if (isset($_POST['actualizar'])) {
 
-    $hayCambios = (
-        $nombre_actual !== $datos['nombre'] ||
-        $apellido_actual !== $datos['apellido'] ||
-        $telefono_actual !== $datos['telefono'] ||
-        $datos['cedula_actual'] !== $datos['cedula'] ||
-         $documento_actual !== $datos['tipo_documento'] ||
-        strtolower($datos['correo_actual']) !== strtolower($datos['correo']) // Comparación case-insensitive
-    );
+    if(!empty($_POST['nombre']) &&!empty($_POST['apellido']) && !empty($_POST['cedula'])&&!empty($_POST['correo']) && !empty($_POST['telefono']) && !empty($_POST['tipo_documento'])){
+        
+        $nombre =  ucfirst(strtolower($_POST['nombre'])); $apellido = ucfirst(strtolower($_POST['apellido'])); $cedula = $_POST['cedula']; $correo = strtolower($_POST['correo']);  $telefono = $_POST['telefono']; $documento = $_POST['tipo_documento'];
+    
+        // Validar tipo_documento
+        if (!validarTipoDocumento($documento)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El tipo de documento no es válido']);
+            exit;
+        }
 
-    if (!$hayCambios) {
-        $res = [
-            'respuesta' => 0,
-            'accion' => 'actualizar',
-            'text' => 'No se realizaron cambios en los datos.'
+        if (ctype_digit($cedula) && filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+        
+              $datosUsuario = [
+                'operacion' => 'actualizar',
+                'datos' => [
+                    'nombre' => $nombre,
+                    'apellido' => $apellido,
+                    'cedula' => $cedula,
+                    'correo' => $correo,
+                    'telefono' => $telefono,
+                    'cedula_actual' => $_SESSION["id"],
+                    'correo_actual' => $_SESSION["correo"],
+                    'tipo_documento' => $documento
+                ]
+            ];
+
+            $resultado = $objdatos->procesarUsuario(json_encode($datosUsuario));
+
+                if ($resultado['respuesta'] == 1) {
+                    $bitacora = [
+                        'id_usuario' => $_SESSION["id_usuario"],
+                        'accion' => 'Modificación de Usuario',
+                        'descripcion' => 'El usuario con ID: ' .
+                                    ' cedula: ' . $datosUsuario['datos']['cedula'] .
+                                        ' nombre: ' . $datosUsuario['datos']['nombre'] .
+                                        ' apellido: ' . $datosUsuario['datos']['apellido'] .
+                                        ' telefono: ' . $datosUsuario['datos']['telefono'] .
+                                    ' Correo: ' . $datosUsuario['datos']['correo']
+                    ];
+                    $bitacoraObj = new Bitacora();
+                    $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
+                }
+
+                    if ($resultado['respuesta'] == 1) {
+                        $id_usuario = $_SESSION["id_usuario"];
+                        $resultado1 = $objdatos->consultardatos($id_usuario);
+
+                                // Verificamos que hay al menos un resultado
+                            if (!empty($resultado1) && is_array($resultado1)) {
+                                $datos = $resultado1[0]; // Accedemos al primer elemento
+
+                                $_SESSION["nombre"]   = $datos["nombre"];
+                                $_SESSION["apellido"] = $datos["apellido"];
+                                $_SESSION["telefono"] = $datos["telefono"];
+                                $_SESSION["correo"]   = $datos["correo"];
+                                $_SESSION["documento"]   = $datos["tipo_documento"];
+                                $_SESSION["id"]   = $datos["cedula"];
+                            }
+                    }   
+            echo json_encode($resultado);           
+        } else {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'La cédula o correo no es válido']);
+            exit; 
+        }
+
+    } else{
+        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'datos vacios']);
+        exit;
+    }
+      
+} else if(isset($_POST['actualizarclave'])){ //  ||||||||||||||||||||||||||||||||||||||||||||||| ACTUALIZAR CLAVE
+    if(!empty($_POST['clave']) && !empty($_POST['clavenueva'])){
+    
+        $datosUsuario = [
+            'operacion' => 'actualizarclave',
+            'datos' => [
+                'id_usuario' => $_SESSION["id_usuario"],
+                'clave_actual' => $_POST['clave'],
+                'clave' => $_POST["clavenueva"]
+            ]
         ];
+
+        $resultado = $objdatos->procesarUsuario(json_encode($datosUsuario));
+    
+            if ($resultado['respuesta'] == 1) {
+                $bitacora = [
+                    'id_persona' => $_SESSION["id"],
+                    'accion' => 'Modificación de Usuario',
+                    'descripcion' => 'El usuario con cambio su clave, ID: ' . $_SESSION["id"] 
+                                
+                ];
+                $bitacoraObj = new Bitacora();
+                $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
+                
+            }
+            
+        echo json_encode($resultado);
+    }else{
+        $res = ['respuesta' => 0, 'accion' => 'clave','text' => 'Datos Vacios'];
         echo json_encode($res);
         exit;
     }
-
-   $resultado = $objdatos->procesarUsuario(json_encode($datosUsuario));
-    /*
-     if ($resultado['respuesta'] == 1) {
-        $bitacora = [
-            'id_usuario' => $_SESSION["id_usuario"],
-            'accion' => 'Modificación de Usuario',
-            'descripcion' => 'El usuario con ID: ' . $datosUsuario['datos']['id_persona'] . 
-                           ' cedula: ' . $datosUsuario['datos']['cedula'] .
-                            ' nombre: ' . $datosUsuario['datos']['nombre'] .
-                            ' apellido: ' . $datosUsuario['datos']['apellido'] .
-                            ' telefono: ' . $datosUsuario['datos']['telefono'] .
-                           ' Correo: ' . $datosUsuario['datos']['correo']
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
-    }
-
-       */
-
-    if ($resultado['respuesta'] == 1) {
-        $id_usuario = $_SESSION["id_usuario"];
-        $resultado1 = $objdatos->consultardatos($id_usuario);
-
-                // Verificamos que hay al menos un resultado
-            if (!empty($resultado1) && is_array($resultado1)) {
-                $datos = $resultado1[0]; // Accedemos al primer elemento
-
-                $_SESSION["nombre"]   = $datos["nombre"];
-                $_SESSION["apellido"] = $datos["apellido"];
-                $_SESSION["telefono"] = $datos["telefono"];
-                $_SESSION["correo"]   = $datos["correo"];
-                $_SESSION["documento"]   = $datos["tipo_documento"];
-                $_SESSION["id"]   = $datos["cedula"];
-            }
-      }   
-
-    echo json_encode($resultado);
-      
-} else if(isset($_POST['actualizarclave'])){
-    $datosUsuario = [
-        'operacion' => 'actualizarclave',
-        'datos' => [
-            'id_usuario' => $_SESSION["id_usuario"],
-            'clave_actual' => $_POST['clave'],
-            'clave' => $_POST["clavenueva"]
-        ]
-    ];
-
-  $resultado = $objdatos->procesarUsuario(json_encode($datosUsuario));
-    /*
-     if ($resultado['respuesta'] == 1) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Modificación de Usuario',
-            'descripcion' => 'El usuario con cambio su clave, ID: ' . $datosUsuario['datos']['id_persona'] 
-                           
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
-        
-    }
-        */
-        echo json_encode($resultado);
-
- 
 }else{
     $bitacora = [
             'id_persona' => $_SESSION["id"],
@@ -139,11 +142,11 @@ if (isset($_POST['actualizar'])) {
     $bitacoraObj->registrarOperacion($bitacora['accion'], 'datos', $bitacora);
    
     if ($_SESSION["nivel_rol"] != 2 && $_SESSION["nivel_rol"] != 3) {
-    header("Location: ?pagina=catalogo");
-    exit();
+        header("Location: ?pagina=catalogo");
+        exit();
+    } else{
+        require_once 'vista/seguridad/datos.php';
     }
-    require_once 'vista/seguridad/datos.php';
 } 
-
 
 ?>

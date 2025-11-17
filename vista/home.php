@@ -173,7 +173,7 @@
           <canvas id="homePieChart" ></canvas>
         </div>
       <?php else: ?>
-        <p class="text-muted">No hay datos para la gráfica.</p>
+        <p class="text-muted texto-secundario">No hay datos para la gráfica.</p>
       <?php endif; ?>
 
     </div>

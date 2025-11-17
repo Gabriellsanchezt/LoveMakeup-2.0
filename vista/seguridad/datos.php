@@ -101,11 +101,11 @@
   <div class="row">
     <!-- Información Personal -->
     <div class="col-md-6 informacion">
-      <h5 class="texto-quinto"><i class="fa-solid fa-user me-2 " style="color:#f6c5b4;"></i> Información Personal</h5>
+      <h5 class="texto-quinto"><i class="fa-solid fa-user me-2 icoM" style="color:#f6c5b4;"></i> Información Personal</h5>
 
         <p class="text-muted texto-secundario">
           En esta área podrás <strong>actualizar tu información personal</strong>, como cédula, nombre, apellido, teléfono y correo electrónico.
-          <span class="text-primary texto-principal"> Recuerda que los cambios se aplicarán al cerrar sesión. </span>
+         
         </p>
        <form action="?pagina=usuario" method="POST" autocomplete="off" id="datos">
         <!-- Cédula -->
@@ -178,7 +178,7 @@
 
     <!-- Seguridad con collapse -->
     <div class="col-md-5 seguridad">
-      <h5 class="texto-quinto"><i class="fa-solid fa-shield-halved me-2" style="color:#f6c5b4;"></i> Seguridad</h5>
+      <h5 class="texto-quinto"><i class="fa-solid fa-shield-halved me-2 icoM" style="color:#f6c5b4;"></i> Seguridad</h5>
       <p class="text-muted texto-secundario">
   En la sección de <strong>seguridad</strong> puedes <span class="text-warning texto-principal">modificar tu clave de acceso</span> de forma segura. Solo haz clic en el botón para desplegar el formulario y completa los campos requeridos.
 </p>
