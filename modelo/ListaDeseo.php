@@ -5,6 +5,12 @@ namespace LoveMakeup\Proyecto\Modelo;
 use LoveMakeup\Proyecto\Config\Conexion;
 
 class ListaDeseo extends Conexion {
+    private $objproducto;
+
+     public function __construct() {
+        parent::__construct();
+        $this->objproducto = new Producto();
+    }
 
     public function procesarListaDeseo($json) {
         $datos = json_decode($json, true);
@@ -70,31 +76,43 @@ class ListaDeseo extends Conexion {
         return ['status' => 'error', 'message' => 'No se pudo vaciar la lista'];
     }
 
-    public function obtenerListaDeseo($id_usuario) {
-        $conex = $this->getConex1();
-     //   try {
-    //        $sql = "
-               /// SELECT ld.id_lista, ld.id_usuario, ld.id_producto, 
-      //                 p.nombre, p.marca, p.descripcion, p.imagen, 
-       //                p.precio_detal, p.precio_mayor, 
-         //              p.cantidad_mayor, p.stock_disponible
-           //     FROM lista_deseo ld
-             //   JOIN producto p ON ld.id_producto = p.id_producto
-            //    WHERE ld.id_usuario = :id_usuario
-           // ";
-           // $stmt = $conex->prepare($sql);
-           // $stmt->bindParam(':id_usuario', $id_usuario, \PDO::PARAM_INT);
-           // $stmt->execute();
-           // $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-           // $conex = null;
-           // return $resultado;
-       // } catch (\PDOException $e) {
-         //   if ($conex) {
-           //     $conex = null;
-           // }
-           // throw $e;
-        //}
+    public function obtenerListaDeseo($cedula) {
+    $conex = $this->getConex1();
+    try {
+        $sql = "
+            SELECT ld.id_lista,
+                   ld.cedula,
+                   ld.id_producto,
+                   p.nombre,
+                   m.nombre AS nombre_marca,
+                   p.descripcion,
+                   p.precio_detal,
+                   p.precio_mayor,
+                   p.cantidad_mayor,
+                   p.stock_disponible
+            FROM lista_deseo ld
+            JOIN producto p ON ld.id_producto = p.id_producto
+            JOIN marca m ON p.id_marca = m.id_marca
+            WHERE ld.cedula = :cedula
+        ";
+        $stmt = $conex->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula, \PDO::PARAM_STR);
+        $stmt->execute();
+        $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Agregamos todas las imágenes de cada producto
+        foreach ($resultado as &$prod) {
+                $prod['imagenes'] = $this->objproducto->obtenerImagenes($prod['id_producto']);
+        }
+
+        $conex = null;
+        return $resultado;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
     }
+}
+
 
     private function eliminarProductoLista($id_lista) {
         $conex = $this->getConex1();
@@ -116,9 +134,9 @@ class ListaDeseo extends Conexion {
     private function vaciarListaDeseo($id_persona) {
         $conex = $this->getConex1();
         try {
-            $sql = "DELETE FROM lista_deseo WHERE id_persona = :id_persona";
+            $sql = "DELETE FROM lista_deseo WHERE cedula = :cedula";
             $stmt = $conex->prepare($sql);
-            $stmt->bindParam(':id_persona', $id_persona, \PDO::PARAM_INT);
+            $stmt->bindParam(':cedula', $cedula, \PDO::PARAM_INT);
             $resultado = $stmt->execute();
             $conex = null;
             return $resultado;
@@ -130,12 +148,12 @@ class ListaDeseo extends Conexion {
         }
     }
 
-    private function estaEnLista($id_persona, $id_producto) {
+    private function estaEnLista($cedula, $id_producto) {
         $conex = $this->getConex1();
         try {
-            $sql = "SELECT 1 FROM lista_deseo WHERE id_persona = :id_persona AND id_producto = :id_producto";
+            $sql = "SELECT 1 FROM lista_deseo WHERE cedula = :cedula AND id_producto = :id_producto";
             $stmt = $conex->prepare($sql);
-            $stmt->bindParam(':id_persona', $id_persona, \PDO::PARAM_INT);
+            $stmt->bindParam(':cedula', $cedula, \PDO::PARAM_INT);
             $stmt->bindParam(':id_producto', $id_producto, \PDO::PARAM_INT);
             $stmt->execute();
             $resultado = $stmt->fetch() ? true : false;
@@ -149,12 +167,12 @@ class ListaDeseo extends Conexion {
         }
     }
  
-    private function agregarProductoLista($id_persona, $id_producto) {
+    private function agregarProductoLista($cedula, $id_producto) {
         $conex = $this->getConex1();
         try {
-            $sql = "INSERT INTO lista_deseo (id_persona, id_producto) VALUES (:id_persona, :id_producto)";
+            $sql = "INSERT INTO lista_deseo (cedula, id_producto) VALUES (:cedula, :id_producto)";
             $stmt = $conex->prepare($sql);
-            $stmt->bindParam(':id_persona', $id_persona, \PDO::PARAM_INT);
+            $stmt->bindParam(':cedula', $cedula, \PDO::PARAM_INT);
             $stmt->bindParam(':id_producto', $id_producto, \PDO::PARAM_INT);
             $resultado = $stmt->execute();
             $conex = null;

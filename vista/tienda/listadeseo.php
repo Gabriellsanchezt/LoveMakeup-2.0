@@ -88,11 +88,11 @@
                    data-cantidad-mayor="<?php echo $producto['cantidad_mayor']; ?>"
                    data-precio-mayor="<?php echo $producto['precio_mayor']; ?>"
                    data-stock-disponible="<?php echo $producto['stock_disponible']; ?>"
-                   data-imagen="<?php echo $producto['imagen']; ?>"
+                   data-imagenes="<?php echo htmlspecialchars(json_encode($producto['imagenes'])); ?>"
                    onclick="openModal(this)">
 
                 <figure class="position-relative">
-                  <img src="<?php echo $producto['imagen']; ?>" alt="<?php echo htmlspecialchars($producto['nombre']); ?>" class="img-fluid rounded-3">
+                   <img src="<?php echo $producto['imagenes'][0]['url_imagen']; ?>" alt="<?php echo htmlspecialchars($producto['nombre']); ?>" class="img-fluid rounded-3">
                 </figure>
                 <div class="d-flex flex-column text-center">
                   <h3 class="fs-5 fw-normal"><?php echo htmlspecialchars($producto['nombre']); ?></h3>
@@ -122,35 +122,47 @@
 
   <!-- MODAL PRODUCTO -->
   <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modal-title"></h5>
-          <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <!-- Imagen -->
-            <div class="col-md-6 text-center">
-              <img id="modal-imagen" src="" alt="Producto" class="img-fluid mb-3" style="max-height: 400px; object-fit: contain;">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-title"></h5>
+        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Imagen a la izquierda -->
+         <div class="col-md-6 text-center">
+            <div id="modal-slider" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner" id="modal-slider-inner">
+                <!-- Aquí se llenan las imágenes -->
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#modal-slider" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#modal-slider" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+              </button>
             </div>
-            <!-- Información -->
-            <div class="col-md-6">
-              <p><strong>Precio Detal:</strong> <span id="modal-precio"></span></p>
-              <p><strong>Marca:</strong> <span id="modal-marca"></span></p>
-              <p><strong>Descripción:</strong> <span id="modal-descripcion"></span></p>
-              <p><strong>Cantidad al mayor:</strong> <span id="modal-cantidad-mayor"></span></p>
-              <p><strong>Precio al mayor:</strong> <span id="modal-precio-mayor"></span></p>
-              <p><strong>Stock disponible:</strong> <span id="modal-stock-disponible"></span></p>
-              <form id="form-carrito">
-                <input type="hidden" name="id" id="form-id">
-                <input type="hidden" name="nombre" id="form-nombre">
-                <input type="hidden" name="precio_detal" id="form-precio-detal">
-                <input type="hidden" name="precio_mayor" id="form-precio-mayor">
-                <input type="hidden" name="cantidad_mayor" id="form-cantidad-mayor">
-                <input type="hidden" name="imagen" id="form-imagen">
-                <input type="hidden" name="stockDisponible" id="form-stock-disponible">
-                <hr>
+          </div>
+          <!-- Datos a la derecha -->
+          <div class="col-md-6">
+            <p><strong>Precio Detal:</strong> <span id="modal-precio"></span></p>
+            <p><strong>Marca:</strong> <span id="modal-marca"></span></p>
+            <p><strong>Descripción:</strong> <span id="modal-descripcion"></span></p>
+            <p><strong>Cantidad al mayor:</strong> <span id="modal-cantidad-mayor"></span></p>
+            <p><strong>Precio al mayor:</strong> <span id="modal-precio-mayor"></span></p>
+            <p><strong>Stock disponible:</strong> <span id="modal-stock-disponible"></span></p>
+            <form id="form-carrito">
+  <input type="hidden" name="id" id="form-id">
+  <input type="hidden" name="nombre" id="form-nombre">
+  <input type="hidden" name="precio_detal" id="form-precio-detal">
+  <input type="hidden" name="precio_mayor" id="form-precio-mayor">
+  <input type="hidden" name="cantidad_mayor" id="form-cantidad-mayor">
+  <input type="hidden" name="imagen" id="form-imagen">
+  <input type="hidden" name="stockDisponible" id="form-stock-disponible">
+  <hr>
 
                 <!-- Botones SIEMPRE visibles (sin lógica de sesión) -->
                 <button type="button" id="btn-agregar-carrito" class="btn btn-primary w-100 mt-2">

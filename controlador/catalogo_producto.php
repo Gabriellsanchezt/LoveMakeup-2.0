@@ -37,7 +37,7 @@ $idsProductosFavoritos = [];
 if ($sesion_activa) {
     $objListaDeseo = new ListaDeseo();
     $lista = $objListaDeseo->obtenerListaDeseo($_SESSION['id']);
-   // $idsProductosFavoritos = array_column($lista, 'id_producto');
+    $idsProductosFavoritos = array_column($lista, 'id_producto');
 }
 
      require_once('vista/tienda/catalogo_producto.php');
