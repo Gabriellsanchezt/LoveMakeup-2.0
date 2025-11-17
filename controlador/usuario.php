@@ -325,7 +325,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                 'estatus' => (int)$_POST['estatus'],
                 'cedula_actual' => $_POST['cedulaactual'],
                 'correo_actual' => $_POST['correoactual'],
-                'rol_actual' => $_POST['rol_actual'],
+                'rol_actual' => (int)$_POST['rol_actual'],
                 'tipo_documento' => $_POST['tipo_documento'],
                 'nivel' => $nivel_valido
             ]
