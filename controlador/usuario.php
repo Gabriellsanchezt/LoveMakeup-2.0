@@ -325,14 +325,14 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                 'estatus' => (int)$_POST['estatus'],
                 'cedula_actual' => $_POST['cedulaactual'],
                 'correo_actual' => $_POST['correoactual'],
-                'rol_actual' => $_POST['rol_actual'],
+                'rol_actual' => (int)$_POST['rol_actual'],
                 'tipo_documento' => $_POST['tipo_documento'],
                 'nivel' => $nivel_valido
             ]
         ]; 
 
             if($datosUsuario['datos']['id_persona'] == 2) { 
-                if($datosUsuario['datos']['id_rol'] != 2) {
+                if($datosUsuario['datos']['id_rol'] != 3) {
                     echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No puedes cambiar el Rol del usuario administrador']);
                     exit;
                 }
