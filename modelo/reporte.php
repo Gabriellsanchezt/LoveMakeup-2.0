@@ -104,7 +104,10 @@ public static function compra(
           LIMIT 10
         ";
         $stmtG = $conex->prepare($sqlG);
-        $stmtG->execute($paramsG);
+    // Log SQL gráfico (venta)
+    error_log('Reporte::venta SQL (grafico): ' . $sqlG);
+    error_log('Reporte::venta params (grafico): ' . json_encode($paramsG));
+    $stmtG->execute($paramsG);
 
         $labels = []; $data = [];
         while ($r = $stmtG->fetch(\PDO::FETCH_ASSOC)) {
@@ -201,8 +204,62 @@ public static function compra(
           ORDER BY total DESC
         ";
         $stmtT = $conex->prepare($sqlT);
+        // Log SQL y parámetros para diagnóstico
+        error_log('Reporte::venta SQL (tabla): ' . $sqlT);
+        error_log('Reporte::venta params (tabla): ' . json_encode($paramsT));
         $stmtT->execute($paramsT);
         $rows  = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Si hay cédula en las filas, obtener datos del cliente desde la BD2 (igual que en consultarVentas)
+        if (!empty($rows)) {
+            try {
+                $conex2 = (new Conexion())->getConex2();
+                foreach ($rows as &$ventaRow) {
+                    if (!empty($ventaRow['cliente_cedula'])) {
+                        try {
+                            $cedula_str = strval($ventaRow['cliente_cedula']);
+                            $sqlCliente = "SELECT u.id_usuario, per.cedula, per.nombre, per.apellido, per.telefono, per.correo, u.estatus as estatus_usuario
+                                          FROM usuario u
+                                          INNER JOIN persona per ON u.cedula = per.cedula
+                                          WHERE per.cedula = :cedula AND u.estatus = 1";
+                            $stmtCliente = $conex2->prepare($sqlCliente);
+                            $stmtCliente->execute(['cedula' => $cedula_str]);
+                            $cliente = $stmtCliente->fetch(\PDO::FETCH_ASSOC);
+                            if ($cliente) {
+                                $ventaRow['cliente'] = $cliente['nombre'] . ' ' . $cliente['apellido'];
+                                $ventaRow['cedula'] = $cliente['cedula'];
+                                // $ventaRow['id_usuario'] = $cliente['id_usuario']; // Comentado porque no se usa
+                            } else {
+                                $ventaRow['cliente'] = 'Sin cliente';
+                                $ventaRow['cedula'] = null;
+                                // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
+                            }
+                        } catch (\PDOException $e) {
+                            $ventaRow['cliente'] = 'Sin cliente';
+                            $ventaRow['cedula'] = null;
+                            // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
+                        }
+                    } else {
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        $ventaRow['id_usuario'] = null;
+                    }
+                }
+                unset($ventaRow);
+                $conex2 = null;
+            } catch (\Exception $e) {
+                foreach ($rows as &$ventaRow) {
+                    $ventaRow['cliente'] = $ventaRow['cliente'] ?? 'Sin cliente';
+                }
+                unset($ventaRow);
+            }
+        }
 
         // Si hay cedula en las filas, obtener datos del cliente desde la BD2 (igual que en Salida::consultarVentas)
         if (!empty($rows)) {
@@ -546,6 +603,9 @@ public static function producto(
          ORDER BY p.stock_disponible DESC, p.nombre ASC
         ";
         $stmtT = $conex->prepare($sqlT);
+        // Log SQL tabla (venta)
+        error_log('Reporte::venta SQL (tabla): ' . $sqlT);
+        error_log('Reporte::venta params (tabla): ' . json_encode($paramsT));
         $stmtT->execute($paramsT);
         $rows  = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -681,12 +741,37 @@ public static function venta(
 
     $conex = (new Conexion())->getConex1();
 
+    // Detectar esquema de `pedido`: si existe columna 'cedula' o 'id_persona'
+    try {
+        $dbStmt = $conex->query("SELECT DATABASE() AS db");
+        $dbName = $dbStmt->fetchColumn();
+        $colStmt = $conex->prepare(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'pedido' AND COLUMN_NAME IN ('cedula','id_persona')"
+        );
+        $colStmt->execute([':db' => $dbName]);
+        $foundCols = $colStmt->fetchAll(\PDO::FETCH_COLUMN);
+    } catch (\Throwable $e) {
+        error_log('Reporte::venta esquema detection failed: ' . $e->getMessage());
+        $foundCols = [];
+    }
+    $hasCedula = in_array('cedula', $foundCols, true);
+    $hasIdPersona = in_array('id_persona', $foundCols, true);
+    // Mantener compatibilidad: alias 'cliente_cedula' será el nombre de la columna encontrada o el id_pedido como fallback
+    if ($hasCedula) {
+        $clienteSelectCol = 'pe.cedula';
+    } elseif ($hasIdPersona) {
+        $clienteSelectCol = 'pe.id_persona';
+    } else {
+        $clienteSelectCol = 'pe.id_pedido';
+    }
+
     try {
         $conex->beginTransaction();
 
         // — Top 10 producto más vendidos (gráfico) —
         $whereG  = ['pe.tipo = 1'];
         $paramsG = [];
+        $joinG   = '';
 
         // a) Sólo inicio
         if ($origStart && !$origEnd) {
@@ -714,7 +799,9 @@ public static function venta(
             $paramsG[':catG'] = $catId;
         }
         if ($metodoPago) {
-            $whereG[]         = 'pe.id_metodopago = :mpG';
+            // El método de pago se almacena en detalle_pago (dp) y pedido contiene id_pago
+            $joinG = " LEFT JOIN detalle_pago dp ON pe.id_pago = dp.id_pago";
+            $whereG[]         = 'dp.id_metodopago = :mpG';
             $paramsG[':mpG']  = $metodoPago;
         }
         if ($montoMin !== null) {
@@ -726,17 +813,18 @@ public static function venta(
             $paramsG[':montoMaxG'] = $montoMax;
         }
 
-        $sqlG = "
-          SELECT pr.nombre AS producto,
-                 SUM(pd.cantidad) AS total
-            FROM pedido pe
-            JOIN pedido_detalles pd ON pd.id_pedido = pe.id_pedido
-            JOIN producto       pr ON pr.id_producto = pd.id_producto
-           WHERE " . implode(' AND ', $whereG) . "
-          GROUP BY pr.id_producto
-          ORDER BY total DESC
-          LIMIT 10
-        ";
+                $sqlG = "
+                    SELECT pr.nombre AS producto,
+                                 SUM(pd.cantidad) AS total
+                        FROM pedido pe
+                        JOIN pedido_detalles pd ON pd.id_pedido = pe.id_pedido
+                        JOIN producto       pr ON pr.id_producto = pd.id_producto
+                        " . $joinG . "
+                     WHERE " . implode(' AND ', $whereG) . "
+                    GROUP BY pr.id_producto
+                    ORDER BY total DESC
+                    LIMIT 10
+                ";
         $stmtG = $conex->prepare($sqlG);
         $stmtG->execute($paramsG);
 
@@ -768,6 +856,7 @@ public static function venta(
         // — Tabla de ventas con categoría —
         $whereT  = ['pe.tipo = 1'];
         $paramsT = [];
+        $joinT   = '';
 
         // a) Sólo inicio
         if ($origStart && !$origEnd) {
@@ -795,7 +884,8 @@ public static function venta(
             $paramsT[':catT'] = $catId;
         }
         if ($metodoPago) {
-            $whereT[]         = 'pe.id_metodopago = :mpT';
+            $joinT = " LEFT JOIN detalle_pago dp ON pe.id_pago = dp.id_pago";
+            $whereT[]         = 'dp.id_metodopago = :mpT';
             $paramsT[':mpT']  = $metodoPago;
         }
         if ($montoMin !== null) {
@@ -809,7 +899,7 @@ public static function venta(
 
         $sqlT = "
                     SELECT
-                        pe.cedula AS cliente_cedula,
+                        " . $clienteSelectCol . " AS cliente_cedula,
                         pe.fecha,
                         pe.precio_total_usd             AS total_usd,
                         GROUP_CONCAT(
@@ -818,17 +908,21 @@ public static function venta(
                             SEPARATOR ', '
                         ) AS producto,
                         cat.nombre                      AS categoria
-                    FROM pedido pe
-                    JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
-                    JOIN producto       pr  ON pr.id_producto   = pd.id_producto
-                    JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
-                 WHERE " . implode(' AND ', $where) . "
-                GROUP BY pe.cedula, pe.fecha, total_usd, cat.nombre
-        ORDER BY total_usd DESC
+                          FROM pedido pe
+                          JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
+                          JOIN producto       pr  ON pr.id_producto   = pd.id_producto
+                          JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
+                          " . $joinT . "
+                      WHERE " . implode(' AND ', $whereT) . "
+                GROUP BY cliente_cedula, pe.fecha, pe.precio_total_usd, cat.nombre
+        ORDER BY pe.precio_total_usd DESC
         ";
         $stmtT = $conex->prepare($sqlT);
         $stmtT->execute($paramsT);
         $rows  = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Log diagnóstico: número de filas obtenidas
+        error_log('Reporte::venta - filas obtenidas: '.count($rows));
 
         // — Texto de filtros —
         if (!$origStart && !$origEnd) {
@@ -892,20 +986,25 @@ public static function venta(
           . '<table><thead><tr>'
           . '<th>Cliente</th><th>Fecha</th><th>Total (USD)</th><th>Productos</th><th>Categoría</th>'
           . '</tr></thead><tbody>';
-        foreach ($rows as $r) {
-            $d    = date('d/m/Y',strtotime($r['fecha']));
-            $tot  = '$'.number_format($r['total_usd'],2);
-            $cli  = htmlspecialchars($r['cliente']);
-            $prods= htmlspecialchars($r['producto'] ?? '—');
-            $catn = htmlspecialchars($r['categoria'] ?? '—');
-            $html .= "<tr>
-                        <td>{$cli}</td>
-                        <td>{$d}</td>
-                        <td>{$tot}</td>
-                        <td>{$prods}</td>
-                        <td>{$catn}</td>
-                      </tr>";
-        }
+                foreach ($rows as $r) {
+                        $d    = date('d/m/Y',strtotime($r['fecha']));
+                        $tot  = '$'.number_format($r['total_usd'],2);
+                        // Si no se proporcionó el nombre del cliente, mostrar cédula o valor por defecto
+                        $cliRaw = $r['cliente'] ?? $r['cliente_cedula'] ?? 'Sin cliente';
+                        $cli  = htmlspecialchars($cliRaw);
+                        $prods= htmlspecialchars($r['producto'] ?? '—');
+                        $catn = htmlspecialchars($r['categoria'] ?? '—');
+                        $html .= "<tr>
+                                                <td>{$cli}</td>
+                                                <td>{$d}</td>
+                                                <td>{$tot}</td>
+                                                <td>{$prods}</td>
+                                                <td>{$catn}</td>
+                                            </tr>";
+                }
+
+                // Log diagnóstico: tamaño del HTML generado (para verificar que no esté vacío)
+                error_log('Reporte::venta - longitud HTML: '.strlen($html));
         $html .= '</tbody></table></main>'
                . '<footer>Página <span class="pageNumber"></span> de <span class="totalPages"></span></footer>'
                . '</body></html>';
@@ -1025,7 +1124,8 @@ public static function pedidoWeb(
         $params[':estado'] = $estado;
     }
     if ($metodoPago !== null) {
-        $where[]        = 'p.id_metodopago = :metodoPago';
+        // Filtrar por método de pago usando detalle_pago (dp) relacionado por id_pago
+        $where[]        = 'dp.id_metodopago = :metodoPago';
         $params[':metodoPago'] = $metodoPago;
     }
     if ($montoMin !== null) {
@@ -1037,6 +1137,12 @@ public static function pedidoWeb(
         $params[':montoMax'] = $montoMax;
     }
     $whereSql = implode(' AND ', $where);
+
+    // Si se está filtrando por método de pago, asegurarse de unir la tabla detalle_pago
+    $join = '';
+    if (strpos($whereSql, 'dp.id_metodopago') !== false || $metodoPago !== null) {
+        $join = ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago';
+    }
 
     // 3) Incluir dependencias
     // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
@@ -1055,16 +1161,17 @@ public static function pedidoWeb(
         $conex->beginTransaction();
 
         // — Gráfico Top 5 Productos — (sin cambios) —
-        $sqlG = "
-          SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
-            FROM pedido p
-       LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
-       LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
-           WHERE {$whereSql}
-        GROUP BY pr.id_producto
-        ORDER BY total DESC
-           LIMIT 5
-        ";
+          $sqlG = "
+             SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
+                FROM pedido p
+                " . $join . "
+         LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
+         LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
+              WHERE {$whereSql}
+          GROUP BY pr.id_producto
+          ORDER BY total DESC
+              LIMIT 5
+          ";
         $stmtG = $conex->prepare($sqlG);
         $stmtG->execute($params);
         $labels = []; $data = [];
@@ -1089,26 +1196,47 @@ public static function pedidoWeb(
               ? 'data:image/png;base64,'.base64_encode(file_get_contents($imgFile))
               : '';
 
-        // — Tabla de Pedidos Web, ahora con columna PRODUCTOS —
-        $sqlT = "
-          SELECT
-            DATE_FORMAT(p.fecha, '%d/%m/%Y')        AS fecha,
-            p.estado                               AS estado,
-            p.precio_total_bs                      AS total,
-            GROUP_CONCAT(
-              DISTINCT pr.nombre
-              ORDER BY pr.nombre
-              SEPARATOR ', '
-            )                                      AS producto,
-            CONCAT(c.nombre,' ',c.apellido)        AS usuario
-          FROM pedido p
-          LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
-          LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
-          LEFT JOIN cliente         c  ON c.id_persona   = p.id_persona
-          WHERE {$whereSql}
-          GROUP BY p.id_pedido
-          ORDER BY p.precio_total_bs DESC
-        ";
+                // Detectar si la tabla `cliente` existe en la BD1; si no, omitimos el JOIN
+                try {
+                        $dbStmt = $conex->query("SELECT DATABASE() as db");
+                        $dbName = $dbStmt->fetchColumn();
+                        $tblStmt = $conex->prepare("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'cliente'");
+                        $tblStmt->execute([':db' => $dbName]);
+                        $hasCliente = (bool)$tblStmt->fetchColumn();
+                } catch (\Throwable $e) {
+                        error_log('Reporte::pedidoWeb cliente detection failed: ' . $e->getMessage());
+                        $hasCliente = false;
+                }
+
+                $usuarioSelect = $hasCliente
+                        ? "CONCAT(c.nombre,' ',c.apellido) AS usuario"
+                        : "NULL AS usuario";
+
+                $clienteJoin = $hasCliente
+                        ? "LEFT JOIN cliente c ON c.id_persona = p.id_persona"
+                        : "";
+
+                // — Tabla de Pedidos Web, ahora con columna PRODUCTOS —
+                $sqlT = "
+                    SELECT
+                        DATE_FORMAT(p.fecha, '%d/%m/%Y')        AS fecha,
+                        p.estado                               AS estado,
+                        p.precio_total_bs                      AS total,
+                        GROUP_CONCAT(
+                            DISTINCT pr.nombre
+                            ORDER BY pr.nombre
+                            SEPARATOR ', '
+                        )                                      AS producto,
+                        " . $usuarioSelect . "
+                    FROM pedido p
+                    " . $join . "
+                    LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
+                    LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
+                    " . $clienteJoin . "
+                    WHERE {$whereSql}
+                    GROUP BY p.id_pedido
+                    ORDER BY p.precio_total_bs DESC
+                ";
         $stmtT = $conex->prepare($sqlT);
         $stmtT->execute($params);
         $rows = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
@@ -1304,6 +1432,9 @@ public static function countCompra($start = null, $end = null, $prodId = null, $
     ";
 
     $stmt = $conex->prepare($sql);
+    // Log SQL y parámetros para diagnóstico de countCompra
+    error_log('Reporte::countCompra SQL: ' . $sql);
+    error_log('Reporte::countCompra params: ' . json_encode($params));
     $stmt->execute($params);
     return (int) $stmt->fetchColumn();
 }
@@ -1394,6 +1525,33 @@ public static function countVenta(
 
     $where  = ['pe.tipo = 1'];
     $params = [];
+    $join   = '';
+
+    // Detectar esquema: ¿tiene la tabla `pedido` la columna `cedula` o `id_persona`?
+    try {
+        $dbStmt = $conex->query("SELECT DATABASE() AS db");
+        $dbName = $dbStmt->fetchColumn();
+        $colStmt = $conex->prepare(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'pedido' AND COLUMN_NAME IN ('cedula','id_persona')"
+        );
+        $colStmt->execute([':db' => $dbName]);
+        $foundCols = $colStmt->fetchAll(\PDO::FETCH_COLUMN);
+    } catch (\Throwable $e) {
+        // Si falla la detección, asumimos esquema antiguo con 'cedula'
+        error_log('Reporte::countVenta esquema detection failed: ' . $e->getMessage());
+        $foundCols = [];
+    }
+    $hasCedula = in_array('cedula', $foundCols, true);
+    $hasIdPersona = in_array('id_persona', $foundCols, true);
+    // Elegir columna para agrupar/mostrar en el conteo
+    if ($hasCedula) {
+        $clienteCol = 'pe.cedula';
+    } elseif ($hasIdPersona) {
+        $clienteCol = 'pe.id_persona';
+    } else {
+        // Fallback seguro: agrupar por id_pedido si no existe cedula/id_persona
+        $clienteCol = 'pe.id_pedido';
+    }
 
     // a) Sólo inicio
     if ($origStart && !$origEnd) {
@@ -1417,7 +1575,9 @@ public static function countVenta(
         $params[':pid'] = $prodId;
     }
     if ($metodoId) {
-        $where[]         = 'pe.id_metodopago = :mp';
+        // Unir con detalle_pago para filtrar por id_metodopago
+        $join = ' LEFT JOIN detalle_pago dp ON pe.id_pago = dp.id_pago';
+        $where[]         = 'dp.id_metodopago = :mp';
         $params[':mp']   = $metodoId;
     }
     if ($catId) {
@@ -1436,24 +1596,36 @@ public static function countVenta(
     }
 
     // Usar la misma estructura que en el PDF para contar exactamente lo mismo
-        $sql = "
-            SELECT COUNT(*) FROM (
-                SELECT
-                    pe.cedula AS cliente_cedula,
-                    pe.fecha,
-                    pe.precio_total_usd             AS total_usd,
-                    cat.nombre                      AS categoria
-                FROM pedido pe
-                JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
-                JOIN producto       pr  ON pr.id_producto   = pd.id_producto
-                JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
-                WHERE " . implode(' AND ', $where) . "
-                GROUP BY pe.cedula, pe.fecha, total_usd, cat.nombre
-            ) AS subquery
-        ";
+    $sql = "
+        SELECT COUNT(*) FROM (
+            SELECT
+                " . $clienteCol . " AS cliente_key,
+                pe.fecha,
+                pe.precio_total_usd AS total_usd,
+                cat.nombre AS categoria
+            FROM pedido pe
+            JOIN pedido_detalles pd ON pd.id_pedido = pe.id_pedido
+            JOIN producto pr ON pr.id_producto = pd.id_producto
+            JOIN categoria cat ON cat.id_categoria = pr.id_categoria
+            " . $join . "
+            WHERE " . implode(' AND ', $where) . "
+            GROUP BY cliente_key, pe.fecha, pe.precio_total_usd, cat.nombre
+        ) AS subquery
+    ";
     
     $stmt = $conex->prepare($sql);
-    $stmt->execute($params);
+    // Log diagnóstico antes de ejecutar
+    error_log('Reporte::countVenta SQL: ' . $sql);
+    error_log('Reporte::countVenta params: ' . json_encode($params));
+    try {
+        $stmt->execute($params);
+    } catch (\Throwable $e) {
+        // Log detallado para ayudar a reproducir el error
+        error_log('Reporte::countVenta EXECUTE EXCEPTION: ' . $e->getMessage());
+        error_log($e->getTraceAsString());
+        // Re-throw para que el controlador capture y devuelva 500 cuando corresponda
+        throw $e;
+    }
     return (int) $stmt->fetchColumn();
 }
 
@@ -1501,7 +1673,7 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
     }
 
     if ($metodoPago !== null) {
-        $where[]        = 'p.id_metodopago = :metodoPago';
+        $where[]        = 'dp.id_metodopago = :metodoPago';
         $params[':metodoPago'] = $metodoPago;
     }
 
@@ -1519,12 +1691,16 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
 
     // 3) Ejecutar conteo
     $conex = (new Conexion())->getConex1();
-    $sql  = "
-      SELECT COUNT(DISTINCT p.id_pedido) AS cnt
-        FROM pedido p
-        JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
-      {$w}
-    ";
+        // Asegurar join con detalle_pago si el where contiene dp.id_metodopago
+        $joinDp = (strpos($w, 'dp.id_metodopago') !== false || $metodoPago !== null) ? ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago' : '';
+
+        $sql  = "
+            SELECT COUNT(DISTINCT p.id_pedido) AS cnt
+                FROM pedido p
+                JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
+                {$joinDp}
+            {$w}
+        ";
     $stmt = $conex->prepare($sql);
     $stmt->execute($params);
 

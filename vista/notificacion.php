@@ -127,9 +127,9 @@
                   <th class="text-white">Mensaje</th>
                   <th class="text-white">Estado</th>
                   <th class="text-white">Fecha</th>
-                  <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'especial')): ?>
-                      <th class="text-center text-white">Acciones</th>
-                   <?php endif; ?>
+                    <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'especial')): ?>
+                        <th class="text-center text-white">Acciones</th>
+                    <?php endif; ?>
                 </tr>
               </thead>
 
@@ -139,12 +139,12 @@
     <?php foreach ($notificaciones as $n): ?>
       <tr id="notif-<?= $n['id_notificacion'] ?>">
         <td>
-          <p class="text-sm font-weight-normal mb-0">
+          <p class="text-sm font-weight-normal mb-0 texto-secundario">
             <?= htmlspecialchars($n['titulo']) ?>
           </p>
         </td>
         <td>
-          <p class="text-sm font-weight-normal mb-0">
+          <p class="text-sm font-weight-normal mb-0 texto-secundario">
             <?= htmlspecialchars($n['mensaje']) ?>
           </p>
         </td>
@@ -164,7 +164,7 @@
           endswitch; ?>
         </td>
         <td>
-          <span class="text-sm">
+          <span class="text-sm texto-secundario">
             <?= date('d-m-Y g:i a', strtotime($n['fecha'])) ?>
           </span>
         </td>

@@ -650,9 +650,11 @@
                 </label>
                 <select name="f_mp" class="form-select">
                   <option value="">— Todos —</option>
-                  <option value="1">Efectivo</option>
-                  <option value="2">Transferencia</option>
-                  <option value="3">Pago Móvil</option>
+                  <option value="4">Efectivo Bs</option>
+                  <option value="2">Transferencia Bancaria</option>
+                  <option value="1">Pago Móvil</option>
+                  <option value="3">Punto de Venta</option>
+                  <option value="5">Divisas (Dólares $)</option>
                 </select>
               </div>
               <div class="col-md-6">
@@ -788,8 +790,8 @@
                 </label>
                 <select name="metodo_pago" class="form-select">
                   <option value="">— Todos —</option>
-                  <option value="2">Transferencia</option>
-                  <option value="3">Pago Móvil</option>
+                  <option value="2">Transferencia Bancaria</option>
+                  <option value="1">Pago Móvil</option>
                 </select>
               </div>
               <div class="col-md-6">

@@ -53,7 +53,7 @@ class Usuario extends Conexion
                     
                case 'actualizar':
                     $datosProcesar['insertar_permisos'] = false;
-
+                    
                     if ($datosProcesar['id_rol'] !== $datosProcesar['rol_actual']) {
                         $resultado = $this->ejecutarEliminacionPermisos($datosProcesar['cedula']);
                         if ($resultado['respuesta'] === 0) {
@@ -194,36 +194,51 @@ class Usuario extends Conexion
 
         // 2. Actualizar datos en la tabla usuario
         $sqlUsuario = "UPDATE usuario 
-                       SET cedula = :cedula_nueva, 
-                           estatus = :estatus, 
-                           id_rol = :id_rol 
+                       SET cedula = :cedula_nueva
                        WHERE cedula = :cedula_actual";
 
         $paramUsuario = [
             'cedula_nueva' => $datos['cedula'],
-            'estatus' => $datos['estatus'],
-            'id_rol' => $datos['id_rol'],
             'cedula_actual' => $datos['cedula_actual']
         ];
 
+        
         $stmtUsuario = $conex->prepare($sqlUsuario);
         $stmtUsuario->execute($paramUsuario);
 
-        // 3. Actualizar la cédula en la tabla permiso
-        $sqlPermisoUpdate = "UPDATE permiso 
-                             SET cedula = :cedula_nueva 
-                             WHERE cedula = :cedula_actual";
+         if ($datos['cedula'] !== $datos['cedula_actual']) {
+             // 2.1 Actualizar la cédula en la tabla permiso
+            $sqlPermisoUpdate = "UPDATE permiso 
+                                SET cedula = :cedula_nueva 
+                                WHERE cedula = :cedula_actual";
 
-        $paramPermisoUpdate = [
+            $paramPermisoUpdate = [
+                'cedula_nueva' => $datos['cedula'],
+                'cedula_actual' => $datos['cedula_actual']
+            ];
+
+            $stmtPermisoUpdate = $conex->prepare($sqlPermisoUpdate);
+            $stmtPermisoUpdate->execute($paramPermisoUpdate);
+         }
+
+        // 3. Actualizar datos en la tabla usuario
+        $sqlUsuario2 = "UPDATE usuario 
+                       SET estatus = :estatus, 
+                           id_rol = :id_rol 
+                       WHERE cedula = :cedula_nueva";
+
+        $paramUsuario2 = [
             'cedula_nueva' => $datos['cedula'],
-            'cedula_actual' => $datos['cedula_actual']
+            'estatus' => $datos['estatus'],
+            'id_rol' => $datos['id_rol'],
         ];
 
-        $stmtPermisoUpdate = $conex->prepare($sqlPermisoUpdate);
-        $stmtPermisoUpdate->execute($paramPermisoUpdate);
+        $stmtUsuario2 = $conex->prepare($sqlUsuario2);
+        $stmtUsuario2->execute($paramUsuario2);
 
         // 4. Insertar nuevos permisos si corresponde
-        if ($stmtUsuario && !empty($datos['insertar_permisos'])) {
+        if ($stmtUsuario2 && !empty($datos['insertar_permisos'])) {
+            
             $nivel = $datos['nivel'];
             $cedula = $datos['cedula'];
             $datosPermisos = $this->generarPermisosPorNivel($cedula, $nivel);
