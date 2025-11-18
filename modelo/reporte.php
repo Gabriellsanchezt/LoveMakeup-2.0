@@ -1732,12 +1732,15 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
     $conex = (new Conexion())->getConex1();
         // Asegurar join con detalle_pago si el where contiene dp.id_metodopago
         $joinDp = (strpos($w, 'dp.id_metodopago') !== false || $metodoPago !== null) ? ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago' : '';
+        // Asegurar join con producto si el where contiene pr.id_marca
+        $joinPr = (strpos($w, 'pr.id_marca') !== false || $marcaId !== null) ? ' LEFT JOIN producto pr ON pr.id_producto = pd.id_producto' : '';
 
         $sql  = "
             SELECT COUNT(DISTINCT p.id_pedido) AS cnt
                 FROM pedido p
                 JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
                 {$joinDp}
+                {$joinPr}
             {$w}
         ";
     $stmt = $conex->prepare($sql);
