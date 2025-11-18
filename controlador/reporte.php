@@ -4,6 +4,7 @@ use LoveMakeup\Proyecto\Modelo\Reporte;
 use LoveMakeup\Proyecto\Modelo\Producto;
 use LoveMakeup\Proyecto\Modelo\Proveedor;
 use LoveMakeup\Proyecto\Modelo\Categoria;
+use LoveMakeup\Proyecto\Modelo\Bitacora;
 
 session_start();
 if (empty($_SESSION['id'])) {
@@ -21,7 +22,7 @@ if ($_SESSION["nivel_rol"] == 1) {
     
 require_once 'permiso.php';
 
-$objProd = new Producto();
+// No necesitamos instancia de Producto sólo para la bitácora; usaremos Bitacora cuando haga falta
 
 /*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
 
@@ -97,7 +98,7 @@ function validarMetodoPago($metodo_pago) {
         return false;
     }
     $metodo_pago = (int)$metodo_pago;
-    $metodos_validos = [1, 2, 3]; // 1=Efectivo, 2=Transferencia, 3=Pago Móvil
+    $metodos_validos = [1, 2, 3, 4, 5]; // 1=Pago Móvil, 2=Transferencia Bancaria, 3=Punto de Venta, 4=Efectivo Bs, 5=Divisas (Dolares $)
     return in_array($metodo_pago, $metodos_validos, true);
 }
 
@@ -112,7 +113,7 @@ function validarMetodoPagoWeb($metodo_pago_web) {
         return false;
     }
     $metodo_pago_web = (int)$metodo_pago_web;
-    $metodos_validos = [2, 3]; // 2=Transferencia, 3=Pago Móvil
+    $metodos_validos = [2, 1]; // 2=Transferencia Bancaria, 1=Pago Móvil
     return in_array($metodo_pago_web, $metodos_validos, true);
 }
 
@@ -547,11 +548,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     }
 
     if ($desc) {
-        $objProd->registrarBitacora(json_encode([
-            'id_persona'  => $userId,
-            'accion'      => $desc,
-            'descripcion' => "Usuario ($rol) ejecutó $desc"
-        ]));
+        try {
+            $bit = new Bitacora();
+            // registrarOperacion maneja la sesión y el formato del registro
+            $bit->registrarOperacion($desc, 'reporte', ['descripcion' => "Usuario ($rol) ejecutó $desc"]);
+        } catch (\Throwable $e) {
+            error_log('reporte.php bitacora fallo: ' . $e->getMessage());
+        }
     }
 
     exit; // PDF ya enviado

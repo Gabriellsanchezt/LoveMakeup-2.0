@@ -154,8 +154,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion'])) {
 
 
 // 4) GET normal: regenerar y listar
-$N->generarDePedidos();
-$all = $N->getAll();
+try {
+    $N->generarDePedidos();
+    $all = $N->getAll();
+} catch (\Throwable $e) {
+    // Si hay un error con notificaciones (p. ej. esquema de BD), no detener la aplicación
+    error_log('notificacion.php fallo al generar/listar: ' . $e->getMessage());
+    $all = [];
+}
 
 // FILTRADO según rol:
 //  - Admin ve estados 1 (nuevas) y 4 (leídas solo por asesora)

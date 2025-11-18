@@ -228,18 +228,24 @@ public static function compra(
                             if ($cliente) {
                                 $ventaRow['cliente'] = $cliente['nombre'] . ' ' . $cliente['apellido'];
                                 $ventaRow['cedula'] = $cliente['cedula'];
-                                $ventaRow['id_usuario'] = $cliente['id_usuario'];
+                                // $ventaRow['id_usuario'] = $cliente['id_usuario']; // Comentado porque no se usa
                             } else {
                                 $ventaRow['cliente'] = 'Sin cliente';
                                 $ventaRow['cedula'] = null;
-                                $ventaRow['id_usuario'] = null;
+                                // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
                             }
                         } catch (\PDOException $e) {
                             $ventaRow['cliente'] = 'Sin cliente';
                             $ventaRow['cedula'] = null;
-                            $ventaRow['id_usuario'] = null;
+                            // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
                         }
                     } else {
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
                         $ventaRow['cliente'] = 'Sin cliente';
                         $ventaRow['cedula'] = null;
                         $ventaRow['id_usuario'] = null;
@@ -1132,6 +1138,12 @@ public static function pedidoWeb(
     }
     $whereSql = implode(' AND ', $where);
 
+    // Si se está filtrando por método de pago, asegurarse de unir la tabla detalle_pago
+    $join = '';
+    if (strpos($whereSql, 'dp.id_metodopago') !== false || $metodoPago !== null) {
+        $join = ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago';
+    }
+
     // 3) Incluir dependencias
     // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
     $gdAvailable = extension_loaded('gd') && function_exists('imagetypes') && (imagetypes() & IMG_PNG);
@@ -1149,16 +1161,17 @@ public static function pedidoWeb(
         $conex->beginTransaction();
 
         // — Gráfico Top 5 Productos — (sin cambios) —
-        $sqlG = "
-          SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
-            FROM pedido p
-       LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
-       LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
-           WHERE {$whereSql}
-        GROUP BY pr.id_producto
-        ORDER BY total DESC
-           LIMIT 5
-        ";
+          $sqlG = "
+             SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
+                FROM pedido p
+                " . $join . "
+         LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
+         LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
+              WHERE {$whereSql}
+          GROUP BY pr.id_producto
+          ORDER BY total DESC
+              LIMIT 5
+          ";
         $stmtG = $conex->prepare($sqlG);
         $stmtG->execute($params);
         $labels = []; $data = [];
@@ -1216,6 +1229,7 @@ public static function pedidoWeb(
                         )                                      AS producto,
                         " . $usuarioSelect . "
                     FROM pedido p
+                    " . $join . "
                     LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
                     LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
                     " . $clienteJoin . "
