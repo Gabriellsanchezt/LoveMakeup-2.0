@@ -1240,31 +1240,21 @@ public static function pedidoWeb(
                         $hasCliente = false;
                 }
 
-                $usuarioSelect = $hasCliente
-                        ? "CONCAT(c.nombre,' ',c.apellido) AS usuario"
-                        : "NULL AS usuario";
-
-                $clienteJoin = $hasCliente
-                        ? "LEFT JOIN cliente c ON c.id_persona = p.id_persona"
-                        : "";
-
                 // — Tabla de Pedidos Web, ahora con columna PRODUCTOS —
                 $sqlT = "
                     SELECT
                         DATE_FORMAT(p.fecha, '%d/%m/%Y')        AS fecha,
-                        p.estado                               AS estado,
+                        p.estatus                              AS estado,
                         p.precio_total_bs                      AS total,
                         GROUP_CONCAT(
                             DISTINCT pr.nombre
                             ORDER BY pr.nombre
                             SEPARATOR ', '
-                        )                                      AS producto,
-                        " . $usuarioSelect . "
+                        )                                      AS producto
                     FROM pedido p
                     " . $join . "
                     LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
                     LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
-                    " . $clienteJoin . "
                     WHERE {$whereSql}
                     GROUP BY p.id_pedido
                     ORDER BY p.precio_total_bs DESC
@@ -1330,7 +1320,7 @@ public static function pedidoWeb(
               : '')
           . '<table><thead><tr>'
           . '<th>Fecha</th><th>Estado</th><th>Total (Bs.)</th>'
-          . '<th>Productos</th><th>Usuario</th>'
+          . '<th>Productos</th>'
           . '</tr></thead><tbody>';
         foreach ($rows as $r) {
             $e   = $estados[(string)$r['estado']] ?? 'Desconocido';
@@ -1340,7 +1330,6 @@ public static function pedidoWeb(
                         <td>{$e}</td>
                         <td>{$tot}</td>
                         <td>".htmlspecialchars($r['producto'])."</td>
-                        <td>".htmlspecialchars($r['usuario'])."</td>
                       </tr>";
         }
         $html .= '</tbody></table></main>'
