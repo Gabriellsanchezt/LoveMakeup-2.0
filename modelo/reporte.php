@@ -1692,7 +1692,7 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
     // 3) Ejecutar conteo
     $conex = (new Conexion())->getConex1();
         // Asegurar join con detalle_pago si el where contiene dp.id_metodopago
-        $joinDp = strpos($w, 'dp.id_metodopago') !== false ? ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago' : '';
+        $joinDp = (strpos($w, 'dp.id_metodopago') !== false || $metodoPago !== null) ? ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago' : '';
 
         $sql  = "
             SELECT COUNT(DISTINCT p.id_pedido) AS cnt

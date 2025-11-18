@@ -1,9 +1,8 @@
 <?php
-
-use LoveMakeup\Proyecto\Modelo\Reporte;
 use LoveMakeup\Proyecto\Modelo\Producto;
 use LoveMakeup\Proyecto\Modelo\Proveedor;
 use LoveMakeup\Proyecto\Modelo\Categoria;
+use LoveMakeup\Proyecto\Modelo\Reporte;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 
 session_start();
@@ -113,7 +112,7 @@ function validarMetodoPagoWeb($metodo_pago_web) {
         return false;
     }
     $metodo_pago_web = (int)$metodo_pago_web;
-    $metodos_validos = [2, 1]; // 2=Transferencia Bancaria, 1=Pago Móvil
+    $metodos_validos = [1, 2]; // 1=Pago Móvil, 2=Transferencia Bancaria
     return in_array($metodo_pago_web, $metodos_validos, true);
 }
 
