@@ -9,6 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!bellBtn) return;
     try {
       const res         = await fetch(`${BASE}&accion=count`);
+      const contentType  = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('updateBadge HTTP error', res.status, txt);
+        return;
+      }
+      if (!contentType.includes('application/json')) {
+        const txt = await res.text();
+        console.error('updateBadge expected JSON but got:', txt);
+        return;
+      }
       const { count }   = await res.json();
       const dotExisting = bellBtn.querySelector('.notif-dot');
 
@@ -28,6 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!bellBtn) return;
     try {
       const res               = await fetch(`${BASE}&accion=nuevos&lastId=${lastId}`);
+      const contentType2      = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('pollPedidos HTTP error', res.status, txt);
+        return;
+      }
+      if (!contentType2.includes('application/json')) {
+        const txt = await res.text();
+        console.error('pollPedidos expected JSON but got:', txt);
+        return;
+      }
       const { count, pedidos} = await res.json();
 
       if (count > 0) {
@@ -89,6 +111,19 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: new URLSearchParams({ id })
       });
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('marcarLeida HTTP error', res.status, txt);
+        Swal.fire('Error','No se pudo conectar','error');
+        return;
+      }
+      if (!ct.includes('application/json')) {
+        const txt = await res.text();
+        console.error('marcarLeida expected JSON but got:', txt);
+        Swal.fire('Error','Respuesta inesperada del servidor','error');
+        return;
+      }
       const data = await res.json();
 
       await Swal.fire(

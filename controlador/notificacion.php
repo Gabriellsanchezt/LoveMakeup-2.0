@@ -4,16 +4,23 @@ use LoveMakeup\Proyecto\Modelo\Notificacion;
 use LoveMakeup\Proyecto\Modelo\TipoUsuario;
 
 session_start();
+// Detectar si es una petición AJAX (tiene parámetro `accion`)
+$esAjax = ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['accion']))
+       || ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion']));
+
+// Si no hay sesión y es AJAX, responder 401 JSON en vez de redirigir a login HTML
 if (empty($_SESSION['id'])) {
+    if ($esAjax) {
+        header('Content-Type: application/json');
+        http_response_code(401);
+        echo json_encode(['error' => true, 'message' => 'No autorizado']);
+        exit;
+    }
     header('Location:?pagina=login');
     exit;
 }
 
 $nivel = (int)($_SESSION['nivel_rol'] ?? 0);
-
-// Verificar si es una petición AJAX ANTES de cargar archivos que pueden generar output
-$esAjax = ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['accion'])) 
-       || ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion']));
 
 // Solo cargar estos archivos si NO es una petición AJAX
 if (!$esAjax) {
@@ -27,6 +34,42 @@ if (!$esAjax) {
     }
     
     require_once __DIR__ . '/permiso.php';
+}
+
+// Si es AJAX: evitar que warnings/HTML rompan la respuesta JSON
+if ($esAjax) {
+    // iniciar buffering para capturar cualquier salida inesperada
+    if (!ob_get_level()) {
+        ob_start();
+    }
+    // no mostrar errores en HTML
+    ini_set('display_errors', '0');
+
+    // convertir errores en excepciones para manejarlos y devolver JSON
+    set_error_handler(function($errno, $errstr, $errfile, $errline) {
+        throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+    });
+    set_exception_handler(function($e) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => true, 'message' => $e->getMessage()]);
+        exit;
+    });
+
+    // si hay salida en el buffer al final, devolverla como mensaje de error JSON
+    register_shutdown_function(function() {
+        $buf = '';
+        if (ob_get_level()) {
+            $buf = ob_get_clean();
+        }
+        if ($buf !== '') {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            $msg = strip_tags($buf);
+            echo json_encode(['error' => true, 'message' => substr($msg, 0, 200)]);
+            exit;
+        }
+    });
 }
 
 $N   = new Notificacion();
@@ -49,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
         $count = 0;
     }
 
+    if (ob_get_level()) { ob_end_clean(); }
     echo json_encode(['count' => $count]);
     exit;
 }
@@ -64,10 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
     $lastId = (int)($_GET['lastId'] ?? 0);
     $nuevos = $N->getNuevosPedidos($lastId);
 
-    echo json_encode([
-      'count'   => count($nuevos),
-      'pedidos' => $nuevos
-    ]);
+        if (ob_get_level()) { ob_end_clean(); }
+        echo json_encode([
+            'count'   => count($nuevos),
+            'pedidos' => $nuevos
+        ]);
     exit;
 }
 
@@ -96,11 +141,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion'])) {
     }
     else {
         http_response_code(400);
+        if (ob_get_level()) { ob_end_clean(); }
         echo json_encode(['success' => false, 'mensaje' => 'Acción inválida o no autorizada.']);
         exit;
     }
 
     // Respondo siempre JSON y salgo
+    if (ob_get_level()) { ob_end_clean(); }
     echo json_encode(['success' => $success, 'mensaje' => $mensaje]);
     exit;
 }
