@@ -100,7 +100,7 @@ foreach ($pedidos as &$p) {
 }
 
 
-if ($_SESSION["nivel_rol"] >=2 && tieneAcceso(9, 'ver')) {
+if ($_SESSION["nivel_rol"] >=2 && tieneAcceso(5, 'ver')) {
 $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'pedidoweb';
 require_once __DIR__ . '/../vista/pedidoweb.php';
 } else {

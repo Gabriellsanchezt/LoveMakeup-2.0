@@ -203,7 +203,7 @@
  <?php if (!in_array($pedido['estatus'], [0])): ?>
 
 <!-- Botón Tracking: solo si método de entrega es 2 o 3 -->
-<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(9, 'especial') && in_array($pedido['metodo_entrega'], ['MRW','	ZOOM' ])&&
+<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 'especial') && in_array($pedido['metodo_entrega'], ['MRW','ZOOM' ])&&
   in_array($pedido['estatus'], [2, 3])): ?>
   <button type="button"  title="Enviar Codigo Tracking " class="btn btn-primary btn-tracking" data-bs-toggle="modal" data-bs-target="#modalTracking<?php echo $pedido['id_pedido']; ?>">
     <i class="fa-regular fa-envelope"></i>
@@ -475,8 +475,8 @@ if (
               <label for="tracking<?php echo $pedido['id_pedido']; ?>" class="form-label">Número de Tracking</label>
               <input type="text" class="form-control" id="tracking<?php echo $pedido['id_pedido']; ?>" name="tracking" required>
 
-              <input type="hidden" name="correo_cliente" value="<?php echo htmlspecialchars($pedido['correo'], ENT_QUOTES); ?>">
-              <input type="hidden" name="nombre_cliente" value="<?php echo htmlspecialchars($pedido['nombre'], ENT_QUOTES); ?>">
+              <input type="hidden" name="correo_cliente" value="<?php echo htmlspecialchars($pedido['correo_cliente'], ENT_QUOTES); ?>">
+              <input type="hidden" name="nombre_cliente" value="<?php echo htmlspecialchars($pedido['nombre_cliente'], ENT_QUOTES); ?>">
             </div>
           </div>
           <div class="modal-footer">
