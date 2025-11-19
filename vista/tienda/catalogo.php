@@ -185,11 +185,12 @@ window.addEventListener('offline', () => {
         </div>
 
         <!-- GRID DE PRODUCTO -->
-        <div class="product-grid row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 row-cols-xl-4 g-4 mt-3">
-          <?php if (!empty($registro)): ?>
+             <div class="col-md-12">
+    <div class="product-grid row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 row-cols-xl-4 g-4">
+        <?php if (!empty($registro)): ?>
             <?php foreach ($registro as $producto): ?>
-              <div class="col">
-                <div class="product-item" data-categoria="<?php echo $producto['id_categoria']; ?>" 
+                <div class="col">
+                   <div class="product-item" data-categoria="<?php echo $producto['id_categoria']; ?>" 
                      data-id="<?php echo $producto['id_producto']; ?>"
                      data-nombre="<?php echo htmlspecialchars($producto['nombre']); ?>"
                      data-precio="<?php echo $producto['precio_detal']; ?>"
@@ -198,11 +199,11 @@ window.addEventListener('offline', () => {
                      data-cantidad-mayor="<?php echo $producto['cantidad_mayor']; ?>"
                      data-precio-mayor="<?php echo $producto['precio_mayor']; ?>"
                      data-stock-disponible="<?php echo $producto['stock_disponible']; ?>"
-                     data-imagen="<?php echo $producto['imagen']; ?>">
+                     data-imagenes="<?php echo htmlspecialchars(json_encode($producto['imagenes'])); ?>">
                   <figure class="position-relative">
                     <p title="<?php echo htmlspecialchars($producto['nombre']); ?>">
                       <img
-                       src="<?php echo $producto['imagen']; ?>"
+                       src="<?php echo $producto['imagenes'][0]['url_imagen']; ?>"
                        alt="<?php echo htmlspecialchars($producto['nombre']); ?>"
                        class="tab-image img-fluid rounded-3"
                        data-bs-toggle="modal"
@@ -210,10 +211,7 @@ window.addEventListener('offline', () => {
                        onclick="openModal(this.closest('.product-item'))"
                       />
                     </p>
-
-
-                    
-              <?php if ($sesion_activa): ?>
+                           <?php if ($sesion_activa): ?>
 
 <?php if ($_SESSION["nivel_rol"] == 1): ?>
    
@@ -266,7 +264,7 @@ window.addEventListener('offline', () => {
                     <input type="hidden" name="precio_detal" value="<?php echo $producto['precio_detal']; ?>">
                     <input type="hidden" name="precio_mayor" value="<?php echo $producto['precio_mayor']; ?>">
                     <input type="hidden" name="cantidad_mayor" value="<?php echo $producto['cantidad_mayor']; ?>">
-                    <input type="hidden" name="imagen" value="<?php echo $producto['imagen']; ?>">
+                    <input type="hidden" name="imagen" value="<?php echo $producto['imagenes'][0]['url_imagen']; ?>">
                     <input type="hidden" name="stockDisponible" value="<?php echo $producto['stock_disponible']; ?>">
 
 
@@ -317,10 +315,22 @@ window.addEventListener('offline', () => {
               </div>
               <div class="modal-body">
                 <div class="row">
-                  <!-- Imagen -->
+                  
                   <div class="col-md-6 text-center">
-                    <img id="modal-imagen" src="" alt="Producto" class="img-fluid mb-3" style="max-height: 400px; object-fit: contain;">
-                  </div>
+            <div id="modal-slider" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner" id="modal-slider-inner">
+                <!-- Aquí se llenan las imágenes -->
+              </div>
+              <button class="carousel-control-prev" type="button" data-bs-target="#modal-slider" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#modal-slider" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+              </button>
+            </div>
+          </div>
                   <!-- Datos -->
                   <div class="col-md-6">
                     <p><strong>Precio Detal:</strong> <span id="modal-precio"></span></p>

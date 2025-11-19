@@ -24,6 +24,140 @@ if (!empty($_SESSION['id'])) {
 
 $venta = new VentaWeb();
 
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN Y SANITIZACIÓN CONTRA INYECCIÓN SQL |||||||||||||||||||||||||||||*/
+
+/**
+ * Detecta intentos de inyección SQL en un string
+ */
+function detectarInyeccionSQL($valor) {
+    if (empty($valor)) {
+        return false;
+    }
+    
+    $valor_lower = strtolower($valor);
+    
+    // Patrones comunes de inyección SQL
+    $patrones_peligrosos = [
+        '/(\bunion\b.*\bselect\b)/i',
+        '/(\bselect\b.*\bfrom\b)/i',
+        '/(\binsert\b.*\binto\b)/i',
+        '/(\bupdate\b.*\bset\b)/i',
+        '/(\bdelete\b.*\bfrom\b)/i',
+        '/(\bdrop\b.*\btable\b)/i',
+        '/(\bcreate\b.*\btable\b)/i',
+        '/(\balter\b.*\btable\b)/i',
+        '/(\bexec\b|\bexecute\b)/i',
+        '/(\bsp_\w+)/i',
+        '/(\bxp_\w+)/i',
+        '/(--|\#|\/\*|\*\/)/',
+        '/(\bor\b.*\b1\s*=\s*1\b)/i',
+        '/(\band\b.*\b1\s*=\s*1\b)/i',
+        '/(\bor\b.*\b1\s*=\s*0\b)/i',
+        '/(\band\b.*\b1\s*=\s*0\b)/i',
+        '/(\bwaitfor\b.*\bdelay\b)/i'
+    ];
+    
+    foreach ($patrones_peligrosos as $patron) {
+        if (preg_match($patron, $valor_lower)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Sanitiza un número entero
+ */
+function sanitizarEntero($valor, $min = null, $max = null) {
+    if (!is_numeric($valor)) {
+        return null;
+    }
+    $valor = (int)$valor;
+    if ($min !== null && $valor < $min) {
+        return null;
+    }
+    if ($max !== null && $valor > $max) {
+        return null;
+    }
+    return $valor;
+}
+
+/**
+ * Sanitiza un string eliminando caracteres peligrosos
+ */
+function sanitizarString($valor, $maxLength = 255) {
+    if (empty($valor)) {
+        return '';
+    }
+    
+    // Detectar inyección SQL
+    if (detectarInyeccionSQL($valor)) {
+        return '';
+    }
+    
+    $valor = trim($valor);
+    
+    // Eliminar caracteres peligrosos
+    $caracteres_peligrosos = [';', '--', '/*', '*/', '<', '>', '"', "'", '`'];
+    foreach ($caracteres_peligrosos as $char) {
+        $valor = str_replace($char, '', $valor);
+    }
+    
+    // Limitar longitud
+    if (strlen($valor) > $maxLength) {
+        $valor = substr($valor, 0, $maxLength);
+    }
+    
+    return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Valida y sanitiza dirección de envío
+ */
+function sanitizarDireccion($direccion) {
+    if (empty($direccion)) {
+        return '';
+    }
+    $direccion = trim($direccion);
+    // Detectar inyección SQL
+    if (detectarInyeccionSQL($direccion)) {
+        return '';
+    }
+    // Eliminar caracteres peligrosos pero permitir caracteres comunes en direcciones
+    $direccion = preg_replace('/[<>"\']/', '', $direccion);
+    // Longitud máxima
+    if (strlen($direccion) > 500) {
+        $direccion = substr($direccion, 0, 500);
+    }
+    return htmlspecialchars($direccion, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Valida y sanitiza sucursal (solo alfanuméricos y guiones)
+ */
+function sanitizarSucursal($sucursal) {
+    if (empty($sucursal)) {
+        return '';
+    }
+    
+    // Detectar inyección SQL
+    if (detectarInyeccionSQL($sucursal)) {
+        return '';
+    }
+    
+    $sucursal = trim($sucursal);
+    // Solo alfanuméricos, guiones y espacios
+    if (!preg_match('/^[a-zA-Z0-9\-\s]+$/', $sucursal)) {
+        return '';
+    }
+    // Longitud máxima
+    if (strlen($sucursal) > 100) {
+        $sucursal = substr($sucursal, 0, 100);
+    }
+    return htmlspecialchars($sucursal, ENT_QUOTES, 'UTF-8');
+}
+
 /*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
 
 /**
@@ -109,65 +243,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
     $metodoEntrega = new MetodoEntrega();
     $metodos_entrega = $metodoEntrega->consultarTodosActivos();
 
-    $me = $_POST['metodo_entrega'] ?? null;
-    $empresa_envio = $_POST['empresa_envio'] ?? null;
-    
-    // Validar metodo_entrega
-    if (!validarMetodoEntrega($me)) {
+    // Sanitizar metodo_entrega
+    $me = sanitizarEntero($_POST['metodo_entrega'] ?? null, 1, 4);
+    if (!$me || !validarMetodoEntrega($me)) {
         echo json_encode(['success'=>false,'message'=>'Método de entrega inválido.']);
         exit;
     }
 
-    if ($me == '2' && $empresa_envio == '3') {
-        $me = '3';
+    // Sanitizar empresa_envio si existe
+    $empresa_envio = !empty($_POST['empresa_envio']) ? sanitizarEntero($_POST['empresa_envio'], 1, 10) : null;
+
+    if ($me == 2 && $empresa_envio == 3) {
+        $me = 3;
     }
 
     // Construye array de entrega
     $entrega = ['id_metodoentrega' => $me];
     switch ($me) {
-        case '4': // Tienda física
-            $entrega['direccion_envio'] = $_POST['direccion_envio'] ?? '';
+        case 4: // Tienda física
+            $entrega['direccion_envio'] = sanitizarDireccion($_POST['direccion_envio'] ?? '');
             $entrega['sucursal_envio']  = null;
             break;
-        case '2': // MRW
+        case 2: // MRW
             if (empty($_POST['empresa_envio']) || empty($_POST['sucursal_envio'])) {
                 echo json_encode(['success'=>false,'message'=>'Complete empresa y sucursal.']);
                 exit;
             }
-            // Validar empresa_envio
-            if (!validarEmpresaEnvio($_POST['empresa_envio'])) {
+            // Sanitizar y validar empresa_envio
+            $empresa_envio = sanitizarEntero($_POST['empresa_envio'], 1, 10);
+            if (!$empresa_envio || !validarEmpresaEnvio($empresa_envio)) {
                 echo json_encode(['success'=>false,'message'=>'Empresa de envío inválida.']);
                 exit;
             }
-            $entrega['empresa_envio']   = $_POST['empresa_envio'];
-            $entrega['sucursal_envio']  = $_POST['sucursal_envio'];
-            $entrega['direccion_envio'] = $_POST['direccion_envio'];
+            $entrega['empresa_envio']   = $empresa_envio;
+            $entrega['sucursal_envio']  = sanitizarSucursal($_POST['sucursal_envio']);
+            $entrega['direccion_envio'] = sanitizarDireccion($_POST['direccion_envio'] ?? '');
             break;
 
-        case '3': //ZOOM
+        case 3: //ZOOM
                 if (empty($_POST['empresa_envio']) || empty($_POST['sucursal_envio'])) {
                     echo json_encode(['success'=>false,'message'=>'Complete empresa y sucursal.']);
                     exit;
                 }
-                // Validar empresa_envio
-                if (!validarEmpresaEnvio($_POST['empresa_envio'])) {
+                // Sanitizar y validar empresa_envio
+                $empresa_envio = sanitizarEntero($_POST['empresa_envio'], 1, 10);
+                if (!$empresa_envio || !validarEmpresaEnvio($empresa_envio)) {
                     echo json_encode(['success'=>false,'message'=>'Empresa de envío inválida.']);
                     exit;
                 }
-                $entrega['empresa_envio']   = $_POST['empresa_envio'];
-                $entrega['sucursal_envio']  = $_POST['sucursal_envio'];
-                $entrega['direccion_envio'] = $_POST['direccion_envio'];
+                $entrega['empresa_envio']   = $empresa_envio;
+                $entrega['sucursal_envio']  = sanitizarSucursal($_POST['sucursal_envio']);
+                $entrega['direccion_envio'] = sanitizarDireccion($_POST['direccion_envio'] ?? '');
                 break;
      
 
-        case '1': // Delivery propio
+        case 1: // Delivery propio
 
             if (empty($_POST['id_delivery'])) {
                 echo json_encode(['success'=>false,'message'=>'Debe seleccionar un delivery.']);
                 exit;
             }
-            // Validar id_delivery
-            if (!validarIdDelivery($_POST['id_delivery'], $delivery_activos)) {
+            // Sanitizar y validar id_delivery
+            $id_delivery = sanitizarEntero($_POST['id_delivery'], 1);
+            if (!$id_delivery || !validarIdDelivery($id_delivery, $delivery_activos)) {
                 echo json_encode(['success'=>false,'message'=>'El delivery seleccionado no es válido.']);
                 exit;
             }
@@ -178,26 +316,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
                     }
                 }
             
-                // Los valores individuales
-                $zona      = trim($_POST['zona']);
-                $parroquia = trim($_POST['parroquia']);
-                $sector    = trim($_POST['sector']);
-                $dirDetall = trim($_POST['direccion_envio']);
+                // Los valores individuales (sanitizados)
+                $zona      = sanitizarString($_POST['zona'], 50);
+                $parroquia = sanitizarString($_POST['parroquia'], 100);
+                $sector    = sanitizarString($_POST['sector'], 100);
+                $dirDetall = sanitizarDireccion($_POST['direccion_envio']);
 
                 // Validar zona
-                if (!validarZona($zona)) {
+                if (empty($zona) || !validarZona($zona)) {
                     echo json_encode(['success'=>false,'message'=>'La zona seleccionada no es válida.']);
                     exit;
                 }
 
                 // Validar parroquia
-                if (!validarParroquia($parroquia)) {
+                if (empty($parroquia) || !validarParroquia($parroquia)) {
                     echo json_encode(['success'=>false,'message'=>'La parroquia no es válida.']);
                     exit;
                 }
 
                 // Validar sector
-                if (!validarSector($sector)) {
+                if (empty($sector) || !validarSector($sector)) {
                     echo json_encode(['success'=>false,'message'=>'El sector no es válido.']);
                     exit;
                 }
@@ -206,10 +344,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
                 // Concatenamos en una sola dirección
                 $entrega['direccion_envio'] = "Zona: {$zona}, Parroquia: {$parroquia}, Sector: {$sector}, Dirección: {$dirDetall}";
 
-              $entrega['id_delivery'] = $_POST['id_delivery'];
-              $entrega['delivery_nombre'] = $_POST['delivery_nombre'];
-              $entrega['delivery_tipo'] = $_POST['delivery_tipo'];
-              $entrega['delivery_contacto'] = $_POST['delivery_contacto'];
+              $entrega['id_delivery'] = $id_delivery;
+              $entrega['delivery_nombre'] = sanitizarString($_POST['delivery_nombre'] ?? '', 100);
+              $entrega['delivery_tipo'] = sanitizarString($_POST['delivery_tipo'] ?? '', 50);
+              $entrega['delivery_contacto'] = sanitizarString($_POST['delivery_contacto'] ?? '', 50);
               
                 // Para uniformidad, dejamos nulo el campo sucursal_envio
                 $entrega['sucursal_envio'] = null;

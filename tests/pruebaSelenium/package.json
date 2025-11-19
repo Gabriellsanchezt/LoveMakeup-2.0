@@ -1,0 +1,42 @@
+{
+  "name": "lovemakeup-selenium-tests",
+  "version": "1.0.0",
+  "description": "Pruebas automatizadas con Selenium y TestLink para LoveMakeup",
+  "main": "compra_valida.js",
+  "scripts": {
+    "test:compra": "node compra_valida.js",
+    "test:compra-varios": "node compra_varios_productos.js",
+    "test:compra-campos-vacios": "node compra_campos_vacios.js",
+    "test:compra-sin-stock": "node compra_sin_stock.js",
+    "test:compra-stock-maximo": "node compra_stock_maximo.js",
+    "test:compra-editar": "node compra_editar.js",
+    "test:compra-editar-invalido": "node compra_editar_invalido.js",
+    "test:compra-ver-detalles": "node compra_ver_detalles.js",
+    "test:venta": "node venta_valida.js",
+    "test:venta-varios": "node venta_varios_productos.js",
+    "test:venta-sin-productos": "node venta_sin_productos.js",
+    "test:venta-cliente-inexistente": "node venta_cliente_inexistente.js",
+    "test:venta-sin-stock": "node venta_sin_stock.js",
+    "test:venta-monto-invalido": "node venta_monto_invalido.js",
+    "test:venta-metodo-pago-invalido": "node venta_metodo_pago_invalido.js",
+    "test:venta-ver-detalles": "node venta_ver_detalles.js",
+    "test:all": "node run_all_tests.js",
+    "install-deps": "npm install"
+  },
+  "keywords": [
+    "selenium",
+    "testlink",
+    "automation",
+    "testing"
+  ],
+  "author": "LoveMakeup Team",
+  "license": "ISC",
+  "dependencies": {
+    "selenium-webdriver": "^4.15.0",
+    "xmlrpc": "^1.3.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
