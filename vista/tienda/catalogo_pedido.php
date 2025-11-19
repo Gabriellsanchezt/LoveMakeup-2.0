@@ -86,7 +86,7 @@ table {
                   
                   <th class="text-white ">Tipo</th>
                   <th class="text-white">Fecha</th>
-                  <th class="text-white">Estado</th>
+                  <th class="text-white">estatus</th>
                  <th class="text-white">Teléfono</th>
                   <th class="text-white">Método Entrega</th>
                  <th class="text-white">Método Pago</th>
@@ -96,11 +96,11 @@ table {
               <tbody>
                
             <?php foreach ($pedidos as $pedido): 
-              // Define clases y deshabilitar botones si estado es 0 o 2
-              if ($pedido['estado'] == 2) {
+              // Define clases y deshabilitar botones si estatus es 0 o 2
+              if ($pedido['estatus'] == 2) {
                 $claseFila = "pedido-confirmado";
                   $botonesDeshabilitados = "disabled";
-              } elseif ($pedido['estado'] == 0) {
+              } elseif ($pedido['estatus'] == 0) {
                   $botonesDeshabilitados = "disabled";
               } else {
                   $claseFila = "";
@@ -108,12 +108,12 @@ table {
               }
           
               $estatus_texto = array(
-                '0' => 'Anulado',
-             '1' => 'Verificar pago',
-             '2' => 'Entregado',
-             '3' => 'Pendiente envío',
-             '4' => 'En camino',
-             '5' => 'Enviado',
+                '0' => 'Rechazado',
+                '1' => 'Verificar pago',
+                '2' => 'Pago Verificado',
+                '3' => 'Pendiente envio',
+                '4' => 'En camino',
+                '5' => 'Entregado',
            
                );
 
@@ -127,7 +127,7 @@ table {
           
              
     $badgeClass = '';
-    switch (strtolower($pedido['estado'])) {
+    switch (strtolower($pedido['estatus'])) {
       case '0': $badgeClass = 'bg-danger'; break;
       case '1': $badgeClass = 'bg-warning'; break;
       case '2': $badgeClass = 'bg-primary'; break;
@@ -144,7 +144,7 @@ table {
               data-bs-target="#verDetallesModal<?= $pedido['id_pedido']; ?>">
               <td class=""><?php echo $tipo_texto[$pedido['tipo']] ?></td>
               <td><?= $pedido['fecha'] ?></td>
-              <td class=" m-3 text-white badge <?php echo $badgeClass; ?>"><?php echo $estatus_texto[$pedido['estado']] ?></td>
+              <td class=" m-3 text-white badge <?php echo $badgeClass; ?>"><?php echo $estatus_texto[$pedido['estatus']] ?></td>
               <td><?= $pedido['telefono_emisor'] ?></td>
               <td><?= $pedido['metodo_entrega'] ?></td>
               <td><?= $pedido['metodo_pago'] ?></td>
@@ -212,19 +212,19 @@ table {
                   </div>
                   <div class="collapse" id="collapseCliente<?php echo $pedido['id_pedido']; ?>">
                     <div class="card-body">
-                      <p><strong>Nombre:</strong> <?php echo htmlspecialchars($pedido['nombre']); ?> <?php echo htmlspecialchars($pedido['apellido']); ?></p>
+                      <p><strong>Nombre:</strong> <?php echo htmlspecialchars($pedido['nombre_cliente']); ?> <?php echo htmlspecialchars($pedido['apellido_cliente']); ?></p>
                       
-                      <p><strong>Estado del pedido:</strong>
+                      <p><strong>estatus del pedido:</strong>
                         <span class="badge 
                           <?php
                             $badge = [
                               '0' => 'bg-danger', '1' => 'bg-warning', '2' => 'bg-primary',
                               '3' => 'bg-success', '4' => 'bg-info', '5' => 'bg-secondary'
                             ];
-                            echo $badge[$pedido['estado']] ?? 'bg-dark';
+                            echo $badge[$pedido['estatus']] ?? 'bg-dark';
                           ?>">
                           <?php
-                            $estados_texto = [
+                            $estatuss_texto = [
                               '0' => 'Rechazado',
                               '1' => 'Verificar pago',
                               '2' => 'Pago Verificado',
@@ -232,7 +232,7 @@ table {
                               '4' => 'En camino',
                               '5' => 'Entregado',
                             ];
-                            echo htmlspecialchars($estados_texto[$pedido['estado']] ?? 'Desconocido');
+                            echo htmlspecialchars($estatuss_texto[$pedido['estatus']] ?? 'Desconocido');
                           ?>
                         </span>
                       </p>
@@ -269,6 +269,15 @@ table {
 <?php endif; ?>
 
                       <p><strong>Método de Entrega:</strong> <?php echo htmlspecialchars($pedido['metodo_entrega'] ?? 'N/A'); ?></p>
+                      
+                      <?php if ($pedido['tipo'] == 2 && !empty($pedido['delivery_nombre'])): ?>
+    <p><strong>Delivery:</strong> <?= htmlspecialchars($pedido['delivery_nombre']); ?></p>
+    <p><strong>Tipo:</strong> <?= htmlspecialchars($pedido['delivery_tipo'] ?? ''); ?></p>
+    <p><strong>Contacto:</strong> <?= htmlspecialchars($pedido['delivery_contacto'] ?? ''); ?></p>
+<?php endif; ?>
+
+                    
+
                       <?php if (!empty($pedido['direccion'])): ?>
                         <p><strong>Dirección:</strong><br><?php echo nl2br(htmlspecialchars($pedido['direccion'])); ?></p>
                       <?php endif; ?>

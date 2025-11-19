@@ -507,23 +507,23 @@ input[type="radio"]:checked + .opcion-custom {
 
 
     <div class="col-md-6 mr-5">   
-
+  <?php if ( !empty($entrega['delivery_nombre'])): ?>
   <div class="col-md-10">
   <div class="card  sombra-suave seccion-formulario">
         <h5 style="color: #ec4899;">Datos del Delivery</h5>
-        
+      
         <p><strong>Nombre:</strong> <?= htmlspecialchars($entrega['delivery_nombre'] ?? '—') ?></p>
         <p><strong>Transporte:</strong> <?= htmlspecialchars($entrega['delivery_tipo'] ?? '-') ?></p>
         <p><strong>Contacto:</strong> <?= htmlspecialchars($entrega['delivery_contacto']?? '-') ?></p>
-
+    
   </div>
   </div>
-
+    <?php endif; ?>
         <div class="col-md-10 ">
           <div class="card  sombra-suave seccion-formulario">
              <p class="mb-1 " style="color: #ec4899;"><b>Datos del pago movil</b></p>
-            <p class="mb-1">• Venezuela (0102)  C.I.: V-30.352.937  Telf.: 0414-509.49.59</p>
-             <p class="mb-1">• Mercantil (0105)  C.I.: V-11.787.299  Telf.: 0426-554.13.64</p>
+            <p class="mb-1">•Venezuela(0102) C.I.:V-30.352.937 Telf.:0414-509.49.59</p>
+             <p class="mb-1">•Mercantil(0105) C.I.:V-11.787.299 Telf.:0426-554.13.64</p>
            <p></p>
             </div>
           </div>
