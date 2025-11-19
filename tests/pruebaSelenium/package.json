@@ -1,0 +1,26 @@
+{
+  "name": "lovemakeup-selenium-tests",
+  "version": "1.0.0",
+  "description": "Pruebas automatizadas con Selenium y TestLink para LoveMakeup",
+  "main": "compra_valida.js",
+  "scripts": {
+    "test:compra": "node compra_valida.js",
+    "install-deps": "npm install"
+  },
+  "keywords": [
+    "selenium",
+    "testlink",
+    "automation",
+    "testing"
+  ],
+  "author": "LoveMakeup Team",
+  "license": "ISC",
+  "dependencies": {
+    "selenium-webdriver": "^4.15.0",
+    "xmlrpc": "^1.3.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+

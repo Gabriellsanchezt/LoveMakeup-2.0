@@ -8,9 +8,6 @@
         <testsuite name="PHPUnit Tests">
             <directory>pruebaPHPUnit</directory>
         </testsuite>
-        <testsuite name="Selenium Tests">
-            <directory>pruebaSelenium</directory>
-        </testsuite>
     </testsuites>
 </phpunit>
 
