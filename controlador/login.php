@@ -3,7 +3,10 @@
 use LoveMakeup\Proyecto\Modelo\Login;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
 session_start();
+}
 
 $objlogin = new Login();
 

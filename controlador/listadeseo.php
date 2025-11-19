@@ -2,7 +2,10 @@
 
 use LoveMakeup\Proyecto\Modelo\ListaDeseo;
 
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar sesión
 $sesion_activa = isset($_SESSION["id"]) && !empty($_SESSION["id"]);

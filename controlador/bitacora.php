@@ -8,7 +8,10 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
          ini_set('display_errors', 0);
      }
      
-     session_start();
+     // Iniciar sesión solo si no está ya iniciada
+     if (session_status() === PHP_SESSION_NONE) {
+         session_start();
+     }
      if (empty($_SESSION["id"])){
        header("location:?pagina=login");
      } /*  Validacion URL  */

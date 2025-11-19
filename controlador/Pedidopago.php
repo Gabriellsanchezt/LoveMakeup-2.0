@@ -2,8 +2,10 @@
 
 use LoveMakeup\Proyecto\Modelo\VentaWeb;
 
-
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 $nombre = isset($_SESSION["nombre"]) && !empty($_SESSION["nombre"]) ? $_SESSION["nombre"] : "Estimado Cliente";
 $apellido = isset($_SESSION["apellido"]) && !empty($_SESSION["apellido"]) ? $_SESSION["apellido"] : ""; 
 
@@ -22,12 +24,79 @@ if (empty($_SESSION['id'])) {
 
 $venta = new VentaWeb();
 
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el banco sea válido (lista de bancos permitidos)
+ */
+function validarBanco($banco) {
+    if (empty($banco)) {
+        return false;
+    }
+    $bancos_validos = [
+        '0102-Banco De Venezuela',
+        '0156-100% Banco ',
+        '0172-Bancamiga Banco Universal,C.A',
+        '0114-Bancaribe',
+        '0171-Banco Activo',
+        '0166-Banco Agricola De Venezuela',
+        '0128-Bancon Caroni',
+        '0163-Banco Del Tesoro',
+        '0175-Banco Digital De Los Trabajadores, Banco Universal',
+        '0115-Banco Exterior',
+        '0151-Banco Fondo Comun',
+        '0173-Banco Internacional De Desarrollo',
+        '0105-Banco Mercantil',
+        '0191-Banco Nacional De Credito',
+        '0138-Banco Plaza',
+        '0137-Banco Sofitasa',
+        '0104-Banco Venezolano De Credito',
+        '0168-Bancrecer',
+        '0134-Banesco',
+        '0177-Banfanb',
+        '0146-Bangente',
+        '0174-Banplus',
+        '0108-BBVA Provincial',
+        '0157-Delsur Banco Universal',
+        '0601-Instituto Municipal De Credito Popular',
+        '0178-N58 Banco Digital Banco Microfinanciero S.A',
+        '0169-R4 Banco Microfinanciero C.A.'
+    ];
+    return in_array($banco, $bancos_validos, true);
+}
+
+/**
+ * Valida que el banco_destino sea válido (solo 2 opciones permitidas)
+ */
+function validarBancoDestino($banco_destino) {
+    if (empty($banco_destino)) {
+        return false;
+    }
+    $bancos_destino_validos = [
+        '0102-Banco De Venezuela',
+        '0105-Banco Mercantil'
+    ];
+    return in_array($banco_destino, $bancos_destino_validos, true);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_pago'])) {
     header('Content-Type: application/json');
 
     // Asegurar existencia de entrega y carrito
     if (empty($_SESSION['pedido_entrega']) || empty($_SESSION['carrito'])) {
         echo json_encode(['success'=>false,'message'=>'Falta información de envío o carrito vacío.']);
+        exit;
+    }
+
+    // Validar banco
+    if (!empty($_POST['banco']) && !validarBanco($_POST['banco'])) {
+        echo json_encode(['success' => false, 'message' => 'El banco de origen seleccionado no es válido']);
+        exit;
+    }
+
+    // Validar banco_destino
+    if (!empty($_POST['banco_destino']) && !validarBancoDestino($_POST['banco_destino'])) {
+        echo json_encode(['success' => false, 'message' => 'El banco de destino seleccionado no es válido']);
         exit;
     }
 

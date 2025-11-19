@@ -1,8 +1,13 @@
 <?php
 
 use LoveMakeup\Proyecto\Modelo\VentaWeb;
+use LoveMakeup\Proyecto\Modelo\MetodoPago;
+use LoveMakeup\Proyecto\Modelo\MetodoEntrega;
 
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 if (!empty($_SESSION['id'])) {
     require_once 'verificarsession.php';
 }
@@ -22,6 +27,93 @@ if (empty($_SESSION['carrito'])) {
 
 $venta = new VentaWeb();
 
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el id_metodopago sea válido y exista en la base de datos
+ */
+function validarIdMetodoPago($id_metodopago, $metodos_pago) {
+    if (empty($id_metodopago) || !is_numeric($id_metodopago)) {
+        return false;
+    }
+    $id_metodopago = (int)$id_metodopago;
+    foreach ($metodos_pago as $metodo) {
+        if ($metodo['id_metodopago'] == $id_metodopago && $metodo['estatus'] == 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Valida que el id_metodoentrega sea válido y exista en la base de datos
+ */
+function validarIdMetodoEntrega($id_metodoentrega, $metodos_entrega) {
+    if (empty($id_metodoentrega) || !is_numeric($id_metodoentrega)) {
+        return false;
+    }
+    $id_metodoentrega = (int)$id_metodoentrega;
+    foreach ($metodos_entrega as $metodo) {
+        if ($metodo['id_entrega'] == $id_metodoentrega && $metodo['estatus'] == 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Valida que el banco sea válido (lista de bancos permitidos)
+ */
+function validarBanco($banco) {
+    if (empty($banco)) {
+        return false;
+    }
+    $bancos_validos = [
+        '0102-Banco De Venezuela',
+        '0156-100% Banco ',
+        '0172-Bancamiga Banco Universal,C.A',
+        '0114-Bancaribe',
+        '0171-Banco Activo',
+        '0166-Banco Agricola De Venezuela',
+        '0128-Bancon Caroni',
+        '0163-Banco Del Tesoro',
+        '0175-Banco Digital De Los Trabajadores, Banco Universal',
+        '0115-Banco Exterior',
+        '0151-Banco Fondo Comun',
+        '0173-Banco Internacional De Desarrollo',
+        '0105-Banco Mercantil',
+        '0191-Banco Nacional De Credito',
+        '0138-Banco Plaza',
+        '0137-Banco Sofitasa',
+        '0104-Banco Venezolano De Credito',
+        '0168-Bancrecer',
+        '0134-Banesco',
+        '0177-Banfanb',
+        '0146-Bangente',
+        '0174-Banplus',
+        '0108-BBVA Provincial',
+        '0157-Delsur Banco Universal',
+        '0601-Instituto Municipal De Credito Popular',
+        '0178-N58 Banco Digital Banco Microfinanciero S.A',
+        '0169-R4 Banco Microfinanciero C.A.'
+    ];
+    return in_array($banco, $bancos_validos, true);
+}
+
+/**
+ * Valida que el banco_destino sea válido (solo 2 opciones permitidas)
+ */
+function validarBancoDestino($banco_destino) {
+    if (empty($banco_destino)) {
+        return false;
+    }
+    $bancos_destino_validos = [
+        '0102-Banco De Venezuela',
+        '0105-Banco Mercantil'
+    ];
+    return in_array($banco_destino, $bancos_destino_validos, true);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Limpiar cualquier salida previa
     if (ob_get_length()) ob_clean();
@@ -29,6 +121,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     
     try {
+        // Obtener métodos válidos para validación
+        $metodos_pago = $venta->obtenerMetodosPago();
+        $metodos_entrega = $venta->obtenerMetodosEntrega();
+
+        // Validar id_metodopago
+        if (!empty($_POST['id_metodopago']) && !validarIdMetodoPago($_POST['id_metodopago'], $metodos_pago)) {
+            die(json_encode(['success' => false, 'message' => 'El método de pago seleccionado no es válido']));
+        }
+
+        // Validar id_metodoentrega
+        if (!empty($_POST['id_metodoentrega']) && !validarIdMetodoEntrega($_POST['id_metodoentrega'], $metodos_entrega)) {
+            die(json_encode(['success' => false, 'message' => 'El método de entrega seleccionado no es válido']));
+        }
+
+        // Validar banco
+        if (!empty($_POST['banco']) && !validarBanco($_POST['banco'])) {
+            die(json_encode(['success' => false, 'message' => 'El banco de origen seleccionado no es válido']));
+        }
+
+        // Validar banco_destino
+        if (!empty($_POST['banco_destino']) && !validarBancoDestino($_POST['banco_destino'])) {
+            die(json_encode(['success' => false, 'message' => 'El banco de destino seleccionado no es válido']));
+        }
 
         $rutaImagen = null;
 if (!empty($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {

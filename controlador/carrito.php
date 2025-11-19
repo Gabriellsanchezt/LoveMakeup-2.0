@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $sesion_activa = isset($_SESSION["id"]) && !empty($_SESSION["id"]);
 // Función para calcular subtotal de un producto
