@@ -6,7 +6,10 @@ use LoveMakeup\Proyecto\Modelo\Reporte;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 use LoveMakeup\Proyecto\Modelo\Marca;
 
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 if (empty($_SESSION['id'])) {
     header('Location:?pagina=login');
     exit;

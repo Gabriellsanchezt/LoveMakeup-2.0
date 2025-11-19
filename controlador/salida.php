@@ -4,7 +4,10 @@ use LoveMakeup\Proyecto\Modelo\Salida;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 use LoveMakeup\Proyecto\Modelo\MetodoPago;
 
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
 session_start();
+}
 if (empty($_SESSION["id"])) {
     header("location:?pagina=login");
     exit;
