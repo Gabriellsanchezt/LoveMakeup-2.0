@@ -173,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     /* ===========================
-       TRACKING (UNIFICADO)
+       TRACKING (UNIFICADO) quitar en dado caso 
        =========================== */
     } else if (isset($_POST['tracking'])) {
 
