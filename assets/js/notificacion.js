@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const helpBtn = document.getElementById('btnAyudanoti');
   let lastId    = Number(localStorage.getItem('lastPedidoId') || 0);
 
-  // 1) Contador de badge
+  // 1) Contador de badge - Mejorado para tiempo real
   async function updateBadge() {
     if (!bellBtn) return;
     try {
@@ -133,22 +133,24 @@ document.addEventListener('DOMContentLoaded', () => {
       );
 
 if (data.success && row) {
-  // 1) elimino la fila
-  // Si usamos DataTables, necesitamos eliminar la fila de manera diferente
-  if ($.fn.DataTable.isDataTable('#myTable')) {
-    $('#myTable').DataTable().row(row).remove().draw();
-  } else {
-    row.remove();
-    
-    // 2) actualizo el badge
-    updateBadge();
-
-    // 3) si ya no hay ninguna fila
-    const tbody = document.querySelector('#myTable tbody');
-    if (tbody && tbody.children.length === 0) {
-      $('#myTable').DataTable().clear().draw();
+  // 1) Actualizar visualmente el estado de la notificación
+  const estadoCell = row.querySelector('td:nth-child(3)');
+  if (estadoCell) {
+    if (accion === 'marcarLeida') {
+      estadoCell.innerHTML = '<span class="badge bg-secondary">Leída</span>';
+    } else if (accion === 'marcarLeidaAsesora') {
+      estadoCell.innerHTML = '<span class="badge bg-success">Leída por asesora</span>';
     }
   }
+  
+  // 2) Eliminar el botón de acción
+  const actionCell = row.querySelector('td:last-child');
+  if (actionCell) {
+    actionCell.innerHTML = '<span class="text-muted">Actualizado</span>';
+  }
+  
+  // 3) actualizo el badge
+  updateBadge();
 }
 
     } catch (err) {
@@ -162,45 +164,78 @@ if (data.success && row) {
     helpBtn.addEventListener('click', () => {
       const Driver = window.driver?.js?.driver;
       if (typeof Driver !== 'function') {
-        return console.error('Driver.js no detectado');
-      }
-
-      const steps = [];
-
-      if (document.querySelector('.table-compact')) {
-        steps.push({
-          element: '.table-compact',
-          popover: {
-            title: 'Tabla de notificaciones',
-            description: 'Aquí ves todas las notificaciones.',
-            side: 'top'
-          }
+        Swal.fire({
+          title: 'Guía no disponible',
+          text: 'La guía interactiva no está disponible en este momento.',
+          icon: 'info',
+          confirmButtonText: 'Entendido'
         });
+        return;
       }
-      if (document.querySelector('.btn-action[data-accion="marcarLeida"]')) {
+
+      const steps = [
+        {
+          element: '#myTable',
+          popover: {
+            title: 'Panel de Notificaciones',
+            description: 'Aquí puedes ver todas las notificaciones del sistema, incluyendo nuevos pedidos y reservas.',
+            side: 'top',
+            align: 'start'
+          }
+        },
+        {
+          element: '.notification-icon',
+          popover: {
+            title: 'Icono de Notificaciones',
+            description: 'Este icono muestra un punto rojo cuando hay notificaciones nuevas. Haz clic para acceder al panel.',
+            side: 'bottom',
+            align: 'start'
+          }
+        }
+      ];
+
+      // Agregar guía específica según el rol del usuario
+      const isAdmin = document.querySelector('.btn-action[data-accion="marcarLeida"]');
+      const isAsesora = document.querySelector('.btn-action[data-accion="marcarLeidaAsesora"]');
+      
+      if (isAdmin) {
         steps.push({
           element: '.btn-action[data-accion="marcarLeida"]',
           popover: {
-            title: 'Marcar como leída',
-            description: 'Haz clic para leer la notificación.',
+            title: 'Marcar como Leída (Admin)',
+            description: 'Como administrador, cuando marcas una notificación como leída, desaparece para ambos (administrador y asesora).',
             side: 'left'
           }
         });
       }
-          if (document.querySelector('.btn-action[data-accion="marcarLeidaAsesora"]')) {
-      steps.push({
-        element: '.btn-action[data-accion="marcarLeidaAsesora"]',
-        popover: {
-          title: 'Leer',
-          description: 'Haz clic para marcar esta notificación como leída.',
-          side: 'left'
-        }
-      });
-    }
+      
+      if (isAsesora) {
+        steps.push({
+          element: '.btn-action[data-accion="marcarLeidaAsesora"]',
+          popover: {
+            title: 'Leer Notificación (Asesora)',
+            description: 'Como asesora, cuando lees una notificación, solo desaparece para ti. El administrador aún la verá hasta que él también la lea.',
+            side: 'left'
+          }
+        });
+      }
+      
+      // Agregar guía sobre estados
+      if (document.querySelector('td:nth-child(3)')) {
+        steps.push({
+          element: 'td:nth-child(3)',
+          popover: {
+            title: 'Estados de Notificaciones',
+            description: 'Las notificaciones tienen diferentes estados: "No leída" (rojo), "Leída por asesora" (verde), "Leída" (gris).',
+            side: 'top'
+          }
+        });
+      }
+
       steps.push({
         popover: {
           title: '¡Listo!',
-          description: 'Terminaste la guía de notificaciones.'
+          description: 'Terminaste la guía de notificaciones. Ahora conoces cómo funciona el sistema de notificaciones en tiempo real.'
         }
       });
 
@@ -209,7 +244,7 @@ if (data.success && row) {
         prevBtnText:  'Anterior',
         doneBtnText:  'Listo',
         popoverClass: 'driverjs-theme',
-        closeBtn:     false,
+        closeBtn:     true,
         steps
       }).drive();
     });
@@ -218,6 +253,6 @@ if (data.success && row) {
   // 5) Inicialización
   updateBadge();
   pollPedidos();
-  setInterval(updateBadge, 30000);
-  setInterval(pollPedidos, 30000);
+  setInterval(updateBadge, 5000); // Actualizar cada 5 segundos para mejor experiencia en tiempo real
+  setInterval(pollPedidos, 15000); // Verificar nuevos pedidos cada 15 segundos
 });
