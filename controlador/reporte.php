@@ -1,9 +1,10 @@
 <?php
-
-use LoveMakeup\Proyecto\Modelo\Reporte;
 use LoveMakeup\Proyecto\Modelo\Producto;
 use LoveMakeup\Proyecto\Modelo\Proveedor;
 use LoveMakeup\Proyecto\Modelo\Categoria;
+use LoveMakeup\Proyecto\Modelo\Reporte;
+use LoveMakeup\Proyecto\Modelo\Bitacora;
+use LoveMakeup\Proyecto\Modelo\Marca;
 
 // Iniciar sesión solo si no está ya iniciada
 if (session_status() === PHP_SESSION_NONE) {
@@ -24,9 +25,30 @@ if ($_SESSION["nivel_rol"] == 1) {
     
 require_once 'permiso.php';
 
-$objProd = new Producto();
+// No necesitamos instancia de Producto sólo para la bitácora; usaremos Bitacora cuando haga falta
 
 /*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el ID de la marca sea válido y exista en la base de datos
+ */
+function validarIdMarca($id_marca, $marcas) {
+    if ($id_marca === '' || $id_marca === null) {
+        return true; // Valor vacío es válido (significa "todas")
+    }
+    if (!is_numeric($id_marca)) {
+        return false;
+    }
+    $id_marca = (int)$id_marca;
+    foreach ($marcas as $marca) {
+        // El método consultar() de Marca solo devuelve id_marca y nombre (sin estatus).
+        // Consideramos válida la marca si el id coincide.
+        if (isset($marca['id_marca']) && $marca['id_marca'] == $id_marca) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Valida que el ID del producto sea válido y exista en la base de datos
@@ -100,7 +122,7 @@ function validarMetodoPago($metodo_pago) {
         return false;
     }
     $metodo_pago = (int)$metodo_pago;
-    $metodos_validos = [1, 2, 3]; // 1=Efectivo, 2=Transferencia, 3=Pago Móvil
+    $metodos_validos = [1, 2, 3, 4, 5]; // 1=Pago Móvil, 2=Transferencia Bancaria, 3=Punto de Venta, 4=Efectivo Bs, 5=Divisas (Dolares $)
     return in_array($metodo_pago, $metodos_validos, true);
 }
 
@@ -115,7 +137,7 @@ function validarMetodoPagoWeb($metodo_pago_web) {
         return false;
     }
     $metodo_pago_web = (int)$metodo_pago_web;
-    $metodos_validos = [2, 3]; // 2=Transferencia, 3=Pago Móvil
+    $metodos_validos = [1, 2]; // 1=Pago Móvil, 2=Transferencia Bancaria
     return in_array($metodo_pago_web, $metodos_validos, true);
 }
 
@@ -155,6 +177,7 @@ $endRaw   = $_REQUEST['f_end']   ?? '';
 $prodRaw  = $_REQUEST['f_id']    ?? '';
 $provRaw  = $_REQUEST['f_prov']  ?? '';
 $catRaw   = $_REQUEST['f_cat']   ?? '';
+$marcaRaw = $_REQUEST['f_marca'] ?? '';
 
 // 2) Nuevos filtros avanzados
 $montoMinRaw = $_REQUEST['monto_min'] ?? '';
@@ -173,6 +196,7 @@ $end    = $endRaw   ?: null;
 $prodId = is_numeric($prodRaw) ? (int)$prodRaw : null;
 $provId = is_numeric($provRaw) ? (int)$provRaw : null;
 $catId  = is_numeric($catRaw)  ? (int)$catRaw  : null;
+$marcaId = is_numeric($marcaRaw) ? (int)$marcaRaw : null;
 
 // Normalizar nuevos filtros
 $montoMin = is_numeric($montoMinRaw) ? (float)$montoMinRaw : null;
@@ -206,6 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
     $productos_lista = (new Producto())->consultar();
     $proveedores_lista = (new Proveedor())->consultar();
     $categorias_lista = (new Categoria())->consultar();
+    $marcas_lista = (new Marca())->consultar();
     
     try {
     // Validar parámetros comunes
@@ -220,6 +245,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
     }
 
     if (!validarIdCategoria($catRaw, $categorias_lista)) {
+        echo json_encode(['count' => 0]);
+        exit;
+    }
+
+    if (!validarIdMarca($marcaRaw, $marcas_lista)) {
         echo json_encode(['count' => 0]);
         exit;
     }
@@ -256,16 +286,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
 
     switch ($accion) {
         case 'countCompra':
-            $cnt = Reporte::countCompra($start, $end, $prodId, $catId, $provId, $montoMin, $montoMax);
+            $cnt = Reporte::countCompra($start, $end, $prodId, $catId, $provId, $marcaId, $montoMin, $montoMax);
             break;
         case 'countProducto':
-            $cnt = Reporte::countProducto($prodId, $provId, $catId, $precioMin, $precioMax, $stockMin, $stockMax, $estado);
+            $cnt = Reporte::countProducto($prodId, $provId, $catId, $marcaId, $precioMin, $precioMax, $stockMin, $stockMax, $estado);
             break;
         case 'countVenta':
-            $cnt = Reporte::countVenta($start, $end, $prodId, $metodoPago, $catId, $montoMin, $montoMax);
+            $cnt = Reporte::countVenta($start, $end, $prodId, $metodoPago, $catId, $marcaId, $montoMin, $montoMax);
             break;
         case 'countPedidoWeb':
-            $cnt = Reporte::countPedidoWeb($start, $end, $prodId, $estado, $metodoPagoWeb, $montoMin, $montoMax);
+            $cnt = Reporte::countPedidoWeb($start, $end, $prodId, $estado, $metodoPagoWeb, $marcaId, $montoMin, $montoMax);
             break;
         default:
             $cnt = 0;
@@ -296,6 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     $productos_lista = (new Producto())->consultar();
     $proveedores_lista = (new Proveedor())->consultar();
     $categorias_lista = (new Categoria())->consultar();
+    $marcas_lista = (new Marca())->consultar();
     
     // Validar parámetros
     if (!validarIdProducto($prodRaw, $productos_lista)) {
@@ -363,6 +394,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     <div class="error-box">
         <h1>Error al generar el reporte</h1>
         <p>La categoría seleccionada no es válida.</p>
+        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
+    </div>
+</body>
+</html>';
+        exit;
+    }
+    
+    if (!validarIdMarca($marcaRaw, $marcas_lista)) {
+        echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Error al generar reporte</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { color: #721c24; }
+        p { color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h1>Error al generar el reporte</h1>
+        <p>La marca seleccionada no es válida.</p>
         <p><a href="?pagina=reporte">Volver a Reportes</a></p>
     </div>
 </body>
@@ -502,19 +557,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
         switch ($accion) {
             case 'compra':
-                Reporte::compra($start, $end, $prodId, $catId, $provId, $montoMin, $montoMax);
+                Reporte::compra($start, $end, $prodId, $catId, $provId, $marcaId, $montoMin, $montoMax);
                 $desc = 'Generó Reporte de Compras';
                 break;
             case 'producto':
-                Reporte::producto($prodId, $provId, $catId, $precioMin, $precioMax, $stockMin, $stockMax, $estado);
+                Reporte::producto($prodId, $provId, $catId, $marcaId, $precioMin, $precioMax, $stockMin, $stockMax, $estado);
                 $desc = 'Generó Reporte de Productos';
                 break;
             case 'venta':
-                Reporte::venta($start, $end, $prodId, $catId, $metodoPago, $montoMin, $montoMax);
+                Reporte::venta($start, $end, $prodId, $catId, $metodoPago, $marcaId, $montoMin, $montoMax);
                 $desc = 'Generó Reporte de Ventas';
                 break;
             case 'pedidoWeb':
-                Reporte::pedidoWeb($start, $end, $prodId, $estado, $metodoPagoWeb, $montoMin, $montoMax);
+                Reporte::pedidoWeb($start, $end, $prodId, $estado, $metodoPagoWeb, $marcaId, $montoMin, $montoMax);
                 $desc = 'Generó Reporte de Pedidos Web';
                 break;
             default:
@@ -550,11 +605,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     }
 
     if ($desc) {
-        $objProd->registrarBitacora(json_encode([
-            'id_persona'  => $userId,
-            'accion'      => $desc,
-            'descripcion' => "Usuario ($rol) ejecutó $desc"
-        ]));
+        try {
+            $bit = new Bitacora();
+            // registrarOperacion maneja la sesión y el formato del registro
+            $bit->registrarOperacion($desc, 'reporte', ['descripcion' => "Usuario ($rol) ejecutó $desc"]);
+        } catch (\Throwable $e) {
+            error_log('reporte.php bitacora fallo: ' . $e->getMessage());
+        }
     }
 
     exit; // PDF ya enviado
@@ -564,6 +621,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 $productos_lista   = (new Producto())->consultar();
 $proveedores_lista = (new Proveedor())->consultar();
 $categorias_lista  = (new Categoria())->consultar();
+$marcas_lista      = (new Marca())->consultar();
 
 
 

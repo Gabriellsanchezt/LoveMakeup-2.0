@@ -4,6 +4,7 @@
 
 use LoveMakeup\Proyecto\Modelo\VentaWeb;
 use LoveMakeup\Proyecto\Modelo\Delivery;
+use LoveMakeup\Proyecto\Modelo\MetodoEntrega;
 
 // Iniciar sesión solo si no está ya iniciada
 if (session_status() === PHP_SESSION_NONE) {
@@ -114,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuar_entrega']))
 
 $delivery = new Delivery();
 $delivery_activos = $delivery->consultarActivos();
+
+$metodoEntrega = new MetodoEntrega();
+$metodos_entrega = $metodoEntrega->consultarTodosActivos();
 
 // 4) Si llegamos aquí, no es AJAX: preparamos la vista
 

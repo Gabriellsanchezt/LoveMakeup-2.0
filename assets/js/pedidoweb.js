@@ -52,7 +52,8 @@ $(document).ready(function() {
     }).then((result) => {
       if (result.isConfirmed) {
         $.ajax({
-          url: 'controlador/pedidoweb.php',
+          async: true,
+          url: '',
           type: 'POST',
           data: {
             confirmar: 'confirmar',
@@ -106,7 +107,8 @@ $(document).ready(function() {
     }).then((result) => {
       if (result.isConfirmed) {
         $.ajax({
-          url: 'controlador/pedidoweb.php',
+          async: true,
+          url: '',
           type: 'POST',
           data: {
             eliminar: 'eliminar',
@@ -161,7 +163,8 @@ $(document).on('click', '.btn-enviar', function () {
   }).then((result) => {
     if (result.isConfirmed) {
       $.ajax({
-        url: 'controlador/pedidoweb.php',
+        async: true,
+           url: '',
         type: 'POST',
         data: {
           enviar: 'enviar',
@@ -215,7 +218,8 @@ $(document).on('click', '.btn-entregar', function () {
   }).then((result) => {
     if (result.isConfirmed) {
       $.ajax({
-        url: 'controlador/pedidoweb.php',
+        async: true,
+           url: '',
         type: 'POST',
         data: {
           entregar: 'entregar',

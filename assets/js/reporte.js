@@ -250,7 +250,7 @@ function inicializarValidacionOriginal() {
         // Armar parámetros para el conteo
         const params = new URLSearchParams();
         for (let [k, v] of data.entries()) {
-            if (['f_start', 'f_end', 'f_id', 'f_prov', 'f_cat', 'monto_min', 'monto_max', 'precio_min', 'precio_max', 'stock_min', 'stock_max', 'f_mp', 'metodo_pago', 'estado'].includes(k) && v) {
+            if (['f_start', 'f_end', 'f_id', 'f_prov', 'f_cat', 'f_marca', 'monto_min', 'monto_max', 'precio_min', 'precio_max', 'stock_min', 'stock_max', 'f_mp', 'metodo_pago', 'estado'].includes(k) && v) {
                 params.append(k, v);
             }
         }

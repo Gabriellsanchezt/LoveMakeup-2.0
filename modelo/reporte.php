@@ -15,6 +15,7 @@ public static function compra(
     $prodId  = null,
     $catId   = null,
     $provId  = null,
+    $marcaId = null,
     $montoMin = null,
     $montoMax = null
 ): void {
@@ -70,8 +71,12 @@ public static function compra(
             $paramsG[':pidG'] = $prodId;
         }
         if ($catId) {
-            $whereG[]         = 'p.id_categoria = :catG';
+            $whereG[]       = 'p.id_categoria = :catG';
             $paramsG[':catG'] = $catId;
+        }
+        if ($marcaId) {
+            $whereG[]       = 'p.id_marca = :marcaG';
+            $paramsG[':marcaG'] = $marcaId;
         }
         if ($provId) {
             $whereG[]         = 'c.id_proveedor = :provG';
@@ -161,6 +166,10 @@ public static function compra(
             $whereT[]        = 'p.id_categoria = :catT';
             $paramsT[':catT']= $catId;
         }
+        if ($marcaId) {
+            $whereT[]        = 'p.id_marca = :marcaT';
+            $paramsT[':marcaT']= $marcaId;
+        }
         if ($provId) {
             $whereT[]        = 'c.id_proveedor = :provT';
             $paramsT[':provT']= $provId;
@@ -228,18 +237,24 @@ public static function compra(
                             if ($cliente) {
                                 $ventaRow['cliente'] = $cliente['nombre'] . ' ' . $cliente['apellido'];
                                 $ventaRow['cedula'] = $cliente['cedula'];
-                                $ventaRow['id_usuario'] = $cliente['id_usuario'];
+                                // $ventaRow['id_usuario'] = $cliente['id_usuario']; // Comentado porque no se usa
                             } else {
                                 $ventaRow['cliente'] = 'Sin cliente';
                                 $ventaRow['cedula'] = null;
-                                $ventaRow['id_usuario'] = null;
+                                // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
                             }
                         } catch (\PDOException $e) {
                             $ventaRow['cliente'] = 'Sin cliente';
                             $ventaRow['cedula'] = null;
-                            $ventaRow['id_usuario'] = null;
+                            // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
                         }
                     } else {
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
+                        $ventaRow['cliente'] = 'Sin cliente';
+                        $ventaRow['cedula'] = null;
+                        // $ventaRow['id_usuario'] = null; // Comentado porque no se usa
                         $ventaRow['cliente'] = 'Sin cliente';
                         $ventaRow['cedula'] = null;
                         $ventaRow['id_usuario'] = null;
@@ -429,6 +444,7 @@ public static function producto(
     $prodId = null,
     $provId = null,
     $catId  = null,
+    $marcaId = null,
     $precioMin = null,
     $precioMax = null,
     $stockMin = null,
@@ -471,6 +487,10 @@ public static function producto(
         if ($catId) {
             $whereG[]          = 'p.id_categoria = :cat';
             $paramsG[':cat']   = $catId;
+        }
+        if ($marcaId) {
+            $whereG[]          = 'p.id_marca = :marca';
+            $paramsG[':marca']   = $marcaId;
         }
         if ($precioMin !== null) {
             $whereG[]          = 'p.precio_detal >= :precioMinG';
@@ -553,6 +573,10 @@ public static function producto(
         if ($catId) {
             $whereT[]         = 'p.id_categoria = :catT';
             $paramsT[':catT'] = $catId;
+        }
+        if ($marcaId) {
+            $whereT[]         = 'p.id_marca = :marcaT';
+            $paramsT[':marcaT'] = $marcaId;
         }
         if ($precioMin !== null) {
             $whereT[]         = 'p.precio_detal >= :precioMinT';
@@ -709,6 +733,7 @@ public static function venta(
     $prodId  = null,
     $catId   = null,
     $metodoPago = null,
+    $marcaId = null,
     $montoMin = null,
     $montoMax = null
 ): void {
@@ -791,6 +816,10 @@ public static function venta(
         if ($catId) {
             $whereG[]         = 'pr.id_categoria = :catG';
             $paramsG[':catG'] = $catId;
+        }
+        if ($marcaId) {
+            $whereG[]         = 'pr.id_marca = :marcaG';
+            $paramsG[':marcaG'] = $marcaId;
         }
         if ($metodoPago) {
             // El método de pago se almacena en detalle_pago (dp) y pedido contiene id_pago
@@ -876,6 +905,10 @@ public static function venta(
         if ($catId) {
             $whereT[]         = 'pr.id_categoria = :catT';
             $paramsT[':catT'] = $catId;
+        }
+        if ($marcaId) {
+            $whereT[]         = 'pr.id_marca = :marcaT';
+            $paramsT[':marcaT'] = $marcaId;
         }
         if ($metodoPago) {
             $joinT = " LEFT JOIN detalle_pago dp ON pe.id_pago = dp.id_pago";
@@ -1084,6 +1117,7 @@ public static function pedidoWeb(
     ?int    $prodId = null,
     ?int    $estado = null,
     ?int    $metodoPago = null,
+    ?int    $marcaId = null,
     ?float  $montoMin = null,
     ?float  $montoMax = null
 ): void {
@@ -1122,6 +1156,10 @@ public static function pedidoWeb(
         $where[]        = 'dp.id_metodopago = :metodoPago';
         $params[':metodoPago'] = $metodoPago;
     }
+    if ($marcaId !== null) {
+        $where[]        = 'pr.id_marca = :marcaId';
+        $params[':marcaId'] = $marcaId;
+    }
     if ($montoMin !== null) {
         $where[]       = 'p.precio_total_bs >= :montoMin';
         $params[':montoMin'] = $montoMin;
@@ -1131,6 +1169,12 @@ public static function pedidoWeb(
         $params[':montoMax'] = $montoMax;
     }
     $whereSql = implode(' AND ', $where);
+
+    // Si se está filtrando por método de pago, asegurarse de unir la tabla detalle_pago
+    $join = '';
+    if (strpos($whereSql, 'dp.id_metodopago') !== false || $metodoPago !== null) {
+        $join = ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago';
+    }
 
     // 3) Incluir dependencias
     // Verificar si GD está habilitado y tiene soporte PNG antes de cargar JpGraph
@@ -1149,16 +1193,17 @@ public static function pedidoWeb(
         $conex->beginTransaction();
 
         // — Gráfico Top 5 Productos — (sin cambios) —
-        $sqlG = "
-          SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
-            FROM pedido p
-       LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
-       LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
-           WHERE {$whereSql}
-        GROUP BY pr.id_producto
-        ORDER BY total DESC
-           LIMIT 5
-        ";
+          $sqlG = "
+             SELECT pr.nombre AS producto, SUM(pd.cantidad) AS total
+                FROM pedido p
+                " . $join . "
+         LEFT JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
+         LEFT JOIN producto pr       ON pr.id_producto = pd.id_producto
+              WHERE {$whereSql}
+          GROUP BY pr.id_producto
+          ORDER BY total DESC
+              LIMIT 5
+          ";
         $stmtG = $conex->prepare($sqlG);
         $stmtG->execute($params);
         $labels = []; $data = [];
@@ -1195,30 +1240,21 @@ public static function pedidoWeb(
                         $hasCliente = false;
                 }
 
-                $usuarioSelect = $hasCliente
-                        ? "CONCAT(c.nombre,' ',c.apellido) AS usuario"
-                        : "NULL AS usuario";
-
-                $clienteJoin = $hasCliente
-                        ? "LEFT JOIN cliente c ON c.id_persona = p.id_persona"
-                        : "";
-
                 // — Tabla de Pedidos Web, ahora con columna PRODUCTOS —
                 $sqlT = "
                     SELECT
                         DATE_FORMAT(p.fecha, '%d/%m/%Y')        AS fecha,
-                        p.estado                               AS estado,
+                        p.estatus                              AS estado,
                         p.precio_total_bs                      AS total,
                         GROUP_CONCAT(
                             DISTINCT pr.nombre
                             ORDER BY pr.nombre
                             SEPARATOR ', '
-                        )                                      AS producto,
-                        " . $usuarioSelect . "
+                        )                                      AS producto
                     FROM pedido p
+                    " . $join . "
                     LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
                     LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
-                    " . $clienteJoin . "
                     WHERE {$whereSql}
                     GROUP BY p.id_pedido
                     ORDER BY p.precio_total_bs DESC
@@ -1284,7 +1320,7 @@ public static function pedidoWeb(
               : '')
           . '<table><thead><tr>'
           . '<th>Fecha</th><th>Estado</th><th>Total (Bs.)</th>'
-          . '<th>Productos</th><th>Usuario</th>'
+          . '<th>Productos</th>'
           . '</tr></thead><tbody>';
         foreach ($rows as $r) {
             $e   = $estados[(string)$r['estado']] ?? 'Desconocido';
@@ -1294,7 +1330,6 @@ public static function pedidoWeb(
                         <td>{$e}</td>
                         <td>{$tot}</td>
                         <td>".htmlspecialchars($r['producto'])."</td>
-                        <td>".htmlspecialchars($r['usuario'])."</td>
                       </tr>";
         }
         $html .= '</tbody></table></main>'
@@ -1344,7 +1379,7 @@ public static function pedidoWeb(
 
 
 
-public static function countCompra($start = null, $end = null, $prodId = null, $catId = null, $provId = null, $montoMin = null, $montoMax = null): int {
+public static function countCompra($start = null, $end = null, $prodId = null, $catId = null, $provId = null, $marcaId = null, $montoMin = null, $montoMax = null): int {
     $conex     = (new Conexion())->getConex1();
     $origStart = $start;
     $origEnd   = $end;
@@ -1383,6 +1418,10 @@ public static function countCompra($start = null, $end = null, $prodId = null, $
     if ($catId) {
         $where[]       = 'p.id_categoria = :cid';
         $params[':cid'] = $catId;
+    }
+    if ($marcaId) {
+        $where[]       = 'p.id_marca = :marca';
+        $params[':marca'] = $marcaId;
     }
 
     if ($provId) {
@@ -1430,7 +1469,7 @@ public static function countCompra($start = null, $end = null, $prodId = null, $
 
 
 
-public static function countProducto($prodId = null, $provId = null, $catId = null, $precioMin = null, $precioMax = null, $stockMin = null, $stockMax = null, $estado = null): int {
+public static function countProducto($prodId = null, $provId = null, $catId = null, $marcaId = null, $precioMin = null, $precioMax = null, $stockMin = null, $stockMax = null, $estado = null): int {
     $conex = (new Conexion())->getConex1();
     $where  = ['1=1'];
     $params = [];
@@ -1443,6 +1482,10 @@ public static function countProducto($prodId = null, $provId = null, $catId = nu
     if ($catId) {
       $where[]          = 'p.id_categoria = :cat';
       $params[':cat']   = $catId;
+    }
+    if ($marcaId) {
+      $where[]          = 'p.id_marca = :marca';
+      $params[':marca']   = $marcaId;
     }
     if ($provId) {
       $join = "
@@ -1497,6 +1540,7 @@ public static function countVenta(
     $prodId     = null,
     $metodoId   = null,
     $catId      = null,
+    $marcaId    = null,
     $montoMin   = null,
     $montoMax   = null
 ): int {
@@ -1570,6 +1614,10 @@ public static function countVenta(
         $where[]  = 'pr.id_categoria = :cat';
         $params[':cat'] = $catId;
     }
+    if ($marcaId) {
+        $where[]  = 'pr.id_marca = :marca';
+        $params[':marca'] = $marcaId;
+    }
 
     // Filtros de montos
     if ($montoMin !== null) {
@@ -1618,7 +1666,7 @@ public static function countVenta(
 
 
 
-public static function countPedidoWeb($start = null, $end = null, $prodId = null, $estado = null, $metodoPago = null, $montoMin = null, $montoMax = null): int {
+public static function countPedidoWeb($start = null, $end = null, $prodId = null, $estado = null, $metodoPago = null, $marcaId = null, $montoMin = null, $montoMax = null): int {
     // 1) Normalizar rangos parciales
     $origStart = $start;
     $origEnd   = $end;
@@ -1663,6 +1711,11 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
         $params[':metodoPago'] = $metodoPago;
     }
 
+    if ($marcaId !== null) {
+        $where[]        = 'pr.id_marca = :marcaId';
+        $params[':marcaId'] = $marcaId;
+    }
+
     // Filtros de montos
     if ($montoMin !== null) {
         $where[]       = 'p.precio_total_bs >= :montoMin';
@@ -1678,13 +1731,16 @@ public static function countPedidoWeb($start = null, $end = null, $prodId = null
     // 3) Ejecutar conteo
     $conex = (new Conexion())->getConex1();
         // Asegurar join con detalle_pago si el where contiene dp.id_metodopago
-        $joinDp = strpos($w, 'dp.id_metodopago') !== false ? ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago' : '';
+        $joinDp = (strpos($w, 'dp.id_metodopago') !== false || $metodoPago !== null) ? ' LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago' : '';
+        // Asegurar join con producto si el where contiene pr.id_marca
+        $joinPr = (strpos($w, 'pr.id_marca') !== false || $marcaId !== null) ? ' LEFT JOIN producto pr ON pr.id_producto = pd.id_producto' : '';
 
         $sql  = "
             SELECT COUNT(DISTINCT p.id_pedido) AS cnt
                 FROM pedido p
                 JOIN pedido_detalles pd ON pd.id_pedido = p.id_pedido
                 {$joinDp}
+                {$joinPr}
             {$w}
         ";
     $stmt = $conex->prepare($sql);

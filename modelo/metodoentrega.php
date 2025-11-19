@@ -92,5 +92,12 @@ class MetodoEntrega extends Conexion {
         $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
+
+    public function consultarTodosActivos() {
+        $sql = "SELECT * FROM metodo_entrega WHERE estatus = 1";
+        $stmt = $this->getConex1()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }
 ?>

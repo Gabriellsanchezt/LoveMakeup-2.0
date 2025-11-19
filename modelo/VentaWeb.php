@@ -8,20 +8,28 @@ class VentaWeb extends Conexion
     public function procesarPedido($jsonDatos)
     {
         $d = json_decode($jsonDatos, true)['datos'];
+        $conex = $this->getConex1();   // conexión principal
 
         try {
+
+            // =============================
+            //  INICIO DE TRANSACCIÓN
+            // =============================
+            $conex->beginTransaction();
+
+            // Validar stock ANTES de iniciar inserts
             $this->validarStockCarrito($d['carrito']);
 
             // 1) Registrar dirección
             $idDireccion = $this->registrarDireccion([
                 'id_metodoentrega' => $d['id_metodoentrega'],
-                'cedula' => $d['id_persona'], // tu controlador manda id_persona = CÉDULA
-                'direccion_envio' => $d['direccion_envio'],
-                'sucursal_envio' => $d['sucursal_envio'],
+                'cedula'           => $d['id_persona'],
+                'direccion_envio'  => $d['direccion_envio'],
+                'sucursal_envio'   => $d['sucursal_envio'],
                 'id_delivery'      => $d['id_delivery']
             ]);
 
-            // 2) Registrar pedido  
+            // 2) Registrar pedido
             $idPedido = $this->registrarPedido([
                 'tipo' => $d['tipo'],
                 'fecha' => $d['fecha'],
@@ -35,14 +43,15 @@ class VentaWeb extends Conexion
             // 3) Registrar pago (3 tablas)
             $idPago = $this->registrarPago($d);
 
-            // 4) Actualizar pedido con id_pago
+            // 4) Asignar pago al pedido
             $this->asignarPagoAPedido($idPedido, $idPago);
 
-            // 5) Insertar detalles + descontar stock
+            // 5) Registrar detalles + descontar stock
             foreach ($d['carrito'] as $item) {
+
                 $precio = $item['cantidad'] >= $item['cantidad_mayor']
-                          ? $item['precio_mayor']
-                          : $item['precio_detal'];
+                    ? $item['precio_mayor']
+                    : $item['precio_detal'];
 
                 $this->registrarDetalle([
                     'id_pedido' => $idPedido,
@@ -54,6 +63,9 @@ class VentaWeb extends Conexion
                 $this->actualizarStock($item['id'], $item['cantidad']);
             }
 
+          
+            $conex->commit();
+
             return [
                 'success' => true,
                 'id_pedido' => $idPedido,
@@ -61,6 +73,14 @@ class VentaWeb extends Conexion
             ];
 
         } catch (\Exception $e) {
+
+            // =============================
+            //  REVERTIR TRANSACCIÓN
+            // =============================
+            if ($conex->inTransaction()) {
+                $conex->rollBack();
+            }
+
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }

@@ -486,6 +486,22 @@
                 </select>
               </div>
               <div class="col-md-6">
+                <label class="form-label">Marca 
+                  <i class="fas fa-question-circle text-info ms-1" 
+                     data-bs-toggle="tooltip" 
+                     data-bs-html="true" 
+                     title="<strong>🏷️ Marcas:</strong><br>• <strong>Vacío:</strong> Productos de TODAS las marcas<br>• <strong>Seleccionado:</strong> Solo productos de esa marca específica<br>• <strong>Organización:</strong> Filtra por marca del producto"></i>
+                </label>
+                <select name="f_marca" class="form-select">
+                  <option value="">— Todas —</option>
+                  <?php foreach($marcas_lista as $marca): ?>
+                    <option value="<?= $marca['id_marca'] ?>">
+                      <?= htmlspecialchars($marca['nombre']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-6">
                 <label class="form-label">Estado del Producto 
                   <i class="fas fa-question-circle text-info ms-1" 
                      data-bs-toggle="tooltip" 
@@ -642,6 +658,22 @@
                 </select>
               </div>
               <div class="col-md-6">
+                <label class="form-label">Marca 
+                  <i class="fas fa-question-circle text-info ms-1" 
+                     data-bs-toggle="tooltip" 
+                     data-bs-html="true" 
+                     title="<strong>🏷️ Marcas:</strong><br>• <strong>Vacío:</strong> Ventas de TODAS las marcas<br>• <strong>Seleccionado:</strong> Solo ventas con productos de esa marca<br>• <strong>Organización:</strong> Filtra por marca del producto"></i>
+                </label>
+                <select name="f_marca" class="form-select">
+                  <option value="">— Todas —</option>
+                  <?php foreach($marcas_lista as $marca): ?>
+                    <option value="<?= $marca['id_marca'] ?>">
+                      <?= htmlspecialchars($marca['nombre']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-6">
                 <label class="form-label">Método de Pago 
                   <i class="fas fa-question-circle text-info ms-1" 
                      data-bs-toggle="tooltip" 
@@ -650,9 +682,11 @@
                 </label>
                 <select name="f_mp" class="form-select">
                   <option value="">— Todos —</option>
-                  <option value="1">Efectivo</option>
-                  <option value="2">Transferencia</option>
-                  <option value="3">Pago Móvil</option>
+                  <option value="4">Efectivo Bs</option>
+                  <option value="2">Transferencia Bancaria</option>
+                  <option value="1">Pago Móvil</option>
+                  <option value="3">Punto de Venta</option>
+                  <option value="5">Divisas (Dólares $)</option>
                 </select>
               </div>
               <div class="col-md-6">
@@ -780,6 +814,22 @@
                 </select>
               </div>
               <div class="col-md-6">
+                <label class="form-label">Marca 
+                  <i class="fas fa-question-circle text-info ms-1" 
+                     data-bs-toggle="tooltip" 
+                     data-bs-html="true" 
+                     title="<strong>🏷️ Marcas:</strong><br>• <strong>Vacío:</strong> Pedidos con productos de TODAS las marcas<br>• <strong>Seleccionado:</strong> Solo pedidos con productos de esa marca<br>• <strong>Organización:</strong> Filtra por marca del producto"></i>
+                </label>
+                <select name="f_marca" class="form-select">
+                  <option value="">— Todas —</option>
+                  <?php foreach($marcas_lista as $marca): ?>
+                    <option value="<?= $marca['id_marca'] ?>">
+                      <?= htmlspecialchars($marca['nombre']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-6">
                 <label class="form-label">Método de Pago 
                   <i class="fas fa-question-circle text-info ms-1" 
                      data-bs-toggle="tooltip" 
@@ -788,8 +838,8 @@
                 </label>
                 <select name="metodo_pago" class="form-select">
                   <option value="">— Todos —</option>
-                  <option value="2">Transferencia</option>
-                  <option value="3">Pago Móvil</option>
+                  <option value="2">Transferencia Bancaria</option>
+                  <option value="1">Pago Móvil</option>
                 </select>
               </div>
               <div class="col-md-6">
