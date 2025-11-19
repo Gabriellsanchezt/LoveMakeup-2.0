@@ -22,6 +22,41 @@ if ($_SESSION["nivel_rol"] == 1) {
 require_once 'permiso.php';
 $objPedidoWeb = new PedidoWeb();
 
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el id_pedido sea válido y exista en la base de datos
+ */
+function validarIdPedido($id_pedido, $objPedidoWeb) {
+    if (empty($id_pedido) || !is_numeric($id_pedido)) {
+        return false;
+    }
+    $id_pedido = (int)$id_pedido;
+    $conex = $objPedidoWeb->getConex1();
+    try {
+        $sql = "SELECT id_pedido FROM pedido WHERE id_pedido = :id_pedido LIMIT 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_pedido' => $id_pedido]);
+        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $conex = null;
+        return !empty($resultado);
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        return false;
+    }
+}
+
+/**
+ * Valida que el estado_delivery sea válido
+ */
+function validarEstadoDelivery($estado_delivery) {
+    if (empty($estado_delivery)) {
+        return false;
+    }
+    $estados_validos = ['pendiente', 'en_camino', 'entregado', 'cancelado'];
+    return in_array($estado_delivery, $estados_validos, true);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ===========================
@@ -30,6 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['confirmar'])) {
 
         if (!empty($_POST['id_pedido'])) {
+            // Validar id_pedido
+            if (!validarIdPedido($_POST['id_pedido'], $objPedidoWeb)) {
+                echo json_encode(['respuesta' => 0, 'mensaje' => 'El ID del pedido no es válido']);
+                exit;
+            }
             $datosPeticion = [
                 'operacion' => 'confirmar',
                 'datos' => $_POST['id_pedido']
@@ -46,6 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else if (isset($_POST['eliminar'])) {
 
         if (!empty($_POST['id_pedido'])) {
+            // Validar id_pedido
+            if (!validarIdPedido($_POST['id_pedido'], $objPedidoWeb)) {
+                echo json_encode(['respuesta' => 0, 'mensaje' => 'El ID del pedido no es válido']);
+                exit;
+            }
             $datosPeticion = [
                 'operacion' => 'eliminar',
                 'datos' => $_POST['id_pedido']
@@ -60,6 +105,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        DELIVERY
        =========================== */
     } else if (!empty($_POST['id_pedido']) && isset($_POST['estado_delivery']) && isset($_POST['direccion'])) {
+
+        // Validar id_pedido
+        if (!validarIdPedido($_POST['id_pedido'], $objPedidoWeb)) {
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'El ID del pedido no es válido']);
+            exit;
+        }
+
+        // Validar estado_delivery
+        if (!validarEstadoDelivery($_POST['estado_delivery'])) {
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'El estado de delivery no es válido']);
+            exit;
+        }
 
         $datosPeticion = [
             'operacion' => 'delivery',
@@ -79,6 +136,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else if (isset($_POST['enviar'])) {
 
         if (!empty($_POST['id_pedido'])) {
+            // Validar id_pedido
+            if (!validarIdPedido($_POST['id_pedido'], $objPedidoWeb)) {
+                echo json_encode(['respuesta' => 0, 'mensaje' => 'El ID del pedido no es válido']);
+                exit;
+            }
             $datosPeticion = [
                 'operacion' => 'enviar',
                 'datos' => $_POST['id_pedido']
@@ -95,6 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else if (isset($_POST['entregar'])) {
 
         if (!empty($_POST['id_pedido'])) {
+            // Validar id_pedido
+            if (!validarIdPedido($_POST['id_pedido'], $objPedidoWeb)) {
+                echo json_encode(['respuesta' => 0, 'mensaje' => 'El ID del pedido no es válido']);
+                exit;
+            }
             $datosPeticion = [
                 'operacion' => 'entregar',
                 'datos' => $_POST['id_pedido']
@@ -116,6 +183,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             !empty($_POST['correo_cliente']) &&
             !empty($_POST['nombre_cliente'])
         ) {
+            // Validar id_pedido
+            if (!validarIdPedido($_POST['id_pedido'], $objPedidoWeb)) {
+                echo json_encode(['success' => false, 'message' => 'El ID del pedido no es válido']);
+                exit;
+            }
 
             $datosPeticion = [
                 'operacion' => 'tracking',
