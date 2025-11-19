@@ -5,7 +5,10 @@ use LoveMakeup\Proyecto\Modelo\Producto;
 use LoveMakeup\Proyecto\Modelo\Proveedor;
 use LoveMakeup\Proyecto\Modelo\Categoria;
 
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 if (empty($_SESSION['id'])) {
     header('Location:?pagina=login');
     exit;

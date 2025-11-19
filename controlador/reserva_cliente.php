@@ -2,7 +2,10 @@
 
 use LoveMakeup\Proyecto\Modelo\ReservaCliente;
 
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Si no hay sesión activa, redirigir al login
 if (empty($_SESSION['id'])) {

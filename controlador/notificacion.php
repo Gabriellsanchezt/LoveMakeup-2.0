@@ -3,7 +3,10 @@
 use LoveMakeup\Proyecto\Modelo\Notificacion;
 use LoveMakeup\Proyecto\Modelo\TipoUsuario;
 
-session_start();
+// Iniciar sesión solo si no está ya iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 // Detectar si es una petición AJAX (tiene parámetro `accion`)
 $esAjax = ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['accion']))
        || ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion']));
