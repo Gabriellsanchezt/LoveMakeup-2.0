@@ -314,37 +314,47 @@ class Producto extends Conexion {
 
 
     public function MasVendidos() {
-        $conex = $this->getConex1();
-         try {
+    $conex = $this->getConex1();
+    try {
         $sql = "
             SELECT 
-                producto.*
-            FROM 
-                producto
-            INNER JOIN 
-                pedido_detalles ON producto.id_producto = pedido_detalles.id_producto
-            INNER JOIN 
-                pedido ON pedido.id_pedido = pedido_detalles.id_pedido
+                p.*,
+                c.nombre AS nombre_categoria,
+                m.nombre AS nombre_marca,
+                SUM(pd.cantidad) AS cantidad_vendida
+            FROM producto p
+            INNER JOIN pedido_detalles pd ON p.id_producto = pd.id_producto
+            INNER JOIN pedido pe ON pe.id_pedido = pd.id_pedido
+            INNER JOIN categoria c ON p.id_categoria = c.id_categoria
+            INNER JOIN marca m ON p.id_marca = m.id_marca
             WHERE 
-                producto.estatus = 1 AND pedido.estatus = '2'
+                p.estatus = 1 
+                AND pe.estatus = '2'
             GROUP BY 
-                producto.id_producto
+                p.id_producto
             ORDER BY 
-                SUM(pedido_detalles.cantidad) DESC
+                cantidad_vendida DESC
             LIMIT 10
         ";
-         $stmt = $conex->prepare($sql);
-         $stmt->execute();
-         $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-         $conex = null;
-         return $resultado;
-        }catch (\PDOException $e) {
-            if ($conex) {
-                $conex = null;
-            }
-            throw $e;
+
+        $stmt = $conex->prepare($sql);
+        $stmt->execute();
+        $productos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Agregar imágenes como en ProductosActivos()
+        foreach ($productos as &$prod) {
+            $prod['imagenes'] = $this->obtenerImagenes($prod['id_producto']);
         }
+
+        $conex = null;
+        return $productos;
+
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
     }
+}
+
 
    public function ProductosActivos() {
     $conex = $this->getConex1();
