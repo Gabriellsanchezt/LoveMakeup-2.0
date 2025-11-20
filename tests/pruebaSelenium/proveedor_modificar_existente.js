@@ -146,7 +146,7 @@ async function runTest() {
     testSteps.push('Verificar que el modal de modificación se abrió');
     
     // Esperar a que el modal aparezca en el DOM
-    await driver.wait(until.elementLocated(By.id('registroModal')), 15000);
+    await driver.wait(until.elementLocated(By.id('registro')), 15000);
     
     // Esperar a que el modal sea visible (tenga la clase 'show')
     let modalVisible = false;
@@ -155,14 +155,14 @@ async function runTest() {
     
     while (!modalVisible && attempts < maxAttempts) {
       try {
-        const modal = await driver.findElement(By.id('registroModal'));
+        const modal = await driver.findElement(By.id('registro'));
         const modalClass = await modal.getAttribute('class');
         modalVisible = modalClass && modalClass.includes('show');
         
         if (!modalVisible) {
           // Intentar verificar con JavaScript
           modalVisible = await driver.executeScript(
-            "return document.querySelector('#registroModal') && document.querySelector('#registroModal').classList.contains('show');"
+            "return document.querySelector('#registro') && document.querySelector('#registro').classList.contains('show');"
           );
         }
         

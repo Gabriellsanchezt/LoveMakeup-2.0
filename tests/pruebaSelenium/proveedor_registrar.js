@@ -98,22 +98,22 @@ async function runTest() {
     await driver.get(BASE_URL + '?pagina=proveedor');
     await driver.sleep(2000);
     
-    await driver.wait(until.elementLocated(By.css('button[data-bs-target="#registroModal"]')), 15000);
+    await driver.wait(until.elementLocated(By.id('btnAbrirRegistrar')), 15000);
     console.log('Modulo Proveedor cargado correctamente.');
     testSteps.push('Módulo Proveedor cargado correctamente');
 
     // === Paso 3: Abrir formulario de registro ===
     testSteps.push('Abrir formulario de registro de proveedor');
     console.log('Abriendo formulario de registro...');
-    const registrarBtn = await driver.findElement(By.css('button[data-bs-target="#registroModal"]'));
+    const registrarBtn = await driver.findElement(By.id('btnAbrirRegistrar'));
     await driver.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", registrarBtn);
     await driver.sleep(500);
     await driver.wait(until.elementIsVisible(registrarBtn), 10000);
     await registrarBtn.click();
     await driver.sleep(1500);
 
-    await driver.wait(until.elementLocated(By.id('registroModal')), 10000);
-    const modal = await driver.findElement(By.id('registroModal'));
+    await driver.wait(until.elementLocated(By.id('registro')), 10000);
+    const modal = await driver.findElement(By.id('registro'));
     const isModalVisible = await modal.getAttribute('class');
     if (!isModalVisible.includes('show')) {
       throw new Error('El modal de registro no se abrió correctamente');
