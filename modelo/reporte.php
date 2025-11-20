@@ -1174,7 +1174,7 @@ public static function graficaVentaTop5(): array
         FROM producto pr
         INNER JOIN pedido_detalles pd ON pr.id_producto = pd.id_producto
         INNER JOIN pedido pe ON pe.id_pedido = pd.id_pedido
-        WHERE pe.estatus = '2'
+        WHERE pe.estatus IN (2, 5)
         GROUP BY pr.id_producto
         ORDER BY cantidad_vendida DESC
         LIMIT 5
