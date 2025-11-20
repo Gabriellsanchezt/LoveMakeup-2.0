@@ -3,23 +3,6 @@
 use LoveMakeup\Proyecto\Modelo\Catalogo;
 use LoveMakeup\Proyecto\Modelo\ListaDeseo;
 
-// Asegurar que el autoloader esté cargado - Fallback para producción
-if (!class_exists('LoveMakeup\Proyecto\Modelo\Catalogo')) {
-    // Fallback: cargar el archivo directamente si el autoloader falla
-    $catalogoPath = __DIR__ . '/../modelo/catalogo.php';
-    if (file_exists($catalogoPath)) {
-        require_once $catalogoPath;
-    }
-}
-
-if (!class_exists('LoveMakeup\Proyecto\Modelo\ListaDeseo')) {
-    // Fallback: cargar el archivo directamente si el autoloader falla
-    $listaDeseoPath = __DIR__ . '/../modelo/ListaDeseo.php';
-    if (file_exists($listaDeseoPath)) {
-        require_once $listaDeseoPath;
-    }
-}
-
 // Iniciar sesión solo si no está ya iniciada
 if (session_status() === PHP_SESSION_NONE) {
 session_start();
