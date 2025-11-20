@@ -81,7 +81,7 @@ function sanitizarString($valor, $maxLength = 255) {
     if (strlen($valor) > $maxLength) $valor = substr($valor, 0, $maxLength);
     return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
 }
-    
+
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['nombre']) && !empty($_POST['descripcion']) && !empty($_POST['marca']) && !empty($_POST['cantidad_mayor']) && !empty($_POST['precio_mayor']) && !empty($_POST['precio_detal']) && !empty($_POST['stock_maximo']) && !empty($_POST['stock_minimo']) && !empty($_POST['categoria'])) {
             $rutaImagen = 'assets/img/logo.PNG';
             $imagenes = [];
-
+            
 if (isset($_FILES['imagenarchivo'])) {
     foreach ($_FILES['imagenarchivo']['name'] as $indice => $nombreArchivo) {
         if ($_FILES['imagenarchivo']['error'][$indice] == 0) {
@@ -106,9 +106,11 @@ if (isset($_FILES['imagenarchivo'])) {
         }
     }
 }
-            if (!empty($imagenes)) {
-                $rutaImagen = $imagenes[0]; // Usar la primera imagen como principal
-            }
+if (empty($imagenes)) {
+    $imagenes[] = 'assets/img/logo.PNG';
+}
+
+$rutaImagen = $imagenes[0];
 
           $datosProducto = [
     'operacion' => 'registrar',
@@ -196,6 +198,11 @@ if (!empty($_POST['imagenesReemplazadas'])) {
         }
     }
 }
+
+    if (empty($imagenes) && empty($imagenesReemplazos)) {
+    $imagenes[] = ['url_imagen' => 'assets/img/logo.PNG'];
+    }
+    
    $datosProducto = [
     'operacion' => 'actualizar',
     'datos' => [
