@@ -24,17 +24,33 @@ $(document).ready(function() {
 
   function validarnomSu(input) {
     const valor = input.val().trim();
-    const valido = valor.length >= 5;
-    valido ? limpiarError(input) : mostrarError(input, "Mínimo 5 caracteres.");
-    return valido;
-  }
 
+    // Solo letras, números y espacios
+    const regex = /^[A-Za-z0-9\s]{10,50}$/;
+
+    const valido = regex.test(valor);
+
+    valido
+        ? limpiarError(input)
+        : mostrarError(input, "Debe tener entre 10 y 50 caracteres y solo letras, números y espacios.");
+
+    return valido;
+}
   function validarDireccion(input) {
     const valor = input.val().trim();
-    const valido = valor.length >= 10;
-    valido ? limpiarError(input) : mostrarError(input, "Mínimo 10 caracteres.");
+
+    // Solo letras, números y espacios
+    const regex = /^[A-Za-z0-9\s]{10,100}$/;
+
+    const valido = regex.test(valor);
+
+    valido
+        ? limpiarError(input)
+        : mostrarError(input, "Debe tener entre 10 y 100 caracteres y solo letras, números y espacios.");
+
     return valido;
-  }
+}
+
 
   // Ahora definimos validarSelect
   function validarSelect(select, mensaje) {
