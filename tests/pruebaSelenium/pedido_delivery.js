@@ -64,7 +64,7 @@ async function runTest() {
     await driver.wait(until.elementLocated(By.id('usuario')), 15000);
     const usuarioInput = await driver.findElement(By.id('usuario'));
     await usuarioInput.clear();
-    await usuarioInput.sendKeys('30559870');
+    await usuarioInput.sendKeys('30559878');
     const passwordInput = await driver.findElement(By.id('pid'));
     await passwordInput.clear();
     await passwordInput.sendKeys('love1234');
