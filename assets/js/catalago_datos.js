@@ -476,9 +476,9 @@ function enviaAjax(datos) {
                 if (lee.respuesta == 1) {  
                   muestraMensaje("success", 2000, "Se ha Actualizado con éxito", "Sus datos se en modificado con exitosamente");
                   desactivarLoaderBoton('#actualizar');
-                  setTimeout(() => {
+              /*    setTimeout(() => {
                  location = '?pagina=catalogo_datos';
-                  }, 2000); 
+                  }, 2000); */
               } else {
                   muestraMensaje("error", 2000, lee.text, "");
                   desactivarLoaderBoton('#actualizar');

@@ -39,6 +39,7 @@ function validarkeypress(er,e){
         e.preventDefault();
     }
 }
+/*
 //Función para validar por keyup
 function validarkeyup(er,etiqueta,etiquetamensaje,mensaje){
     a = er.test(etiqueta.val());
@@ -51,7 +52,7 @@ function validarkeyup(er,etiqueta,etiquetamensaje,mensaje){
         return 0;
     }
 }
-
+*/
 function muestraMensajetost(icono, titulo, mensaje, tiempo) {
   Swal.fire({
     icon: icono,
@@ -234,9 +235,7 @@ $(document).ready(function() {
   });
   
 
-  $("#pid").on("keypress", function(e) {
-    validarkeyup(/^.{8,16}$/, e);
-  });
+ 
 
    $("#pid").on("keyup", function() {
       validarCampoS($(this),/^.{8,16}$/, 
