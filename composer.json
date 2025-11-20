@@ -14,7 +14,8 @@
             "config/"
         ],
         "exclude-from-classmap": [
-            "modelo/reporte_backup.php"
+            "modelo/reporte_backup.php",
+            "modelo/catalogo_favorito.php"
         ]
     },
     "autoload-dev": {
