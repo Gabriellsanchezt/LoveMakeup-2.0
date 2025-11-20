@@ -146,20 +146,20 @@ $(document).ready(function() {
     });
 
       const parroquiasPorZonaloc = {
-        norte: ["El Cují","Tamaca"],
-        sur: ["Juan de Villegas","Unión"],
+        norte: ["El Cuji","Tamaca"],
+        sur: ["Juan de Villegas","Union"],
         este: ["Santa Rosa","Cabudare"],
-        oeste: ["Concepción"],
+        oeste: ["Concepcion"],
         centro: ["Catedral"]
       };
       const sectoresPorParroquialoc = {
-        "Catedral": ["Centro","Urbanización Santa Elena","Barrios La Cruz","Colinas del Viento"],
-        "Concepción": ["La Playa","El Manzano","Urbanización El Obelisco","Barrio Bolívar"],
-        "El Cují": ["Altos de El Cují","La Pastora","El Cují Centro","Barrio El Caribe"],
-        "Juan de Villegas": ["La Carucieña","La Paz","Urbanización Sucre","Barrio El Tostao"],
-        "Santa Rosa": ["Santa Rosa Centro","El Cercado","Urbanización El Ujano","Barrio El Garabatal"],
-        "Tamaca": ["Tamaca Centro","El Trompillo","Barrio El Jebe","Urbanización El Sisal"],
-        "Unión": ["Barrio Unión","San Jacinto","Urbanización El Pedregal","Barrio El Carmen"],
+        "Catedral": ["Centro","Urbanizacion Santa Elena","Barrios La Cruz","Colinas del Viento"],
+        "Concepcion": ["La Playa","El Manzano","Urbanizacion El Obelisco","Barrio Bolivar"],
+        "El Cuji": ["Altos de El Cuji","La Pastora","El Cuji Centro","Barrio El Caribe"],
+        "Juan de Villegas": ["La Carucieña","La Paz","Urbanizacion Sucre","Barrio El Tostao"],
+        "Santa Rosa": ["Santa Rosa Centro","El Cercado","Urbanizacion El Ujano","Barrio El Garabatal"],
+        "Tamaca": ["Tamaca Centro","El Trompillo","Barrio El Jebe","Urbanizacion El Sisal"],
+        "Union": ["Barrio Union","San Jacinto","Urbanización El Pedregal","Barrio El Carmen"],
         "Cabudare": ["La Piedad Norte","La Mora","El Trigal","Valle Hondo","Tarabana","Agua Viva","El Recreo","La Estancia","Las Mercedes","Los Pinos","La Mata","San Rafael" ]
       };
 
