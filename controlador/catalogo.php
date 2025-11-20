@@ -3,19 +3,47 @@
 use LoveMakeup\Proyecto\Modelo\Catalogo;
 use LoveMakeup\Proyecto\Modelo\ListaDeseo;
 
-// Asegurar que el autoloader esté cargado
+// Fallback: asegurar que las clases necesarias estén cargadas
+// Esto es necesario porque el autoloader puede fallar en algunos servidores
+$baseDir = dirname(__DIR__);
+
+// Cargar Conexion si no está cargada
+if (!class_exists('LoveMakeup\Proyecto\Config\Conexion')) {
+    $conexionFile = $baseDir . '/config/conexion.php';
+    if (file_exists($conexionFile)) {
+        require_once $conexionFile;
+    }
+}
+
+// Cargar Categoria si no está cargada
+if (!class_exists('LoveMakeup\Proyecto\Modelo\Categoria')) {
+    $categoriaFile = $baseDir . '/modelo/categoria.php';
+    if (file_exists($categoriaFile)) {
+        require_once $categoriaFile;
+    }
+}
+
+// Cargar Producto si no está cargada
+if (!class_exists('LoveMakeup\Proyecto\Modelo\Producto')) {
+    $productoFile = $baseDir . '/modelo/producto.php';
+    if (file_exists($productoFile)) {
+        require_once $productoFile;
+    }
+}
+
+// Cargar Catalogo si no está cargada
 if (!class_exists('LoveMakeup\Proyecto\Modelo\Catalogo')) {
-    // Fallback: cargar manualmente si el autoloader falla
-    $catalogoFile = __DIR__ . '/../modelo/Catalogo.php';
+    // Intentar con mayúscula primero (correcto)
+    $catalogoFile = $baseDir . '/modelo/Catalogo.php';
     if (file_exists($catalogoFile)) {
         require_once $catalogoFile;
     } else {
-        // Intentar con minúscula (por si acaso)
-        $catalogoFile = __DIR__ . '/../modelo/catalogo.php';
+        // Intentar con minúscula (fallback)
+        $catalogoFile = $baseDir . '/modelo/catalogo.php';
         if (file_exists($catalogoFile)) {
             require_once $catalogoFile;
         } else {
-            die('Error: No se pudo encontrar la clase Catalogo. Verifique que el archivo modelo/Catalogo.php existe.');
+            die('Error: No se pudo encontrar la clase Catalogo. Verifique que el archivo modelo/Catalogo.php existe en: ' . $baseDir);
         }
     }
 }
