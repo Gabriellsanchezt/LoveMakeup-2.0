@@ -10,8 +10,8 @@ class Catalogo extends Conexion {
 
     public function __construct() {
         parent::__construct();
-        $this->objcategoria = new \LoveMakeup\Proyecto\Modelo\Categoria();
-        $this->objproducto = new \LoveMakeup\Proyecto\Modelo\Producto();
+        $this->objcategoria = new Categoria();
+        $this->objproducto = new Producto();
     }
 
     public function obtenerProductosMasVendidos() {
