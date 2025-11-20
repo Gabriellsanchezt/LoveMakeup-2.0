@@ -1,6 +1,10 @@
 <?php
     // Cargar el autoloader de Composer
-    require_once __DIR__ . '/vendor/autoload.php';
+    $autoloadPath = __DIR__ . '/vendor/autoload.php';
+    if (!file_exists($autoloadPath)) {
+        die('Error: El autoloader de Composer no se encuentra. Por favor ejecuta "composer install" o "composer dump-autoload" en el servidor.');
+    }
+    require_once $autoloadPath;
     
     // Iniciar sesión para validar acceso (si no está ya iniciada)
     if (session_status() === PHP_SESSION_NONE) {
