@@ -3,6 +3,23 @@
 use LoveMakeup\Proyecto\Modelo\Catalogo;
 use LoveMakeup\Proyecto\Modelo\ListaDeseo;
 
+// Asegurar que el autoloader esté cargado
+if (!class_exists('LoveMakeup\Proyecto\Modelo\Catalogo')) {
+    // Fallback: cargar manualmente si el autoloader falla
+    $catalogoFile = __DIR__ . '/../modelo/Catalogo.php';
+    if (file_exists($catalogoFile)) {
+        require_once $catalogoFile;
+    } else {
+        // Intentar con minúscula (por si acaso)
+        $catalogoFile = __DIR__ . '/../modelo/catalogo.php';
+        if (file_exists($catalogoFile)) {
+            require_once $catalogoFile;
+        } else {
+            die('Error: No se pudo encontrar la clase Catalogo. Verifique que el archivo modelo/Catalogo.php existe.');
+        }
+    }
+}
+
 // Iniciar sesión solo si no está ya iniciada
 if (session_status() === PHP_SESSION_NONE) {
 session_start();
