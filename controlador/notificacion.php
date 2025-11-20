@@ -167,15 +167,23 @@ try {
 }
 
 // FILTRADO según rol:
-//  - Admin ve estados 1 (nuevas) y 4 (leídas solo por asesora)
-//  - Asesora ve solo estado 1
+// Estados:
+//  1 = Nueva (no leída) - visible para ambos
+//  2 = Leída por admin - oculta para ambos
+//  4 = Leída por asesora - visible solo para admin
+// 
+// - Admin (nivel 3) ve estados 1 (nuevas) y 4 (leídas solo por asesora)
+// - Asesora (nivel 2) ve solo estado 1 (nuevas) - NO ve leídas
 if ($nivel === 3) {
+    // Admin ve notificaciones nuevas y leídas por asesora
     $notificaciones = array_filter(
       $all,
-      fn($n) => in_array((int)$n['estado'], [1,4])
+      fn($n) => in_array((int)$n['estado'], [1, 4])
     );
 }
 elseif ($nivel === 2) {
+    // Asesora ve solo notificaciones nuevas (estado 1)
+    // NO ve estado 2 (leídas por admin) ni estado 4 (leídas por ella)
     $notificaciones = array_filter(
       $all,
       fn($n) => (int)$n['estado'] === 1
