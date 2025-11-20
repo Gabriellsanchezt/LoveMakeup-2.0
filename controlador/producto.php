@@ -27,6 +27,63 @@ $registro = $objproducto->consultar();
 $categoria = $objproducto->obtenerCategoria();
 $marca = $objproducto->obtenerMarca();
 
+/* FUNCIONES DE VALIDACIÓN Y SANITIZACIÓN CONTRA INYECCIÓN SQL */
+
+function detectarInyeccionSQL($valor) {
+    if (empty($valor)) return false;
+
+    $valor_lower = strtolower($valor);
+    $patrones_peligrosos = [
+        '/(\bunion\b.*\bselect\b)/i',
+        '/(\bselect\b.*\bfrom\b)/i',
+        '/(\binsert\b.*\binto\b)/i',
+        '/(\bupdate\b.*\bset\b)/i',
+        '/(\bdelete\b.*\bfrom\b)/i',
+        '/(\bdrop\b.*\btable\b)/i',
+        '/(\bcreate\b.*\btable\b)/i',
+        '/(\balter\b.*\btable\b)/i',
+        '/(\bexec\b|\bexecute\b)/i',
+        '/(\bsp_\w+)/i',
+        '/(\bxp_\w+)/i',
+        '/(--|\#|\/\*|\*\/)/',
+        '/(\bor\b.*\b1\s*=\s*1\b)/i',
+        '/(\band\b.*\b1\s*=\s*1\b)/i',
+        '/(\bor\b.*\b1\s*=\s*0\b)/i',
+        '/(\band\b.*\b1\s*=\s*0\b)/i',
+        '/(\bwaitfor\b.*\bdelay\b)/i'
+    ];
+
+    foreach ($patrones_peligrosos as $patron) {
+        if (preg_match($patron, $valor_lower)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function sanitizarEntero($valor, $min = null, $max = null) {
+    if (!is_numeric($valor)) return null;
+    $valor = (int)$valor;
+    if ($min !== null && $valor < $min) return null;
+    if ($max !== null && $valor > $max) return null;
+    return $valor;
+}
+
+function sanitizarString($valor, $maxLength = 255) {
+    if (empty($valor)) return '';
+    if (detectarInyeccionSQL($valor)) return '';
+    $valor = trim($valor);
+    $caracteres_peligrosos = [';', '--', '/*', '*/', '<', '>', '"', "'", '`'];
+    foreach ($caracteres_peligrosos as $char) {
+        $valor = str_replace($char, '', $valor);
+    }
+    if (strlen($valor) > $maxLength) $valor = substr($valor, 0, $maxLength);
+    return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+}
+    
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accion']) && $_POST['accion'] === 'obtenerImagenes') {
         $id_producto = $_POST['id_producto'];
@@ -53,19 +110,19 @@ if (isset($_FILES['imagenarchivo'])) {
                 $rutaImagen = $imagenes[0]; // Usar la primera imagen como principal
             }
 
-            $datosProducto = [
+          $datosProducto = [
     'operacion' => 'registrar',
     'datos' => [
-        'nombre' => ucfirst(strtolower($_POST['nombre'])),
-        'descripcion' => $_POST['descripcion'],
-        'id_marca' => $_POST['marca'],
-        'cantidad_mayor' => $_POST['cantidad_mayor'],
-        'precio_mayor' => $_POST['precio_mayor'],
-        'precio_detal' => $_POST['precio_detal'],
-        'stock_maximo' => $_POST['stock_maximo'],
-        'stock_minimo' => $_POST['stock_minimo'],
-        'id_categoria' => $_POST['categoria'],
-        'imagenes' => $imagenes
+        'nombre'         => ucfirst(strtolower(sanitizarString($_POST['nombre'], 100))),
+        'descripcion'    => sanitizarString($_POST['descripcion'], 500),
+        'id_marca'       => sanitizarEntero($_POST['marca'], 1),
+        'cantidad_mayor' => sanitizarEntero($_POST['cantidad_mayor'], 0),
+        'precio_mayor'   => sanitizarEntero($_POST['precio_mayor'], 0),
+        'precio_detal'   => sanitizarEntero($_POST['precio_detal'], 0),
+        'stock_maximo'   => sanitizarEntero($_POST['stock_maximo'], 0),
+        'stock_minimo'   => sanitizarEntero($_POST['stock_minimo'], 0),
+        'id_categoria'   => sanitizarEntero($_POST['categoria'], 1),
+        'imagenes'       => $imagenes
     ]
 ];
 
@@ -139,21 +196,19 @@ if (!empty($_POST['imagenesReemplazadas'])) {
         }
     }
 }
-
-    // 4️⃣ Preparar datos del producto
    $datosProducto = [
     'operacion' => 'actualizar',
     'datos' => [
-        'id_producto'    => $_POST['id_producto'],
-        'nombre'         => ucfirst(strtolower($_POST['nombre'])),
-        'descripcion'    => $_POST['descripcion'],
-        'id_marca'       => $_POST['marca'],
-        'cantidad_mayor' => $_POST['cantidad_mayor'],
-        'precio_mayor'   => $_POST['precio_mayor'],
-        'precio_detal'   => $_POST['precio_detal'],
-        'stock_maximo'   => $_POST['stock_maximo'],
-        'stock_minimo'   => $_POST['stock_minimo'],
-        'id_categoria'   => $_POST['categoria'],
+        'id_producto'    => sanitizarEntero($_POST['id_producto'], 1),
+        'nombre'         => ucfirst(strtolower(sanitizarString($_POST['nombre'], 100))),
+        'descripcion'    => sanitizarString($_POST['descripcion'], 500),
+        'id_marca'       => sanitizarEntero($_POST['marca'], 1),
+        'cantidad_mayor' => sanitizarEntero($_POST['cantidad_mayor'], 0),
+        'precio_mayor'   => sanitizarEntero($_POST['precio_mayor'], 0),
+        'precio_detal'   => sanitizarEntero($_POST['precio_detal'], 0),
+        'stock_maximo'   => sanitizarEntero($_POST['stock_maximo'], 0),
+        'stock_minimo'   => sanitizarEntero($_POST['stock_minimo'], 0),
+        'id_categoria'   => sanitizarEntero($_POST['categoria'], 1),
         'imagenes_nuevas'      => $imagenes,
         'imagenes_reemplazos'  => $imagenesReemplazos
     ]
@@ -178,7 +233,7 @@ if (!empty($_POST['imagenesReemplazadas'])) {
         $datosProducto = [
             'operacion' => 'eliminar',
             'datos' => [
-                'id_producto' => $_POST['id_producto']
+                'id_producto' => sanitizarEntero($_POST['id_producto'], 1)
             ]
         ];
 
@@ -197,12 +252,12 @@ if (!empty($_POST['imagenesReemplazadas'])) {
         echo json_encode($resultado);
     } else if(isset($_POST['accion']) && $_POST['accion'] == 'cambiarEstatus') {
         $datosProducto = [
-            'operacion' => 'cambiarEstatus',
-            'datos' => [
-                'id_producto' => $_POST['id_producto'],
-                'estatus_actual' => $_POST['estatus_actual']
-            ]
-        ];
+    'operacion' => 'cambiarEstatus',
+    'datos' => [
+        'id_producto'   => sanitizarEntero($_POST['id_producto'], 1),
+        'estatus_actual'=> sanitizarEntero($_POST['estatus_actual'], 0, 2)
+    ]
+];
 
         $resultado = $objproducto->procesarProducto(json_encode($datosProducto));
 
