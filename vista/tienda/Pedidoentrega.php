@@ -308,51 +308,25 @@ input[type="radio"]:checked + .opcion-custom {
 <?php include 'vista/complementos/nav_catalogo.php' ?>
 
 <section id="latest-blog" class="section-padding pt-0">
-<div class="modal-body bg-s">
-    <div class="mb-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="modal-body bg-s">
-    <div class="mb-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="progress-steps">
-
-                    <!-- BARRA ANIMADA -->
-                    <div class="progress-bar-container" id="progress-bar-pasos">
-                        <div class="progress-bar-fill"></div>
-                    </div>
-
-                    <div class="step active" id="step-cliente">
-            <div class="step-number">1</div>
-            <div class="step-label">Producto</div>
-          </div>
-
-          <div class="step" id="step-productos">
-            <div class="step-number">2</div>
-            <div class="step-label">Entrega</div>
-          </div>
-
-          <div class="step" id="step-pago">
-            <div class="step-number">3</div>
-            <div class="step-label">Pago</div>
-          </div>
-
-          <div class="step" id="step-confirmar">
-            <div class="step-number">4</div>
-            <div class="step-label">Confirmacion</div>
-          </div>
-
-                </div>
-            </div>
-        </div>
+    <div class="container-lg">
+        <div class="pasos-container">
+    <div class="paso completado">
+      <div class="circulo">1</div>
+      <span>Producto</span>
     </div>
-</div>
-
-            </div>
-        </div>
+    <div class="paso actual">
+      <div class="circulo">2</div>
+      <span>Entrega</span>
     </div>
-</div>
+    <div class="paso completado">
+      <div class="circulo">3</div>
+      <span>Pago</span>
+    </div>
+    <div class="paso completado">
+      <div class="circulo">4</div>
+      <span>Confirmación</span>
+    </div>
+  </div>
 
   
   <div class="container py-2"> 
