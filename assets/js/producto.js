@@ -284,7 +284,15 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
     timeout: 10000,
     success: function (respuesta) {
       console.log(respuesta);
-      var lee = JSON.parse(respuesta);
+      var lee;
+      try {
+        lee = JSON.parse(respuesta);
+      } catch (parseError) {
+        console.error('Error parseando JSON del servidor:', parseError, respuesta);
+        muestraMensaje("error", 2000, "Error", "Respuesta inválida del servidor. Intente nuevamente.");
+        $('#btnEnviar').prop("disabled", false).html('<i class="fas fa-save me-2"></i>Guardar Producto');
+        return;
+      }
       try {
         if (lee.accion == 'consultar') {
           crearConsulta(lee.datos);
@@ -298,7 +306,7 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
               location.href = "?pagina=producto";
             }, 1000);
           } else {
-            let mensajeError = lee.error ? lee.error : "Ha ocurrido un error inesperado. Inténtelo nuevamente.";
+            let mensajeError = lee.error || lee.mensaje || lee.text || "Ha ocurrido un error inesperado. Inténtelo nuevamente.";
 
             if (mensajeError.includes("Ya existe un producto con el mismo nombre y marca")) {
               muestraMensaje("error", 1000, "Registro duplicado", mensajeError);
@@ -328,7 +336,7 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
               location.href = "?pagina=producto";
             }, 1000);
           } else {
-            let mensajeError = lee.error ? lee.error : "Ha ocurrido un error inesperado. Inténtelo nuevamente.";
+            let mensajeError = lee.error || lee.mensaje || lee.text || "Ha ocurrido un error inesperado. Inténtelo nuevamente.";
 
             if (mensajeError.includes("No se puede eliminar un producto con stock disponible")) {
               muestraMensaje("error", 1000, "Error al eliminar", mensajeError);
@@ -346,6 +354,21 @@ function cambiarEstatusProducto(id_producto, estatus_actual) {
             }, 1000);
           } else {
             muestraMensaje("error", 2000, "ERROR", lee.text);
+          }
+        }
+        else {
+          const mensajeServidor = lee.mensaje || lee.error || lee.text || '';
+          if (mensajeServidor.includes('Ya existe un producto')) {
+            muestraMensaje("error", 1200, "Registro duplicado", mensajeServidor);
+            $('#btnEnviar').prop("disabled", false).html('<i class="fas fa-save me-2"></i>Guardar Producto');
+          } else if (mensajeServidor.includes('No se puede eliminar un producto con stock disponible')) {
+            muestraMensaje("error", 1200, "Error al eliminar", mensajeServidor);
+          } else if (lee.respuesta == 1) {
+            muestraMensaje("success", 1000, "Operación exitosa", mensajeServidor || 'Operación completada');
+            setTimeout(function () { location.href = '?pagina=producto'; }, 1000);
+          } else {
+            muestraMensaje("error", 2000, "Error", mensajeServidor || 'Ocurrió un error inesperado');
+            $('#btnEnviar').prop("disabled", false).html('<i class="fas fa-save me-2"></i>Guardar Producto');
           }
         }
       } catch (e) {

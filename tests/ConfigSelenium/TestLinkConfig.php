@@ -7,21 +7,18 @@ namespace Tests\ConfigSelenium;
  */
 class TestLinkConfig
 {
-    /**
-     * URL de la API de TestLink
-     * Ejemplo: 'http://testlink.example.com/lib/api/xmlrpc/v1/xmlrpc.php'
-     */
-    public const API_URL = '';
+  
+    public const API_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
     
     /**
      * API Key de TestLink
      */
-    public const API_KEY = '';
+    public const API_KEY = '1a4d579d37e9a7f66a417c527ca09718';
     
     /**
      * ID del Plan de Pruebas en TestLink
      */
-    public const TEST_PLAN_ID = '';
+    public const TEST_PLAN_ID = '104';
     
     /**
      * Nombre del Build por defecto
@@ -36,7 +33,7 @@ class TestLinkConfig
     /**
      * Habilitar envío automático a TestLink
      */
-    public const AUTO_SEND_TO_TESTLINK = false;
+    public const AUTO_SEND_TO_TESTLINK = true;
     
     /**
      * Verificar configuración

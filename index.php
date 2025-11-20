@@ -102,7 +102,8 @@
     $nivelRol = isset($_SESSION['nivel_rol']) ? (int)$_SESSION['nivel_rol'] : 0;
     
     // 1. Si el usuario está logueado pero intenta acceder a login, redirigir según su rol
-    if ($pagina === 'login' && $usuarioLogueado) {
+    // EXCEPCIÓN: Permitir acceso a login si viene un POST de cerrar sesión
+    if ($pagina === 'login' && $usuarioLogueado && !isset($_POST['cerrar']) && !isset($_POST['cerrarolvido'])) {
         if ($nivelRol == 1) {
             header("Location: ?pagina=catalogo");
         } else {
