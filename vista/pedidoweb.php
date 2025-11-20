@@ -473,14 +473,15 @@ if (
             <input type="hidden" name="id_pedido" value="<?php echo $pedido['id_pedido']; ?>">
             <div class="mb-3">
               <label for="tracking<?php echo $pedido['id_pedido']; ?>" class="form-label">Número de Tracking</label>
-              <input type="text" class="form-control" id="tracking<?php echo $pedido['id_pedido']; ?>" name="tracking" required>
+              <input type="text" class="form-control tracking-input" id="tracking<?php echo $pedido['id_pedido']; ?>" name="tracking" required>
+              <span class="invalid-feedback text-danger"></span>
 
               <input type="hidden" name="correo_cliente" value="<?php echo htmlspecialchars($pedido['correo_cliente'], ENT_QUOTES); ?>">
               <input type="hidden" name="nombre_cliente" value="<?php echo htmlspecialchars($pedido['nombre_cliente'], ENT_QUOTES); ?>">
             </div>
           </div>
           <div class="modal-footer">
-            <button type="submit" id="btn-tracking" class="btn btn-success">Guardar y Enviar Email</button>
+            <button type="submit" id="btn-tracking" class="btn btn-success btn-tracking-send">Guardar y Enviar Email</button>
           </div>
         </form>
       </div>
@@ -489,63 +490,120 @@ if (
 <?php endif; ?>
 
 <script>
-    /*||| Funcion para cambiar el boton a loader |||*/
-function activarLoaderBoton(idBoton, texto) {
-  const $boton = $(idBoton);
+function activarLoaderBoton(boton, texto) {
+  const $boton = $(boton);
   const textoActual = $boton.html();
-  $boton.data('texto-original', textoActual); // Guarda el texto original
+  $boton.data('texto-original', textoActual);
   $boton.prop('disabled', true);
-  $boton.html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${texto}`);
+  $boton.html(
+    `<span class="spinner-border spinner-border-sm me-2"></span>${texto}`
+  );
 }
 
-function desactivarLoaderBoton(idBoton) {
-  const $boton = $(idBoton);
+function desactivarLoaderBoton(boton) {
+  const $boton = $(boton);
   const textoOriginal = $boton.data('texto-original');
   $boton.prop('disabled', false);
   $boton.html(textoOriginal);
 }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.tracking-form').forEach(function(form) {
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const boton = form.querySelector('#btn-tracking'); 
+function validarTracking(input) {
+  const valor = input.value.trim();
 
-      activarLoaderBoton('#btn-tracking',"Enviando..."); 
+  // Regla: solo números
+  const soloNumeros = /^[0-9]+$/;
 
-        console.log('Enviando tracking al correo:', formData.get('correo_cliente'));
+  let msjError = "";
 
-        $.ajax({
-          url: 'controlador/pedidoweb_tracking.php',
-          type: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          dataType: 'json',
-                    success: function (data) {
-                      console.log('Respuesta del servidor:', data);
-                      desactivarLoaderBoton('#btn-tracking'); 
-            if (data.success) {  // <-- aquí cambias 'respuesta' por 'success'
-              Swal.fire({
-                icon: 'success',
-                title: 'Tracking enviado',
-                text: data.message, // también cambia 'msg' por 'message'
-                confirmButtonText: 'OK'
-              }).then(() => location.reload());
-            } else {
-              Swal.fire({
-                icon: 'error',
-                title: 'Error al enviar',
-                text: data.message,
-                confirmButtonText: 'Cerrar'
-              });
-            }
-          }
-        });
-      });
-    });
+  if (!soloNumeros.test(valor)) {
+    msjError = "Solo se permiten números.";
+  } else if (valor.length < 10 || valor.length > 20) {
+    msjError = "Debe tener entre 10 y 20 dígitos.";
+  }
+
+  const span = input.nextElementSibling; // invalid-feedback
+
+  if (msjError !== "") {
+    input.classList.add("is-invalid");
+    input.classList.remove("is-valid");
+    span.textContent = msjError;
+    return false;
+  } else {
+    input.classList.remove("is-invalid");
+    input.classList.add("is-valid");
+    span.textContent = "";
+    return true;
+  }
+}
+
+
+// Validación en tiempo real de todos los inputs tracking
+document.querySelectorAll('.tracking-input').forEach(input => {
+  input.addEventListener('input', function () {
+    // Limitar caracteres SOLO a números
+    this.value = this.value.replace(/\D/g, '').slice(0, 20);
+    validarTracking(this);
   });
+});
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.tracking-form').forEach(function (form) {
+
+    form.addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const formData = new FormData(form);
+  const boton = form.querySelector('.btn-tracking-send');
+  const trackingInput = form.querySelector('.tracking-input');
+
+  // VALIDAR TRACKING
+  if (!validarTracking(trackingInput)) {
+    desactivarLoaderBoton(boton);
+
+  
+    e.stopImmediatePropagation();
+
+    return Swal.fire({
+      icon: "warning",
+      title: "Tracking inválido",
+      text: "Debe tener entre 10 y 20 dígitos y solo números."
+    });
+  }
+
+  activarLoaderBoton(boton, "Enviando...");
+
+  $.ajax({
+    url: 'controlador/pedidoweb_tracking.php',
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false,
+    dataType: 'json',
+
+    success: function (data) {
+      desactivarLoaderBoton(boton);
+
+      if (data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Tracking enviado',
+          text: data.message,
+          confirmButtonText: 'OK'
+        }).then(() => location.reload());
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al enviar',
+          text: data.message,
+          confirmButtonText: 'Cerrar'
+        });
+      }
+    }
+  });
+});
+});
+});
 </script>
 
 

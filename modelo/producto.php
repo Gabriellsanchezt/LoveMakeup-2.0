@@ -9,6 +9,7 @@ use LoveMakeup\Proyecto\Config\Conexion;
 
 class Producto extends Conexion {
     private $objcategoria;
+    private $objmarca;
 
     function __construct() {
         parent::__construct();

@@ -68,7 +68,7 @@
           </div>
         </div>
         <h3 class="fw-bold mb-0 text-white">
-          $ <?php echo number_format($totales['total_ventas'], 2); ?>
+          $ <?php echo number_format($totales['total_ventas']?? 2); ?>
         </h3>
         <span class="text-white">Ventas Totales</span>
       </div>
@@ -85,7 +85,7 @@
           </div>
         </div>
         <h3 class="fw-bold mb-0 text-white">
-          $ <?php echo number_format($totales['total_web'], 2); ?>
+          $ <?php echo number_format($totales['total_web']?? 2); ?>
         </h3>
         <span class="text-white">Venta por Web</span>
       </div>
