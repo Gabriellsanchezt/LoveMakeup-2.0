@@ -1,6 +1,7 @@
 // === DEPENDENCIAS ===
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
+const xmlrpc = require('xmlrpc');
 
 // === CONFIGURACIÓN TESTLINK ===
 const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
@@ -76,6 +77,14 @@ async function runTest() {
     
     // Esperar y llenar campos de login
     await driver.wait(until.elementLocated(By.id('usuario')), 15000);
+    
+    // Seleccionar tipo de documento (V - Venezolano)
+    const tipoDocSelect = await driver.findElement(By.id('DocumentoSelct'));
+    await driver.wait(until.elementIsVisible(tipoDocSelect), 10000);
+    await driver.executeScript("arguments[0].value = 'V';", tipoDocSelect);
+    await driver.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", tipoDocSelect);
+    await driver.sleep(300);
+    
     const usuarioInput = await driver.findElement(By.id('usuario'));
     await driver.wait(until.elementIsVisible(usuarioInput), 10000);
     await usuarioInput.clear();
@@ -306,7 +315,73 @@ async function runTest() {
         console.log('Error al cerrar el navegador:', quitError.message);
       }
     }
+    // Reportar a TestLink (mapear status)
+    const testLinkStatus = status === 'p' || status === 'passed' ? 'p' : 'f';
+    await reportResultToTestLink(testLinkStatus, notes);
   }
+}
+
+// === FUNCIÓN: Reportar resultado a TestLink ===
+async function reportResultToTestLink(status, notes) {
+  return new Promise((resolve) => {
+    try {
+      const client = xmlrpc.createClient({ url: TESTLINK_URL });
+
+      // Limpiar notas de HTML y caracteres especiales
+      const cleanNotes = notes
+        .replace(/<[^>]*>/g, '')
+        .replace(/\n/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 500); // Limitar a 500 caracteres
+
+      console.log('Intentando conectar con TestLink...');
+      
+      client.methodCall('tl.checkDevKey', [{ devKey: DEV_KEY }], function (error, value) {
+        if (error) {
+          console.error('DevKey invalido o conexion fallida:', error);
+          resolve();
+          return;
+        }
+
+        console.log('DevKey valido. Reportando resultado...');
+        
+        // Validar External ID
+        const externalId = String(TEST_CASE_EXTERNAL_ID || '').trim();
+        if (!externalId || externalId.length === 0) {
+          console.error('Error: External ID no puede estar vacio');
+          resolve();
+          return;
+        }
+        if (externalId.length > 50) {
+          console.error('Error: External ID excede el limite de 50 caracteres. Longitud: ' + externalId.length);
+          resolve();
+          return;
+        }
+        
+        const params = {
+          devKey: DEV_KEY,
+          testcaseexternalid: externalId,
+          testplanid: TEST_PLAN_ID,
+          buildid: BUILD_ID,
+          notes: cleanNotes,
+          status: status,
+        };
+
+        client.methodCall('tl.reportTCResult', [params], function (error, value) {
+          if (error) {
+            console.error('Error al enviar resultado a TestLink:', error);
+          } else {
+            console.log('Resultado enviado a TestLink exitosamente:', JSON.stringify(value));
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.error('No se pudo conectar con TestLink:', error);
+      resolve();
+    }
+  });
 }
 
 // === Ejecutar test ===
@@ -317,5 +392,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runTest };
+module.exports = { runTest, reportResultToTestLink };
 

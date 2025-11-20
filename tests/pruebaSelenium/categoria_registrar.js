@@ -79,6 +79,14 @@ async function runTest() {
     
     // Esperar y llenar campos de login
     await driver.wait(until.elementLocated(By.id('usuario')), 15000);
+    
+    // Seleccionar tipo de documento (V - Venezolano)
+    const tipoDocSelect = await driver.findElement(By.id('DocumentoSelct'));
+    await driver.wait(until.elementIsVisible(tipoDocSelect), 10000);
+    await driver.executeScript("arguments[0].value = 'V';", tipoDocSelect);
+    await driver.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", tipoDocSelect);
+    await driver.sleep(300);
+    
     const usuarioInput = await driver.findElement(By.id('usuario'));
     await driver.wait(until.elementIsVisible(usuarioInput), 10000);
     await usuarioInput.clear();
