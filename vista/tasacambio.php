@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
           <button type="button" class="btn btn-success" id="btnActualizarManual">
             <i class="fas fa-edit me-2"></i>Actualizar Manualmente
           </button>
-    <?php endif; ?>
+      <?php endif; ?>
           
         </div>
       </div>
@@ -183,11 +183,12 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
           <h5 class="card-title">Tasa del Dolar (Actual - Via Internet) </h5>
          <h4 class="card-subtitle mb-2 text-dark" id="bcv"></h4>
           <p class="card-text">Estás utilizando la tasa de cambio USD a Bs obtenida automáticamente desde internet. Si lo prefieres, puedes sincronizar esta tasa y actualizar la que está guardada en la base de datos.</p>
-<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
+          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
           <form action="?pagina=tasacambio" method="POST" id="for_sincronizar" style="display: none;">
             <input type="hidden" name="fecha" id="fecha_2">
             <input type="hidden" name="tasa" id="tasabcv">
             <input type="hidden" name="fuente" value="Via Internet">
+            
           </form>
           <button type="button" class="btn btn-primary" id="btnSincronizar">
             <i class="fas fa-sync-alt me-2"></i>Sincronizar y Actualizar

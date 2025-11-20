@@ -100,7 +100,7 @@ if(isset($_POST['actualizar'])){ /*|||||||||||||||||||||||||||||||||||||||||||||
          exit;
     }   
 
-} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'ver')) {
+} else if ($_SESSION["nivel_rol"] >=2 && tieneAcceso(10, 'ver')) {
          $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Acceso a Módulo',

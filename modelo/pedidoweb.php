@@ -403,12 +403,12 @@ public function consultarDetallesPedido($id_pedido) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'help.lovemakeupca@gmail.com';
-            $mail->Password = 'uoteptddjgljeukw';
+            $mail->Username = 'lovemakeupca.help@gmail.com'; // Tu dirección de correo de Gmail
+            $mail->Password = 'jzvfcfjqfggndqdl'; // Tu contraseña de Gmail o contraseña de aplicación
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
     
-            $mail->setFrom('help.lovemakeupca@gmail.com', 'Love Makeup');
+            $mail->setFrom('lovemakeupca.help@gmail.com', 'Love Makeup');
             $mail->addAddress($correo, $nombre_cliente);
             $mail->Subject = 'Informacion de Envio: Numero de Tracking';
             $mail->isHTML(true);

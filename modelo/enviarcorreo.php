@@ -8,12 +8,12 @@ function enviarCodigoRecuperacion($correo, $codigo) {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'help.lovemakeupca@gmail.com'; // Tu dirección de correo de Gmail
-        $mail->Password = 'uoteptddjgljeukw'; // Tu contraseña de Gmail o contraseña de aplicación
+        $mail->Username = 'lovemakeupca.help@gmail.com'; // Tu dirección de correo de Gmail
+        $mail->Password = 'jzvfcfjqfggndqdl'; // Tu contraseña de Gmail o contraseña de aplicación
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
-        $mail->setFrom('help.lovemakeupca@gmail.com', 'Love Makeup');
+        $mail->setFrom('lovemakeupca.help@gmail.com', 'Love Makeup');
         $mail->addAddress($correo);
         $mail->Subject = 'Codigo de Recuperacion de Clave';
         $mail->isHTML(true); // Habilitar HTML en el correo
@@ -75,7 +75,7 @@ function enviarCodigoRecuperacion($correo, $codigo) {
 
       <p><strong>LoveMakeup C.A</strong> es tu mejor aliado en productos de belleza y maquillaje. ¡Descubre tu mejor versión con nosotros!</p>
 
-      <p>Telf.: +58 424 5115414<br> Correo: <a href='mailto:help.lovemakeupca@gmail.com'>help.lovemakeupca@gmail.com</a></p>
+      <p>Telf.: +58 424 5115414<br> Correo: <a href='mailto:lovemakeupca.help@gmail.com'>lovemakeupca.help@gmail.com</a></p>
 
 <!-- Redes Sociales -->
 <div style='text-align: center; margin-top: 30px;'>
