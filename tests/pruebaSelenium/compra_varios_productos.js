@@ -5,7 +5,7 @@ const xmlrpc = require('xmlrpc');
 // === CONFIGURACIÓN TESTLINK ===
 const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
 const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
-const TEST_CASE_EXTERNAL_ID = '10';
+const TEST_CASE_EXTERNAL_ID = 'Prueba-10';
 const TEST_PLAN_ID = 104;
 const BUILD_ID = 1;
 
@@ -364,7 +364,6 @@ async function runTest() {
     const testLinkStatus = status === 'p' || status === 'passed' ? 'p' : 'f';
     await reportResultToTestLink(testLinkStatus, notes);
   }
-}
 
 // === FUNCIÓN: Reportar resultado a TestLink ===
 async function reportResultToTestLink(status, notes) {

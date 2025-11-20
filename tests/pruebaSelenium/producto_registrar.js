@@ -1,6 +1,14 @@
 // === DEPENDENCIAS ===
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
+
+// === CONFIGURACIÓN TESTLINK ===
+const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
+const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
+const TEST_CASE_EXTERNAL_ID = 'Prueba-17';
+const TEST_PLAN_ID = 104;
+const BUILD_ID = 1;
+
 // === CONFIGURACIÓN DE URLS ===
 const BASE_URL = 'http://localhost:8080/LoveMakeup/LoveMakeup-2.0/';
 
