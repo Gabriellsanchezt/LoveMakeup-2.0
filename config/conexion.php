@@ -1,8 +1,6 @@
 <?php
 
-namespace LoveMakeup\Proyecto\Config;
-
-require_once (__DIR__.'/config.php');
+require_once (__DIR__.'/../config/config.php');
 
 class Conexion {
     private $conex1;
@@ -11,14 +9,14 @@ class Conexion {
     public function __construct() {
         try {
             // Primera conexión
-            $this->conex1 = new \PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME_1.";charset=utf8", DB_USER, DB_PASS);
-            $this->conex1->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->conex1 = new PDO("mysql:host="._DB_HOST_.";dbname="._DB_NAME_1_.";charset=utf8", _DB_USER_, _DB_PASS_);
+            $this->conex1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // Segunda conexión
-            $this->conex2 = new \PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME_2.";charset=utf8", DB_USER, DB_PASS);
-            $this->conex2->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->conex2 = new PDO("mysql:host="._DB_HOST_.";dbname="._DB_NAME_2_.";charset=utf8", _DB_USER_2_, _DB_PASS_);
+            $this->conex2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             die ("Conexión Fallida: ".$e->getMessage());
         }
     }
