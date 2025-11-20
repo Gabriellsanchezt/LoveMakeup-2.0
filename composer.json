@@ -7,7 +7,15 @@
             "LoveMakeup\\Proyecto\\Modelo\\": "modelo/",
             "LoveMakeup\\Proyecto\\Controlador\\": "controlador/",
             "LoveMakeup\\Proyecto\\Config\\": "config/"
-        }
+        },
+        "classmap": [
+            "modelo/",
+            "controlador/",
+            "config/"
+        ],
+        "exclude-from-classmap": [
+            "modelo/reporte_backup.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

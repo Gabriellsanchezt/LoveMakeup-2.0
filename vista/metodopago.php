@@ -213,7 +213,7 @@
 
         </form>
       </div>
-      <div class="text-center mt-4">
+      <div class="text-center ">
          <button type="button" class="btn btn-modern px-4 m-2 btn-guardar" id="btnModificar">
          <i class="fa-solid fa-floppy-disk me-2"></i> Actualizar
          </button>
