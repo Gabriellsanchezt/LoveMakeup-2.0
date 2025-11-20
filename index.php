@@ -1,5 +1,6 @@
 <?php
-    require __DIR__ . '/vendor/autoload.php';
+    // Cargar bootstrap que maneja el autoload de manera segura
+    require_once __DIR__ . '/bootstrap.php';
 
     // Iniciar sesión para validar acceso (si no está ya iniciada)
     if (session_status() === PHP_SESSION_NONE) {
