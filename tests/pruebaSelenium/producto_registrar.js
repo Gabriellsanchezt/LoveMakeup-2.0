@@ -1,16 +1,6 @@
 // === DEPENDENCIAS ===
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
-const xmlrpc = require('xmlrpc');
-const ReportGenerator = require('./ReportGenerator');
-
-// === CONFIGURACIÓN TESTLINK ===
-const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
-const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
-const TEST_CASE_EXTERNAL_ID = '17';
-const TEST_PLAN_ID = 104;
-const BUILD_ID = 1;
-
 // === CONFIGURACIÓN DE URLS ===
 const BASE_URL = 'http://localhost:8080/LoveMakeup/LoveMakeup-2.0/';
 
@@ -24,8 +14,6 @@ async function runTest() {
   let notes = '';
   const startTime = new Date();
   const testSteps = [];
-  const reportGenerator = new ReportGenerator();
-  const testName = 'Registrar productos';
 
   try {
     // Configurar el driver según el navegador seleccionado
@@ -310,100 +298,7 @@ async function runTest() {
         console.log('Error al cerrar el navegador:', quitError.message);
       }
     }
-
-    // Generar reportes
-    try {
-      const reportData = {
-        testName: testName,
-        status: status,
-        notes: notes,
-        startTime: startTime,
-        endTime: endTime,
-        steps: testSteps,
-        error: status === 'f' ? notes : null,
-        browser: BROWSER,
-        baseUrl: BASE_URL,
-        testCaseId: TEST_CASE_EXTERNAL_ID
-      };
-
-      const reportPath = await reportGenerator.generateReport(reportData);
-      
-      console.log('\n========================================');
-      console.log('REPORTE XML GENERADO');
-      console.log('========================================');
-      console.log(`XML: ${reportPath}`);
-      console.log('========================================\n');
-    } catch (reportError) {
-      console.error('Error al generar reporte:', reportError.message);
-    }
-
-    // Reportar a TestLink (mapear status)
-    const testLinkStatus = status === 'p' || status === 'passed' ? 'p' : 'f';
-    await reportResultToTestLink(testLinkStatus, notes);
   }
-}
-
-// === FUNCIÓN: Reportar resultado a TestLink ===
-async function reportResultToTestLink(status, notes) {
-  return new Promise((resolve) => {
-    try {
-      const client = xmlrpc.createClient({ url: TESTLINK_URL });
-
-      // Limpiar notas de HTML y caracteres especiales
-      const cleanNotes = notes
-        .replace(/<[^>]*>/g, '')
-        .replace(/\n/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 500); // Limitar a 500 caracteres
-
-      console.log('Intentando conectar con TestLink...');
-      
-      client.methodCall('tl.checkDevKey', [{ devKey: DEV_KEY }], function (error, value) {
-        if (error) {
-          console.error('DevKey invalido o conexion fallida:', error);
-          resolve();
-          return;
-        }
-
-        console.log('DevKey valido. Reportando resultado...');
-        
-        // Validar External ID
-        const externalId = String(TEST_CASE_EXTERNAL_ID || '').trim();
-        if (!externalId || externalId.length === 0) {
-          console.error('Error: External ID no puede estar vacio');
-          resolve();
-          return;
-        }
-        if (externalId.length > 50) {
-          console.error('Error: External ID excede el limite de 50 caracteres. Longitud: ' + externalId.length);
-          resolve();
-          return;
-        }
-        
-        const params = {
-          devKey: DEV_KEY,
-          testcaseexternalid: externalId,
-          testplanid: TEST_PLAN_ID,
-          buildid: BUILD_ID,
-          notes: cleanNotes,
-          status: status,
-        };
-
-        client.methodCall('tl.reportTCResult', [params], function (error, value) {
-          if (error) {
-            console.error('Error al enviar resultado a TestLink:', error);
-          } else {
-            console.log('Resultado enviado a TestLink exitosamente:', JSON.stringify(value));
-          }
-          resolve();
-        });
-      });
-    } catch (error) {
-      console.error('No se pudo conectar con TestLink:', error);
-      resolve();
-    }
-  });
 }
 
 // === Ejecutar test ===
@@ -414,5 +309,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runTest, reportResultToTestLink };
+module.exports = { runTest };
 

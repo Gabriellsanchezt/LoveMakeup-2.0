@@ -2,8 +2,6 @@
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 const xmlrpc = require('xmlrpc');
-const ReportGenerator = require('./ReportGenerator');
-
 // === CONFIGURACIÓN TESTLINK ===
 const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
 const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
@@ -24,8 +22,6 @@ async function runTest() {
   let notes = '';
   const startTime = new Date();
   const testSteps = [];
-  const reportGenerator = new ReportGenerator();
-  const testName = 'Ver Detalles Completos de una Venta';
 
   try {
     console.log(`Inicializando navegador: ${BROWSER}...`);
@@ -284,32 +280,6 @@ async function runTest() {
       } catch (quitError) {
         console.log('Error al cerrar el navegador:', quitError.message);
       }
-    }
-
-    // Generar reportes
-    try {
-      const reportData = {
-        testName: testName,
-        status: status,
-        notes: notes,
-        startTime: startTime,
-        endTime: endTime,
-        steps: testSteps,
-        error: status === 'f' ? notes : null,
-        browser: BROWSER,
-        baseUrl: BASE_URL,
-        testCaseId: TEST_CASE_EXTERNAL_ID
-      };
-
-      const reportPath = await reportGenerator.generateReport(reportData);
-      
-      console.log('\n========================================');
-      console.log('REPORTE XML GENERADO');
-      console.log('========================================');
-      console.log(`XML: ${reportPath}`);
-      console.log('========================================\n');
-    } catch (reportError) {
-      console.error('Error al generar reporte:', reportError.message);
     }
 
     // Reportar a TestLink

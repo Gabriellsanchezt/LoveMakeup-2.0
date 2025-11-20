@@ -2,8 +2,6 @@
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 const xmlrpc = require('xmlrpc');
-const ReportGenerator = require('./ReportGenerator');
-
 // === CONFIGURACIÓN TESTLINK ===
 const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
 const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
@@ -27,8 +25,6 @@ async function runTest() {
   let notes = '';
   const startTime = new Date();
   const testSteps = [];
-  const reportGenerator = new ReportGenerator();
-  const testName = 'Registrar Compra Válida';
 
   try {
     // Configurar el driver según el navegador seleccionado
@@ -141,12 +137,22 @@ async function runTest() {
     // === Paso 5: Llenar datos básicos ===
     testSteps.push('Llenar datos básicos de la compra (fecha y proveedor)');
     console.log('Llenando datos de la compra...');
-    const today = new Date().toISOString().split('T')[0];
+    
+    // Obtener fecha de hoy en formato local (YYYY-MM-DD)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayFormatted = `${year}-${month}-${day}`;
+    
+    console.log('Fecha de hoy: ' + todayFormatted);
 
     const fechaInput = await driver.findElement(By.id('fecha_entrada_reg'));
     await driver.wait(until.elementIsVisible(fechaInput), 10000);
-    await driver.executeScript("arguments[0].value = arguments[1];", fechaInput, today);
+    await driver.executeScript("arguments[0].value = arguments[1];", fechaInput, todayFormatted);
     await driver.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", fechaInput);
+    await driver.sleep(500);
+    console.log('Fecha establecida: ' + todayFormatted);
 
     // Seleccionar proveedor
     const proveedorSelect = await driver.findElement(By.id('id_proveedor_reg'));
@@ -315,7 +321,7 @@ async function runTest() {
     }
 
     console.log('Compra registrada exitosamente.');
-    notes = 'Compra registrada exitosamente con un producto válido. Fecha: ' + today + ', Cantidad: 10, Precio: 5.00';
+    notes = 'Compra registrada exitosamente con un producto válido. Fecha: ' + todayFormatted + ', Cantidad: 10, Precio: 5.00';
     status = 'p';
 
   } catch (error) {
@@ -333,33 +339,6 @@ async function runTest() {
         console.log('Error al cerrar el navegador:', quitError.message);
       }
     }
-
-    // Generar reportes
-    try {
-      const reportData = {
-        testName: testName,
-        status: status,
-        notes: notes,
-        startTime: startTime,
-        endTime: endTime,
-        steps: testSteps,
-        error: status === 'f' ? notes : null,
-        browser: BROWSER,
-        baseUrl: BASE_URL,
-        testCaseId: TEST_CASE_EXTERNAL_ID
-      };
-
-      const reportPath = await reportGenerator.generateReport(reportData);
-      
-      console.log('\n========================================');
-      console.log('REPORTE XML GENERADO');
-      console.log('========================================');
-      console.log(`XML: ${reportPath}`);
-      console.log('========================================\n');
-    } catch (reportError) {
-      console.error('Error al generar reporte:', reportError.message);
-    }
-
     // Reportar a TestLink (mapear status)
     const testLinkStatus = status === 'p' || status === 'passed' ? 'p' : 'f';
     await reportResultToTestLink(testLinkStatus, notes);
