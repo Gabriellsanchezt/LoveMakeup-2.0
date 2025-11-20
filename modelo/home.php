@@ -24,7 +24,7 @@ class Home extends Conexion {
                 ON producto.id_producto = pedido_detalles.id_producto
             INNER JOIN pedido 
                 ON pedido.id_pedido = pedido_detalles.id_pedido
-            WHERE pedido.estatus = '2'
+            WHERE pedido.estatus IN ('2', '5')
             GROUP BY producto.id_producto, producto.nombre
             ORDER BY cantidad_vendida DESC
             LIMIT 5
@@ -49,7 +49,7 @@ class Home extends Conexion {
                 SUM(CASE WHEN tipo = '2' THEN precio_total_usd ELSE 0 END) AS total_web,
                 COUNT(CASE WHEN tipo = '2' THEN 1 END) AS cantidad_pedidos_web
             FROM pedido
-            WHERE estatus = '2'
+            WHERE estatus IN ('2', '5')
         ";
 
         $stmt = $conex->prepare($sql);
