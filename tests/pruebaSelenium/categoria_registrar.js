@@ -3,14 +3,14 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 const xmlrpc = require('xmlrpc');
 // === CONFIGURACIÓN TESTLINK ===
-const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
-const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
-const TEST_CASE_EXTERNAL_ID = '61';
-const TEST_PLAN_ID = 104;
+const TESTLINK_URL = 'http://localhost/testlink/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
+const DEV_KEY = '55387a68ad480af2c9f640e71f955f57';
+const TEST_CASE_EXTERNAL_ID = '1-1';
+const TEST_PLAN_ID =3;
 const BUILD_ID = 1;
 
 // === CONFIGURACIÓN DE URLS ===
-const BASE_URL = 'http://localhost:8080/LoveMakeup/LoveMakeup-2.0/';
+const BASE_URL = 'http://localhost:8080/lovemakeup+composer/LoveMakeup-2.0/';
 
 // === CONFIGURACIÓN DEL NAVEGADOR ===
 const BROWSER = 'edge';
@@ -126,7 +126,7 @@ async function runTest() {
     console.log('Llenando datos de la categoria...');
 
     const timestamp = Date.now();
-    const nombreCategoria = `Polvo${String(timestamp).substring(7, 11)}`;
+    const nombreCategoria = `labial${String(timestamp).substring(7, 11)}`;
 
     // Nombre de la categoría
     const nombreInput = await driver.findElement(By.id('nombre'));

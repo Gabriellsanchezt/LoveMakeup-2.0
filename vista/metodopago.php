@@ -3,6 +3,7 @@
 <head>
   <?php include 'complementos/head.php'; ?> 
   <title> Método de Pago | LoveMakeup </title>
+  <link rel="stylesheet" href="assets/css/formulario.css">
 </head>
 
 <body class="g-sidenav-show bg-gray-100">
@@ -94,6 +95,8 @@
             </div>
             <div class="modal-body bg-s">
               <form id="formRegistrar" autocomplete="off">
+
+           <div class="seccion-formulario"> 
                <div class="mb-3">
                   <label  for="nombre" class="form-label">Nombre</label>
                   <input type="text" class="form-control" name="nombre" id="nombre" placeholder="Ej: Tarjeta de credito" required>
@@ -104,9 +107,45 @@
                   <input type="text" class="form-control" name="descripcion" id="descripcion" placeholder="Ej: Visa, MasterCard, etc." required>
                   <span id="sdescripcion" class="text-danger"></span>
                 </div>
+
+           </div>  
+            
+           <div class="col-12">
+  <div class="info-box p-3 d-flex gap-3 align-items-start rounded shadow-sm bg-light">
+
+    <!-- Ícono -->
+    <div class="info-icon fs-3 text-primary">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+
+    <!-- Contenido -->
+    <div class="info-content flex-grow-1">
+      <strong>Información Importante:</strong>
+      <p>
+        Los métodos de pago permiten definir cómo el cliente cancelará su compra. 
+        Una buena configuración garantiza transacciones claras, seguras y fáciles de validar.
+      </p>
+
+      <p><b>Recomendaciones:</b></p>
+      <ul class="text-muted mb-0">
+        <li>Utiliza nombres fácilmente reconocibles (Ej: Pago Móvil, Transferencia, Zelle)</li>
+        <li>Incluye descripciones que indiquen instrucciones o requisitos del método</li>
+        <li>Evita duplicar métodos que funcionen igual o generen confusión</li>
+        <li>Desactiva métodos no disponibles para evitar pagos inválidos</li>
+        <li>Actualiza la información si cambian cuentas bancarias o plataformas aceptadas</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
                 <div class="text-center mt-4">
-                  <button type="button" class="btn btn-primary" id="registrar">Registrar</button>
-                  <button type="reset" class="btn btn-secondary">Limpiar</button>
+                  <button type="button" class="btn btn-modern px-4 m-2 btn-guardar" id="registrar">
+                  <i class="fa-solid fa-floppy-disk me-2"></i> Registrar
+                  </button>
+                  <button type="reset" class="btn btn-modern px-4 m-2 btn-limpiar">
+                  <i class="fa-solid fa-eraser me-2"></i> Limpiar
+                  </button>
                 </div>
               </form>
             </div>
@@ -124,6 +163,8 @@
       </div>
       <div class="modal-body bg-s">
         <form id="formModificar">
+
+        <div class="seccion-formulario"> 
           <input type="hidden" id="id_pago_modificar">
 
           <div class="form-group mb-3">
@@ -138,11 +179,47 @@
             <span class="text-danger" id="sdescripcion_modificar"></span>
           </div>
 
+        </div>  
+
+        <div class="col-12">
+  <div class="info-box p-3 d-flex gap-3 align-items-start rounded shadow-sm bg-light">
+
+    <!-- Ícono -->
+    <div class="info-icon fs-3 text-primary">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+
+    <!-- Contenido -->
+    <div class="info-content flex-grow-1">
+      <strong>Información Importante:</strong>
+      <p>
+        Los métodos de pago permiten definir cómo el cliente cancelará su compra. 
+        Una buena configuración garantiza transacciones claras, seguras y fáciles de validar.
+      </p>
+
+      <p><b>Recomendaciones:</b></p>
+      <ul class="text-muted mb-0">
+        <li>Utiliza nombres fácilmente reconocibles (Ej: Pago Móvil, Transferencia, Zelle)</li>
+        <li>Incluye descripciones que indiquen instrucciones o requisitos del método</li>
+        <li>Evita duplicar métodos que funcionen igual o generen confusión</li>
+        <li>Desactiva métodos no disponibles para evitar pagos inválidos</li>
+        <li>Actualiza la información si cambian cuentas bancarias o plataformas aceptadas</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+
         </form>
       </div>
-      <div class="modal-footer bg-s">   
-         <button type="button" class="btn btn-primary" id="btnModificar">Guardar</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <div class="text-center mt-4">
+         <button type="button" class="btn btn-modern px-4 m-2 btn-guardar" id="btnModificar">
+         <i class="fa-solid fa-floppy-disk me-2"></i> Actualizar
+         </button>
+        <button type="button" class="btn btn-modern px-4 m-2 btn-limpiar" data-bs-dismiss="modal">
+          <i class="fa-solid fa-eraser me-2"></i> Cerrar
+        </button>
     
       </div>
     </div>
