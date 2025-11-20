@@ -161,6 +161,9 @@
                 <?= $nivel === 3 ? 'Leída y entregada' : 'Entregada' ?>
               </span>
             <?php break;
+            case 4: ?>
+              <span class="badge bg-warning">Leída por asesora</span>
+            <?php break;
           endswitch; ?>
         </td>
         <td>
