@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <?php include 'complementos/head.php'; ?> 
+  <link rel="stylesheet" href="assets/css/formulario.css">
   <title>Método de Entrega | LoveMakeup</title>
 </head>
 
@@ -95,35 +96,68 @@
         </div>
       </div>
 
-      <!-- Modal registrar -->
-      <div class="modal fade" id="registro" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header header-color">
-              <h1 class="modal-title fs-5">Registrar Método de Entrega</h1>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body bg-s">
-              <form id="formRegistrar" autocomplete="off">
-               <div class="mb-3">
-                  <label  for="nombre" class="form-label">Nombre</label>
-                  <input type="text" class="form-control" name="nombre" id="nombre" placeholder="Ej: Envío express" required>
-                  <span id="snombre" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                  <label for="descripcion" class="form-label">Descripción</label>
-                  <input type="text" class="form-control" name="descripcion" id="descripcion" placeholder="Ej: Entrega en 24 horas" required>
-                  <span id="sdescripcion" class="text-danger"></span>
-                </div>
-                <div class="text-center mt-4">
-                  <button type="button" class="btn btn-primary" id="registrar">Registrar</button>
-                  <button type="reset" class="btn btn-secondary">Limpiar</button>
-                </div>
-              </form>
+    <!-- Modal registrar -->
+<div class="modal fade" id="registro" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header header-color">
+        <h1 class="modal-title fs-5">Registrar Método de Entrega</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body bg-s">
+        <form id="formRegistrar" autocomplete="off">
+
+          <div class="seccion-formulario">
+            <h6 class="texto-quinto"><i class="fas fa-tag"></i> Información del Método de Entrega</h6>
+
+            <label for="nombre" class="form-label">NOMBRE DEL MÉTODO DE ENTREGA</label>
+            <input type="text" class="form-control" name="nombre" id="nombre" placeholder="Ej: Envío express" required>
+            <span id="snombre" class="text-danger"></span>
+
+            <div class="mb-3">
+              <label for="descripcion" class="form-label">DESCRIPCION</label>
+              <input type="text" class="form-control" name="descripcion" id="descripcion" placeholder="Ej: Entrega en 24 horas" required>
+              <span id="sdescripcion" class="text-danger"></span>
             </div>
           </div>
-        </div>
+
+          <div class="col-12">
+            <div class="info-box p-3 d-flex gap-3 align-items-start rounded shadow-sm bg-light">
+              <div class="info-icon fs-3 text-primary">
+                <i class="fa-solid fa-circle-info"></i>
+              </div>
+
+              <div class="info-content flex-grow-1">
+                <strong>Información Importante:</strong>
+                <p>Los métodos de entrega determinan cómo el cliente recibirá su pedido...</p>
+
+                <p><b>Recomendaciones:</b></p>
+                <ul class="text-muted mb-0">
+                <li>Asigna nombres claros para identificar cada tipo de entrega</li>
+        <li>Agrega descripciones que expliquen cuándo debe usarse cada método</li>
+        <li>Evita duplicar tipos de entrega similares</li>
+        <li>Verifica que los métodos activos coincidan con los realmente disponibles en tienda</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 text-center mt-4">
+            <button type="button" class="btn btn-modern px-4 m-2 btn-guardar" id="registrar">
+              <i class="fa-solid fa-floppy-disk me-2"></i> Registrar
+            </button>
+            <button type="reset" class="btn btn-modern px-4 m-2 btn-limpiar">
+              <i class="fa-solid fa-eraser me-2"></i> Limpiar
+            </button>
+          </div>
+
+        </form>
       </div>
+    </div>
+  </div>
+</div>
+
 
       <!-- Modal modificar -->
       <div class="modal fade" id="modificar" tabindex="-1" aria-labelledby="modificarLabel" aria-hidden="true">
@@ -135,20 +169,46 @@
             </div>
             <div class="modal-body bg-s">
               <form id="formModificar" autocomplete="off">
+              <div class="seccion-formulario">
+              <h6 class="texto-quinto"><i class="fas fa-tag"></i> Información del Método de Entrega</h6>
                 <input type="hidden" name="id_entrega" id="id_entrega_modificar">
                 <div class="mb-3">
-                  <label for="nombre_modificar" class="form-label">Nombre</label>
+                  <label for="nombre_modificar" class="form-label">NOMBRE DEL MÉTODO DE ENTREGA</label>
                   <input type="text" class="form-control" name="nombre" id="nombre_modificar" required>
                    <span id="snombre_modificar" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
-                  <label for="descripcion_modificar" class="form-label">Descripción</label>
+                  <label for="descripcion_modificar" class="form-label">DESCRIPCION</label>
                   <input type="text" class="form-control" name="descripcion" id="descripcion_modificar" required>
                    <span id="sdescripcion_modificar" class="text-danger"></span>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-primary" id="btnModificar">Modificar</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              </div>
+
+              <div class="col-12">
+            <div class="info-box p-3 d-flex gap-3 align-items-start rounded shadow-sm bg-light">
+              <div class="info-icon fs-3 text-primary">
+                <i class="fa-solid fa-circle-info"></i>
+              </div>
+
+              <div class="info-content flex-grow-1">
+                <strong>Información Importante:</strong>
+                <p>Los métodos de entrega determinan cómo el cliente recibirá su pedido...</p>
+
+                <p><b>Recomendaciones:</b></p>
+                <ul class="text-muted mb-0">
+                <li>Asigna nombres claros para identificar cada tipo de entrega</li>
+        <li>Agrega descripciones que expliquen cuándo debe usarse cada método</li>
+        <li>Evita duplicar tipos de entrega similares</li>
+        <li>Verifica que los métodos activos coincidan con los realmente disponibles en tienda</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="col-12 text-center mt-4">
+                  <button type="button" class="btn btn-modern px-4 m-2 btn-guardar" id="btnModificar"><i class="fa-solid fa-floppy-disk me-2"></i> actualizar</button>
+                  <button type="button" class="btn px-4 m-2 btn-limpiar" data-bs-dismiss="modal"> <i class="fa-solid fa-eraser me-2"></i> Limpiar</button>
                 </div>
               </form>
             </div>
