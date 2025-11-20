@@ -8,12 +8,12 @@ function enviarBienvenida($correo) {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'help.lovemakeupca@gmail.com'; // Tu dirección de correo de Gmail
-        $mail->Password = 'uoteptddjgljeukw'; // Tu contraseña de Gmail o contraseña de aplicación
+        $mail->Username = 'lovemakeupca.help@gmail.com'; // Tu dirección de correo de Gmail
+        $mail->Password = 'jzvfcfjqfggndqdl'; // Tu contraseña de Gmail o contraseña de aplicación
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
-        $mail->setFrom('help.lovemakeupca@gmail.com', 'Love Makeup');
+        $mail->setFrom('lovemakeupca.help@gmail.com', 'Love Makeup');
         $mail->addAddress($correo);
         $mail->Subject = 'Love Makeup Tienda | Bienvenido';
         $mail->isHTML(true); // Habilitar HTML en el correo

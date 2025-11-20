@@ -198,11 +198,16 @@ public static function compra(
               DISTINCT cat.nombre
               ORDER BY cat.nombre SEPARATOR ', '
             ) AS categorias,
+            GROUP_CONCAT(
+              DISTINCT m.nombre
+              ORDER BY m.nombre SEPARATOR ', '
+            ) AS marcas,
             SUM(cd.cantidad * cd.precio_unitario) AS total
           FROM compra c
           JOIN compra_detalles cd ON cd.id_compra = c.id_compra
           JOIN producto        p  ON p.id_producto = cd.id_producto
           JOIN categoria        cat ON cat.id_categoria = p.id_categoria
+          JOIN marca            m   ON m.id_marca = p.id_marca
           JOIN proveedor        pr ON pr.id_proveedor = c.id_proveedor
            " . ($whereT
                  ? 'WHERE '.implode(' AND ', $whereT)
@@ -355,6 +360,19 @@ public static function compra(
             $provSt->execute([':prov' => $provId]);
             $filtro .= ' | Proveedor: '.htmlspecialchars($provSt->fetchColumn());
         }
+        if ($marcaId) {
+            $marcaSt = $conex->prepare(
+                'SELECT nombre FROM marca WHERE id_marca = :marca'
+            );
+            $marcaSt->execute([':marca' => $marcaId]);
+            $filtro .= ' | Marca: '.htmlspecialchars($marcaSt->fetchColumn());
+        }
+        if ($montoMin !== null) {
+            $filtro .= ' | Monto mínimo: $'.number_format($montoMin, 2);
+        }
+        if ($montoMax !== null) {
+            $filtro .= ' | Monto máximo: $'.number_format($montoMax, 2);
+        }
 
         // — Armar y emitir PDF —
         $fechaGen = date('d/m/Y H:i:s');
@@ -391,6 +409,7 @@ public static function compra(
           . '<th>Proveedor</th>'
           . '<th>Productos</th>'
           . '<th>Categorías</th>'
+          . '<th>Marcas</th>'
           . '<th>Total</th>'
           . '</tr></thead><tbody>';
         foreach ($rows as $r) {
@@ -401,6 +420,7 @@ public static function compra(
                         <td>".htmlspecialchars($r['proveedor'])."</td>
                         <td>".htmlspecialchars($r['producto'])."</td>
                         <td>".htmlspecialchars($r['categorias'])."</td>
+                        <td>".htmlspecialchars($r['marcas'])."</td>
                         <td>{$t}</td>
                       </tr>";
         }
@@ -607,7 +627,6 @@ public static function producto(
         $sqlT = "
           SELECT DISTINCT
             p.nombre,
-            p.descripcion,
             m.nombre AS marca,
             p.precio_detal,
             p.precio_mayor,
@@ -640,8 +659,31 @@ public static function producto(
             $parts[] = 'Proveedor: ' . htmlspecialchars($pSt->fetchColumn());
         }
         if ($catId) {
-            // la cate﻿goría ya está en cada fila, usamos la primera
+            // la categoría ya está en cada fila, usamos la primera
             $parts[] = 'Categoría: ' . htmlspecialchars($rows[0]['categoria'] ?? '');
+        }
+        if ($marcaId) {
+            $marcaSt = $conex->prepare(
+                'SELECT nombre FROM marca WHERE id_marca = :marca'
+            );
+            $marcaSt->execute([':marca' => $marcaId]);
+            $parts[] = 'Marca: ' . htmlspecialchars($marcaSt->fetchColumn());
+        }
+        if ($precioMin !== null) {
+            $parts[] = 'Precio mínimo: Bs ' . number_format($precioMin, 2);
+        }
+        if ($precioMax !== null) {
+            $parts[] = 'Precio máximo: Bs ' . number_format($precioMax, 2);
+        }
+        if ($stockMin !== null) {
+            $parts[] = 'Stock mínimo: ' . $stockMin;
+        }
+        if ($stockMax !== null) {
+            $parts[] = 'Stock máximo: ' . $stockMax;
+        }
+        if ($estado !== null) {
+            $estadoText = $estado == 1 ? 'Disponible' : 'No disponible';
+            $parts[] = 'Estado: ' . $estadoText;
         }
         $filtro   = $parts ? implode(' | ', $parts) : 'Listado general de producto';
         $fechaGen = date('d/m/Y H:i:s');
@@ -676,14 +718,13 @@ public static function producto(
                 . '<div style="text-align:center"><img src="'.$graf.'" width="600"/></div>'
               : '')
           . '<table><thead><tr>'
-          . '<th>Nombre</th><th>Descripción</th><th>Marca</th>'
+          . '<th>Nombre</th><th>Marca</th>'
           . '<th>Precio Detal</th><th>Precio Mayor</th>'
           . '<th>Stock</th><th>Categoría</th>'
           . '</tr></thead><tbody>';
         foreach ($rows as $r) {
             $html .= '<tr>'
                    . '<td>'.htmlspecialchars($r['nombre']).'</td>'
-                   . '<td>'.htmlspecialchars($r['descripcion']).'</td>'
                    . '<td>'.htmlspecialchars($r['marca']).'</td>'
                    . '<td>'.number_format($r['precio_detal'],2).'</td>'
                    . '<td>'.number_format($r['precio_mayor'],2).'</td>'
@@ -934,11 +975,17 @@ public static function venta(
                             ORDER BY pd.cantidad DESC
                             SEPARATOR ', '
                         ) AS producto,
-                        cat.nombre                      AS categoria
+                        cat.nombre                      AS categoria,
+                        GROUP_CONCAT(
+                            DISTINCT m.nombre
+                            ORDER BY m.nombre
+                            SEPARATOR ', '
+                        ) AS marcas
                           FROM pedido pe
                           JOIN pedido_detalles pd  ON pd.id_pedido     = pe.id_pedido
                           JOIN producto       pr  ON pr.id_producto   = pd.id_producto
                           JOIN categoria       cat ON cat.id_categoria = pr.id_categoria
+                          JOIN marca           m   ON m.id_marca       = pr.id_marca
                           " . $joinT . "
                       WHERE " . implode(' AND ', $whereT) . "
                 GROUP BY cliente_cedula, pe.fecha, pe.precio_total_usd, cat.nombre
@@ -952,33 +999,72 @@ public static function venta(
         error_log('Reporte::venta - filas obtenidas: '.count($rows));
 
         // — Texto de filtros —
+        $filtroParts = [];
+        
         if (!$origStart && !$origEnd) {
-            $filtro = 'Registro general';
+            $filtroParts[] = 'Registro general';
         }
         elseif ($origStart && !$origEnd) {
-            $filtro = 'Desde '.date('d/m/Y',strtotime($origStart))
-                    .' hasta '.date('d/m/Y');
+            $filtroParts[] = 'Desde '.date('d/m/Y',strtotime($origStart)).' hasta '.date('d/m/Y');
         }
         elseif (!$origStart && $origEnd) {
-            $filtro = 'Hasta '.date('d/m/Y',strtotime($origEnd));
+            $filtroParts[] = 'Hasta '.date('d/m/Y',strtotime($origEnd));
         }
         elseif ($origStart === $origEnd) {
-            $filtro = 'Reporte del '.date('d/m/Y',strtotime($origStart));
+            $filtroParts[] = 'Reporte del '.date('d/m/Y',strtotime($origStart));
         }
         else {
-            $filtro = 'Desde '.date('d/m/Y',strtotime($origStart))
-                    .' hasta '.date('d/m/Y',strtotime($origEnd));
+            $filtroParts[] = 'Desde '.date('d/m/Y',strtotime($origStart)).' hasta '.date('d/m/Y',strtotime($origEnd));
         }
+        
         if ($prodId) {
             $pSt = $conex->prepare(
                 'SELECT nombre FROM producto WHERE id_producto = :pid'
             );
             $pSt->execute([':pid'=>$prodId]);
-            $filtro .= ' | Producto: '.htmlspecialchars($pSt->fetchColumn());
+            $filtroParts[] = 'Producto: '.htmlspecialchars($pSt->fetchColumn());
         }
         if ($catId) {
-            $filtro .= ' | Categoría: '.htmlspecialchars($rows[0]['categoria'] ?? '');
+            $cSt = $conex->prepare(
+                'SELECT nombre FROM categoria WHERE id_categoria = :cid'
+            );
+            $cSt->execute([':cid' => $catId]);
+            $filtroParts[] = 'Categoría: '.htmlspecialchars($cSt->fetchColumn());
         }
+        if ($marcaId) {
+            $marcaSt = $conex->prepare(
+                'SELECT nombre FROM marca WHERE id_marca = :marca'
+            );
+            $marcaSt->execute([':marca' => $marcaId]);
+            $filtroParts[] = 'Marca: '.htmlspecialchars($marcaSt->fetchColumn());
+        }
+        if ($provId) {
+            $provSt = $conex->prepare(
+                'SELECT nombre FROM proveedor WHERE id_proveedor = :prov'
+            );
+            $provSt->execute([':prov' => $provId]);
+            $filtroParts[] = 'Proveedor: '.htmlspecialchars($provSt->fetchColumn());
+        }
+        if ($metodoPago) {
+            $metodoPagoText = '';
+            switch($metodoPago) {
+                case 1: $metodoPagoText = 'Pago Móvil'; break;
+                case 2: $metodoPagoText = 'Transferencia Bancaria'; break;
+                case 3: $metodoPagoText = 'Punto de Venta'; break;
+                case 4: $metodoPagoText = 'Efectivo Bs'; break;
+                case 5: $metodoPagoText = 'Divisas (Dólares $)'; break;
+                default: $metodoPagoText = 'Método de pago desconocido';
+            }
+            $filtroParts[] = 'Método de pago: '.$metodoPagoText;
+        }
+        if ($montoMin !== null) {
+            $filtroParts[] = 'Monto mínimo: $'.number_format($montoMin, 2);
+        }
+        if ($montoMax !== null) {
+            $filtroParts[] = 'Monto máximo: $'.number_format($montoMax, 2);
+        }
+        
+        $filtro = !empty($filtroParts) ? implode(' | ', $filtroParts) : 'Registro general';
 
         // — Generar PDF —
         $fechaGen = date('d/m/Y H:i:s');
@@ -1011,7 +1097,7 @@ public static function venta(
                  <div style="text-align:center"><img src="'.$graf.'" width="600"/></div>'
               : '')
           . '<table><thead><tr>'
-          . '<th>Cliente</th><th>Fecha</th><th>Total (USD)</th><th>Productos</th><th>Categoría</th>'
+          . '<th>Cliente</th><th>Fecha</th><th>Total (USD)</th><th>Productos</th><th>Categoría</th><th>Marcas</th>'
           . '</tr></thead><tbody>';
                 foreach ($rows as $r) {
                         $d    = date('d/m/Y',strtotime($r['fecha']));
@@ -1021,12 +1107,14 @@ public static function venta(
                         $cli  = htmlspecialchars($cliRaw);
                         $prods= htmlspecialchars($r['producto'] ?? '—');
                         $catn = htmlspecialchars($r['categoria'] ?? '—');
+                        $marcas = htmlspecialchars($r['marcas'] ?? '—');
                         $html .= "<tr>
                                                 <td>{$cli}</td>
                                                 <td>{$d}</td>
                                                 <td>{$tot}</td>
                                                 <td>{$prods}</td>
                                                 <td>{$catn}</td>
+                                                <td>{$marcas}</td>
                                             </tr>";
                 }
 
@@ -1049,6 +1137,14 @@ public static function venta(
             error_log("GD no disponible: Se generará el PDF sin gráficos ni imágenes.");
         }
         
+        // Limpiar cualquier output buffer antes de generar el PDF
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Hacer commit antes de generar el PDF (el stream() termina la ejecución)
+        $conex->commit();
+        
         $opts = new Options();
         $opts->set('isRemoteEnabled', true);
         $pdf  = new Dompdf($opts);
@@ -1056,8 +1152,6 @@ public static function venta(
         $pdf->setPaper('A4','portrait');
         $pdf->render();
         $pdf->stream('Reporte_Ventas.pdf',['Attachment'=>false]);
-
-        $conex->commit();
     } catch (\Throwable $e) {
         $conex->rollBack();
         throw $e;
@@ -1250,11 +1344,17 @@ public static function pedidoWeb(
                             DISTINCT pr.nombre
                             ORDER BY pr.nombre
                             SEPARATOR ', '
-                        )                                      AS producto
+                        )                                      AS producto,
+                        GROUP_CONCAT(
+                            DISTINCT m.nombre
+                            ORDER BY m.nombre
+                            SEPARATOR ', '
+                        )                                      AS marcas
                     FROM pedido p
                     " . $join . "
                     LEFT JOIN pedido_detalles pd ON pd.id_pedido   = p.id_pedido
                     LEFT JOIN producto       pr ON pr.id_producto  = pd.id_producto
+                    LEFT JOIN marca          m ON m.id_marca      = pr.id_marca
                     WHERE {$whereSql}
                     GROUP BY p.id_pedido
                     ORDER BY p.precio_total_bs DESC
@@ -1269,25 +1369,62 @@ public static function pedidoWeb(
           '3'=>'Pendiente envío','4'=>'En camino','5'=>'Entregado'
         ];
 
-        // Texto de filtro (igual que antes)
+        // Texto de filtro (mejorado para mostrar todos los filtros)
+        $filtroParts = [];
+        
         if (!$origStart && !$origEnd) {
-            $filtro = 'Todos los pedidos web';
+            $filtroParts[] = 'Todos los pedidos web';
         } elseif ($origStart && !$origEnd) {
-            $filtro = "Desde {$start} hasta {$end}";
+            $filtroParts[] = "Desde {$start} hasta {$end}";
         } elseif (!$origStart && $origEnd) {
-            $filtro = "Hasta {$end}";
+            $filtroParts[] = "Hasta {$end}";
         } elseif ($origStart === $origEnd) {
-            $filtro = "Reporte del {$start}";
+            $filtroParts[] = "Reporte del {$start}";
         } else {
-            $filtro = "Desde {$start} hasta {$end}";
+            $filtroParts[] = "Desde {$start} hasta {$end}";
         }
+        
         if ($prodId) {
             $pSt = $conex->prepare(
                 "SELECT nombre FROM producto WHERE id_producto = :pid"
             );
             $pSt->execute([':pid'=>$prodId]);
-            $filtro .= ' | Producto: '.htmlspecialchars($pSt->fetchColumn());
+            $filtroParts[] = 'Producto: '.htmlspecialchars($pSt->fetchColumn());
         }
+        if ($marcaId) {
+            $marcaSt = $conex->prepare(
+                'SELECT nombre FROM marca WHERE id_marca = :marca'
+            );
+            $marcaSt->execute([':marca' => $marcaId]);
+            $filtroParts[] = 'Marca: '.htmlspecialchars($marcaSt->fetchColumn());
+        }
+        if ($catId) {
+            $cSt = $conex->prepare(
+                'SELECT nombre FROM categoria WHERE id_categoria = :cid'
+            );
+            $cSt->execute([':cid' => $catId]);
+            $filtroParts[] = 'Categoría: '.htmlspecialchars($cSt->fetchColumn());
+        }
+        if ($estado !== null) {
+            $estados = [
+                '0'=>'Anulado','1'=>'Verificar pago','2'=>'Pago verificado',
+                '3'=>'Pendiente envío','4'=>'En camino','5'=>'Entregado'
+            ];
+            $estadoText = $estados[(string)$estado] ?? 'Desconocido';
+            $filtroParts[] = 'Estado: '.$estadoText;
+        }
+        if ($metodoPago !== null) {
+            $metodoPagoText = $metodoPago == 1 ? 'Pago Móvil' : ($metodoPago == 2 ? 'Transferencia Bancaria' : 'Método de pago desconocido');
+            $filtroParts[] = 'Método de pago: '.$metodoPagoText;
+        }
+        if ($montoMin !== null) {
+            $filtroParts[] = 'Monto mínimo: Bs '.number_format($montoMin, 2);
+        }
+        if ($montoMax !== null) {
+            $filtroParts[] = 'Monto máximo: Bs '.number_format($montoMax, 2);
+        }
+        
+        $filtro = !empty($filtroParts) ? implode(' | ', $filtroParts) : 'Todos los pedidos web';
 
         // Construir HTML y generar PDF
         $logoPath = __DIR__ . '/../assets/img/icon.PNG';
@@ -1320,7 +1457,7 @@ public static function pedidoWeb(
               : '')
           . '<table><thead><tr>'
           . '<th>Fecha</th><th>Estado</th><th>Total (Bs.)</th>'
-          . '<th>Productos</th>'
+          . '<th>Productos</th><th>Marcas</th>'
           . '</tr></thead><tbody>';
         foreach ($rows as $r) {
             $e   = $estados[(string)$r['estado']] ?? 'Desconocido';
@@ -1330,6 +1467,7 @@ public static function pedidoWeb(
                         <td>{$e}</td>
                         <td>{$tot}</td>
                         <td>".htmlspecialchars($r['producto'])."</td>
+                        <td>".htmlspecialchars($r['marcas'])."</td>
                       </tr>";
         }
         $html .= '</tbody></table></main>'
@@ -1349,15 +1487,21 @@ public static function pedidoWeb(
             error_log("GD no disponible: Se generará el PDF sin gráficos ni imágenes.");
         }
         
-        $opts = new \Dompdf\Options();
+        // Limpiar cualquier output buffer antes de generar el PDF
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Hacer commit antes de generar el PDF (el stream() termina la ejecución)
+        $conex->commit();
+        
+        $opts = new Options();
         $opts->set('isRemoteEnabled', true);
-        $pdf = new \Dompdf\Dompdf($opts);
+        $pdf = new Dompdf($opts);
         $pdf->loadHtml($html);
         $pdf->setPaper('A4','portrait');
         $pdf->render();
         $pdf->stream('Reporte_PedidosWeb.pdf',['Attachment'=>false]);
-
-        $conex->commit();
     } catch (\Throwable $e) {
         $conex->rollBack();
         throw $e;
