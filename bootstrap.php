@@ -58,3 +58,35 @@ if (!class_exists('Composer\Autoload\ClassLoader')) {
     }
 }
 
+// Registrar el autoloader manualmente si es necesario (para casos edge en producción)
+if (function_exists('spl_autoload_register')) {
+    // Asegurar que el autoloader de Composer esté registrado
+    spl_autoload_register(function ($class) {
+        // Solo manejar nuestros namespaces
+        if (strpos($class, 'LoveMakeup\\Proyecto\\') === 0) {
+            // El autoload de Composer debería manejar esto, pero por si acaso...
+            $baseDir = __DIR__ . DIRECTORY_SEPARATOR;
+            
+            // Mapear namespace a directorio
+            $namespaceMap = [
+                'LoveMakeup\\Proyecto\\Modelo\\' => 'modelo' . DIRECTORY_SEPARATOR,
+                'LoveMakeup\\Proyecto\\Controlador\\' => 'controlador' . DIRECTORY_SEPARATOR,
+                'LoveMakeup\\Proyecto\\Config\\' => 'config' . DIRECTORY_SEPARATOR,
+            ];
+            
+            foreach ($namespaceMap as $namespace => $dir) {
+                if (strpos($class, $namespace) === 0) {
+                    $relativeClass = substr($class, strlen($namespace));
+                    $file = $baseDir . $dir . str_replace('\\', DIRECTORY_SEPARATOR, $relativeClass) . '.php';
+                    
+                    if (file_exists($file)) {
+                        require_once $file;
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }, true, true);
+}
+
