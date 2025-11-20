@@ -65,31 +65,50 @@ function desactivarLoaderBoton(idBoton) {
 
   document.getElementById('imagen').addEventListener('change', function (e) {
     const file = e.target.files[0];
+  
+    if (!file) return;
+  
+    // Tipos permitidos
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-
-    if (file) {
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Formato no permitido',
-          text: 'Solo se aceptan imágenes JPG, PNG o WEBP.',
-          confirmButtonText: 'OK'
-        });
-        e.target.value = ''; // Limpia el campo
-        return;
-      }
-
-      // Vista previa si el formato es válido
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        const preview = document.getElementById('preview');
-        preview.src = event.target.result;
-        preview.classList.remove('d-none');
-      };
-      reader.readAsDataURL(file);
+  
+    // Tamaño máximo (2 MB)
+    const maxSize = 2 * 1024 * 1024;
+  
+    // Validar tipo
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Formato no permitido',
+        text: 'Solo imágenes JPG, PNG o WEBP.',
+        confirmButtonText: 'OK'
+      });
+      e.target.value = ""; 
+      document.getElementById("preview").classList.add("d-none");
+      return;
     }
+  
+    // Validar tamaño
+    if (file.size > maxSize) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Imagen demasiado pesada',
+        text: 'El tamaño máximo permitido es de 2 MB.',
+      });
+      e.target.value = "";
+      document.getElementById("preview").classList.add("d-none");
+      return;
+    }
+  
+    // Vista previa
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const preview = document.getElementById('preview');
+      preview.src = event.target.result;
+      preview.classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
   });
-
+  
    // Validación en tiempo real
 
 
@@ -112,6 +131,9 @@ function desactivarLoaderBoton(idBoton) {
     if (!$('#metodopago').val()) {
      
      return Swal.fire('Error', 'Seleccione un método de pago', 'warning');
+    }
+    if (!$('#imagen').val()) {
+      return Swal.fire('Error', 'Debe subir una imagen del comprobante', 'warning');
     }
     if (!$('#referencia_bancaria').val() || !validarReferenciaBancaria($('#referencia_bancaria'))) {
       return Swal.fire('Error', 'Ingrese una referencia bancaria válida', 'warning');
