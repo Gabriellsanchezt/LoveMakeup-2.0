@@ -64,7 +64,7 @@ foreach ($reservas as &$reserva) {
 }
 
 // Verificación de privilegios
-if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(9, 'ver')) {
+if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'ver')) {
      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'reserva';
     require_once 'vista/reserva.php'; // Asegúrate de tener esta vista
 } else {

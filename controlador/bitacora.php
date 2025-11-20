@@ -91,7 +91,7 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
     }
 
     // Verificar permisos y mostrar vista
-    if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 'ver')) {
+    if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 'ver')) {
         // Registrar acceso al módulo de bitácora
         $objBitacora->registrarOperacion('ACCESO A MÓDULO', 'Bitácora', 'Usuario accedió al módulo de Bitácora');
         $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'bitacora';

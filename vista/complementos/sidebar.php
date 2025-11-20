@@ -154,7 +154,7 @@
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder texto-cuarto">Clientes y Entregas</h6>
         </li>
 
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(10, 'ver')): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'cliente' ? 'bg-activo' : '' ?> " href="?pagina=cliente">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -202,7 +202,7 @@
         </li>
         <?php endif; ?>
 
-         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'ver')): ?>
+         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'ver')): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'tasacambio' ? 'bg-activo' : '' ?>" href="?pagina=tasacambio">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
