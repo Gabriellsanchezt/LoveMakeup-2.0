@@ -2,11 +2,9 @@
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 const xmlrpc = require('xmlrpc');
-const ReportGenerator = require('./ReportGenerator');
-
 // === CONFIGURACIÓN TESTLINK ===
 const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
-const DEV_KEY = '76133924c3d3f13d8490b26f5d5a7ca5';
+const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
 const TEST_CASE_EXTERNAL_ID = '57';
 const TEST_PLAN_ID = 104;
 const BUILD_ID = 1;
@@ -24,8 +22,6 @@ async function runTest() {
   let notes = '';
   const startTime = new Date();
   const testSteps = [];
-  const reportGenerator = new ReportGenerator();
-  const testName = 'Error al modificar un proveedor con un caracter invalido';
 
   try {
     // Configurar el driver según el navegador seleccionado
@@ -119,17 +115,49 @@ async function runTest() {
     await driver.executeScript("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", modificarBtn);
     await driver.sleep(500);
     await driver.wait(until.elementIsVisible(modificarBtn), 10000);
+    await driver.wait(until.elementIsEnabled(modificarBtn), 10000);
     await modificarBtn.click();
-    await driver.sleep(2000); // Esperar a que se carguen los datos
+    await driver.sleep(3000); // Esperar a que se carguen los datos y se abra el modal
 
     // === Paso 4: Verificar que el modal se abrió ===
     testSteps.push('Verificar que el modal de modificación se abrió');
-    await driver.wait(until.elementLocated(By.id('registroModal')), 10000);
-    const modal = await driver.findElement(By.id('registroModal'));
-    const isModalVisible = await modal.getAttribute('class');
-    if (!isModalVisible.includes('show')) {
-      throw new Error('El modal de modificación no se abrió correctamente');
+    
+    // Esperar a que el modal aparezca en el DOM
+    await driver.wait(until.elementLocated(By.id('registroModal')), 15000);
+    
+    // Esperar a que el modal sea visible (tenga la clase 'show')
+    let modalVisible = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (!modalVisible && attempts < maxAttempts) {
+      try {
+        const modal = await driver.findElement(By.id('registroModal'));
+        const modalClass = await modal.getAttribute('class');
+        modalVisible = modalClass && modalClass.includes('show');
+        
+        if (!modalVisible) {
+          // Intentar verificar con JavaScript
+          modalVisible = await driver.executeScript(
+            "return document.querySelector('#registroModal') && document.querySelector('#registroModal').classList.contains('show');"
+          );
+        }
+        
+        if (modalVisible) {
+          break;
+        }
+      } catch (e) {
+        // Continuar intentando
+      }
+      
+      attempts++;
+      await driver.sleep(500);
     }
+    
+    if (!modalVisible) {
+      throw new Error('El modal de modificación no se abrió correctamente después de ' + (maxAttempts * 500) + 'ms');
+    }
+    
     console.log('Modal de modificación abierto correctamente.');
     testSteps.push('Modal de modificación abierto');
 
@@ -219,33 +247,6 @@ async function runTest() {
         console.log('Error al cerrar el navegador:', quitError.message);
       }
     }
-
-    // Generar reportes
-    try {
-      const reportData = {
-        testName: testName,
-        status: status,
-        notes: notes,
-        startTime: startTime,
-        endTime: endTime,
-        steps: testSteps,
-        error: status === 'f' ? notes : null,
-        browser: BROWSER,
-        baseUrl: BASE_URL,
-        testCaseId: TEST_CASE_EXTERNAL_ID
-      };
-
-      const reportPath = await reportGenerator.generateReport(reportData);
-      
-      console.log('\n========================================');
-      console.log('REPORTE XML GENERADO');
-      console.log('========================================');
-      console.log(`XML: ${reportPath}`);
-      console.log('========================================\n');
-    } catch (reportError) {
-      console.error('Error al generar reporte:', reportError.message);
-    }
-
     // Reportar a TestLink (mapear status)
     const testLinkStatus = status === 'p' || status === 'passed' ? 'p' : 'f';
     await reportResultToTestLink(testLinkStatus, notes);

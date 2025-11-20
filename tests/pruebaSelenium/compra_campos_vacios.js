@@ -2,11 +2,9 @@
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 const xmlrpc = require('xmlrpc');
-const ReportGenerator = require('./ReportGenerator');
-
 // === CONFIGURACIÓN TESTLINK ===
 const TESTLINK_URL = 'http://localhost/testlink-1.9.18/lib/api/xmlrpc/v1/xmlrpc.php';
-const DEV_KEY = '76133924c3d3f13d8490b26f5d5a7ca5';
+const DEV_KEY = '1a4d579d37e9a7f66a417c527ca09718';
 const TEST_CASE_EXTERNAL_ID = '11';
 const TEST_PLAN_ID = 104;
 const BUILD_ID = 1;
@@ -24,8 +22,6 @@ async function runTest() {
   let notes = '';
   const startTime = new Date();
   const testSteps = [];
-  const reportGenerator = new ReportGenerator();
-  const testName = 'Registrar Compra Dejando Campos Vacíos';
 
   try {
     console.log(`Inicializando navegador: ${BROWSER}...`);
@@ -227,7 +223,7 @@ async function runTest() {
 
     try {
       const reportData = {
-        testName: testName,
+        
         status: status,
         notes: notes,
         startTime: startTime,
@@ -239,15 +235,13 @@ async function runTest() {
         testCaseId: TEST_CASE_EXTERNAL_ID
       };
 
-      const reportPath = await reportGenerator.generateReport(reportData);
       
-      console.log('\n========================================');
-      console.log('REPORTE XML GENERADO');
-      console.log('========================================');
-      console.log(`XML: ${reportPath}`);
-      console.log('========================================\n');
+      
+      
+      
+      
     } catch (reportError) {
-      console.error('Error al generar reporte:', reportError.message);
+      
     }
 
     const testLinkStatus = status === 'p' || status === 'passed' ? 'p' : 'f';

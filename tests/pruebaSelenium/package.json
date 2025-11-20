@@ -50,8 +50,6 @@
     "test:delivery-registrar-validaciones": "node delivery_registrar_validaciones.js",
     "test:delivery-modificar-validaciones": "node delivery_modificar_validaciones.js",
     "test:delivery-ver-informacion": "node delivery_ver_informacion.js",
-    "test:reporte-generar": "node reporte_generar.js",
-    "test:reporte-vacio": "node reporte_vacio.js",
     "test:notificacion-marcar-administrador": "node notificacion_marcar_administrador.js",
     "test:notificacion-marcar-asesor": "node notificacion_marcar_asesor.js",
     "test:proveedor-registrar": "node proveedor_registrar.js",
