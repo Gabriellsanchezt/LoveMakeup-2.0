@@ -533,9 +533,13 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
         exit; 
      }
 
-}  else{
-      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'usuario';
-      require_once 'vista/usuario.php';         
+} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 'ver')) {
+      
+        $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tipousuario';
+        require_once 'vista/usuario.php';
+} else {
+        require_once 'vista/seguridad/privilegio.php';
+
 } 
  
 
