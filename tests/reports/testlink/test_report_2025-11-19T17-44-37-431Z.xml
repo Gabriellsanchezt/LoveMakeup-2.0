@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results>
+  <testcase name="Modificar Proveedor" internalid="52">
+    <result status="f"/>
+    <notes>Error: Waiting for element to be located By(css selector, *[id=&quot;registroModal&quot;])
+Wait timed out after 10016ms | Stack: TimeoutError: Waiting for element to be located By(css selector, *[id=&quot;registroModal&quot;])
+Wait timed out after 10016ms
+    at C:\xampp2\htdocs\LoveMakeup\LoveMakeup-2.0\tests\pruebaSelenium\node_modules</notes>
+    <timestamp>2025-11-19T17:44:09.740Z</timestamp>
+  </testcase>
+</results>

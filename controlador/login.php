@@ -275,6 +275,17 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
 // ------------------
 } else if (isset($_POST['cerrar'])) { /*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| CERRAR SESSION*/
     
+    // Registrar en bitácora si es administrador o asesora de venta
+    if (isset($_SESSION["nivel_rol"]) && ($_SESSION["nivel_rol"] == 2 || $_SESSION["nivel_rol"] == 3)) {
+        $bitacora = [
+            'id_persona' => $_SESSION["id"],
+            'accion' => 'Cierre de sesión',
+            'descripcion' => 'El usuario ha cerrado sesión desde el panel administrativo.'
+        ];
+        $bitacoraObj = new Bitacora();
+        $bitacoraObj->registrarOperacion($bitacora['accion'], 'login', $bitacora);
+    }
+    
     session_destroy();
     header('Location: ?pagina=login');
     exit;

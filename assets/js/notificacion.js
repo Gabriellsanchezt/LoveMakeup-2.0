@@ -133,24 +133,69 @@ document.addEventListener('DOMContentLoaded', () => {
       );
 
 if (data.success && row) {
-  // 1) Actualizar visualmente el estado de la notificación
-  const estadoCell = row.querySelector('td:nth-child(3)');
-  if (estadoCell) {
-    if (accion === 'marcarLeida') {
-      estadoCell.innerHTML = '<span class="badge bg-secondary">Leída</span>';
-    } else if (accion === 'marcarLeidaAsesora') {
-      estadoCell.innerHTML = '<span class="badge bg-success">Leída por asesora</span>';
+  try {
+    // Obtener el nivel del usuario desde el atributo data-nivel de la tabla
+    const tableElement = document.getElementById('myTable');
+    const nivelUsuario = tableElement ? parseInt(tableElement.getAttribute('data-nivel') || '0') : 0;
+    
+    // Intentar obtener la instancia de DataTable si existe
+    let table = null;
+    let rowNode = null;
+    
+    if ($.fn.DataTable && $.fn.DataTable.isDataTable('#myTable')) {
+      table = $('#myTable').DataTable();
+      rowNode = table.row(row).node();
     }
+    
+    // Lógica según el rol:
+    // - Asesor marca como leída (1 → 4): desaparece solo para él
+    // - Admin marca como leída (1 o 4 → 2): desaparece para ambos
+    
+    if (table && rowNode) {
+      // Usar DataTables API
+      if (accion === 'marcarLeidaAsesora' && nivelUsuario === 2) {
+        // Asesor: eliminar la fila porque ya no la verá (estado cambió a 4)
+        setTimeout(() => {
+          table.row(rowNode).remove().draw(false);
+          updateBadge();
+        }, 300);
+      } else if (accion === 'marcarLeida' && nivelUsuario === 3) {
+        // Admin: eliminar la fila porque desaparece para ambos (estado cambió a 2)
+        setTimeout(() => {
+          table.row(rowNode).remove().draw(false);
+          updateBadge();
+        }, 300);
+      } else {
+        // Si hay algún caso especial, invalidar y redibujar
+        table.row(rowNode).invalidate().draw(false);
+        updateBadge();
+      }
+    } else {
+      // Sin DataTable, eliminar directamente del DOM
+      if (accion === 'marcarLeidaAsesora' && nivelUsuario === 2) {
+        // Asesor: eliminar la fila
+        setTimeout(() => {
+          if (row.parentNode) {
+            row.parentNode.removeChild(row);
+          }
+          updateBadge();
+        }, 300);
+      } else if (accion === 'marcarLeida' && nivelUsuario === 3) {
+        // Admin: eliminar la fila
+        setTimeout(() => {
+          if (row.parentNode) {
+            row.parentNode.removeChild(row);
+          }
+          updateBadge();
+        }, 300);
+      } else {
+        updateBadge();
+      }
+    }
+  } catch (err) {
+    console.error('Error al actualizar la fila:', err);
+    Swal.fire('Error', 'Hubo un problema al actualizar la notificación. Por favor, actualiza la página manualmente.', 'error');
   }
-  
-  // 2) Eliminar el botón de acción
-  const actionCell = row.querySelector('td:last-child');
-  if (actionCell) {
-    actionCell.innerHTML = '<span class="text-muted">Actualizado</span>';
-  }
-  
-  // 3) actualizo el badge
-  updateBadge();
 }
 
     } catch (err) {

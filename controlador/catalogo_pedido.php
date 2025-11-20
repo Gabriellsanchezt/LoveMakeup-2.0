@@ -1,7 +1,6 @@
 <?php  
 
 use LoveMakeup\Proyecto\Modelo\Catalogopedido;
-
 // Iniciar sesión solo si no está ya iniciada
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -25,6 +24,7 @@ if (empty($_SESSION["id"])){
     $pedido = new Catalogopedido();
     $id_persona = $_SESSION["id"]; 
     $pedidos = $pedido->consultarPedidosCompletosCatalogo($id_persona);
+
 
     foreach ($pedidos as &$p) {
         $p['detalles'] = $pedido->consultarDetallesPedidoCatalogo($p['id_pedido']);
