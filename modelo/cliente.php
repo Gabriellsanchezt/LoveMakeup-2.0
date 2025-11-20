@@ -149,7 +149,7 @@ class Cliente extends Conexion
         $stmtUsuario2->execute($paramUsuario2);
 
         if ($datos['cedula'] !== $datos['cedula_actual']) {
-            var_dump('r');
+          
             // Verificar si hay pedidos con la cédula actual
             $sqlCheckPedido = "SELECT COUNT(*) FROM pedido WHERE cedula = :cedula_actual";
             $stmtCheckPedido = $conex2->prepare($sqlCheckPedido);
@@ -163,7 +163,7 @@ class Cliente extends Conexion
             $hayDirecciones = $stmtCheckDireccion->fetchColumn() > 0;
 
             // Solo actualizar si hay registros en ambas tablas
-            if ($hayPedidos && $hayDirecciones) {
+            if ($hayPedidos || $hayDirecciones) {
                 // Actualizar pedidos
                 $sqlPedido = "UPDATE pedido SET cedula = :cedula_nueva WHERE cedula = :cedula_actual";
                 $stmtPedido = $conex2->prepare($sqlPedido);

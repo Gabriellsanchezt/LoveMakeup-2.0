@@ -57,9 +57,27 @@ async function runTest() {
     await driver.sleep(2000);
     
     await driver.wait(until.elementLocated(By.id('usuario')), 15000);
-    await driver.findElement(By.id('usuario')).sendKeys('10200300');
-    await driver.findElement(By.id('pid')).sendKeys('love1234');
-    await driver.findElement(By.id('ingresar')).click();
+    
+    // Seleccionar tipo de documento (V - Venezolano)
+    const tipoDocSelect = await driver.findElement(By.id('DocumentoSelct'));
+    await driver.wait(until.elementIsVisible(tipoDocSelect), 10000);
+    await driver.executeScript("arguments[0].value = 'V';", tipoDocSelect);
+    await driver.executeScript("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", tipoDocSelect);
+    await driver.sleep(300);
+    
+    const usuarioInput = await driver.findElement(By.id('usuario'));
+    await driver.wait(until.elementIsVisible(usuarioInput), 10000);
+    await usuarioInput.clear();
+    await usuarioInput.sendKeys('10200300');
+    
+    const passwordInput = await driver.findElement(By.id('pid'));
+    await driver.wait(until.elementIsVisible(passwordInput), 10000);
+    await passwordInput.clear();
+    await passwordInput.sendKeys('love1234');
+    
+    const ingresarBtn = await driver.findElement(By.id('ingresar'));
+    await driver.wait(until.elementIsEnabled(ingresarBtn), 10000);
+    await ingresarBtn.click();
     
     await driver.wait(until.urlContains('pagina=home'), 15000);
     await driver.sleep(2000);
