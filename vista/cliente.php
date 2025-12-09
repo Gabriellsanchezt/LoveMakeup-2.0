@@ -5,45 +5,9 @@
   <!-- php barra de navegacion-->
   <?php include 'complementos/head.php' ?> 
   <link rel="stylesheet" href="assets/css/formulario.css">
+  <link rel="stylesheet" href="assets/css/cliente.css">
   <title> Clientes | LoveMakeup  </title> 
-  <style>
-.telefono-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
 
-.telefono-text {
-  color: #212529;
-  font-size: 0.95rem;
-}
-
-.btn-copiar {
-  cursor: pointer;
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border: 1px solid #ccc;
-  color: #ff59f7ff;
-  border-radius: 4px;
-  background-color: #f8f9fa;
-  transition: background-color 0.2s ease;
-}
-
-.btn-copiar:hover {
-  background-color: #e2e6ea;
-}
-
-.correo-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.correo-text {
-  color: #212529;
-  font-size: 0.95rem;
-}
-</style>
 </head>
  
 <body class="g-sidenav-show bg-gray-100">
@@ -64,6 +28,7 @@
     </nav>
 <!-- php barra de navegacion-->    
 <?php include 'complementos/nav.php' ?>
+
 <!-- |||||||||||||||| LOADER ||||||||||||||||||||-->
   <div class="preloader-wrapper">
     <div class="preloader">
@@ -104,9 +69,9 @@
                   <th class="text-white text-center">Contactar</th>
                   <th class="text-white text-center">Estatus</th>
                   <th class="text-white text-center">Estadísticas</th>
-                    <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
+                    <?php // if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <th class="text-white text-center">Acción</th>
-                    <?php endif; ?>
+                    <?php // endif; ?>
                 </tr>
               </thead>
               <tbody>
@@ -202,7 +167,7 @@
 
                   </td>
                     
-                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
+                  <?php // if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
                   <td class="text-center">
                       <form method="POST" action="?pagina=cliente" id="formestatus">
                   
@@ -218,7 +183,7 @@
                       </button>
                     </form>
                  </td>
-                     <?php endif; ?>
+                     <?php // endif; ?>
 
                      
                 </tr>
@@ -250,20 +215,6 @@
     </div><!-- FIN CARD PRINCIPAL-->  
  </div>
 
- 
-<style>
-  .text-g{
-    font-size:15px;
-  }
-  .input-group #rolSelect2 {
-  flex: 0 0 30%;
-  max-width: 60%;
-}
-
-.input-group .form-control {
-  flex: 1 1 auto;
-}
-</style>
 
 <!-- Modal -->
 <div class="modal fade" id="editarModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
@@ -331,6 +282,7 @@
  
 <!--FIN Modal -->
 <script>
+
 function copiarTelefono(elemento) {
  const telefono = elemento.closest('.telefono-wrapper').querySelector('.telefono-text').innerText;
   navigator.clipboard.writeText(telefono).then(() => {
@@ -357,12 +309,16 @@ function copiarCorreo(elemento) {
   });
 }
 </script>
+
+
 <script>
-  const pedidosData = <?php echo json_encode($pedidos); ?>;
-</script>
-<script>
+// Asegúrate de que $pedidos no sea null en PHP
+const pedidosData = <?php echo json_encode($pedidos ?? []); ?>;
+
 document.querySelectorAll('.ver-estadisticas').forEach(btn => {
   btn.addEventListener('click', function () {
+    console.log('Click detectado');
+    
     const cedula = this.getAttribute('data-cedula');
     const nombre = this.getAttribute('data-nombre');
     const modalTitle = document.getElementById('modalEstadisticasLabel');
@@ -370,16 +326,31 @@ document.querySelectorAll('.ver-estadisticas').forEach(btn => {
 
     modalTitle.textContent = `Pedidos de ${nombre}`;
 
+    // Reiniciar contadores
     let venta = 0, pedido_web = 0, reserva = 0;
     let total_usd_venta = 0, total_usd_web = 0, total_usd_reserva = 0;
 
+    console.log("Buscando cédula:", cedula);
+
     pedidosData.forEach(p => {
-      if (p.cedula === cedula) {
-        const usd = parseFloat(p.precio_total_usd);
+      // CORRECCIÓN 1: Asegurar que ambos sean string para comparar
+      if (String(p.cedula) === String(cedula)) {
+        
+        const usd = parseFloat(p.precio_total_usd) || 0; // Evitar NaN si viene null
+        
         switch (parseInt(p.tipo)) {
-          case 1: venta++; total_usd_venta += usd; break;
-          case 2: pedido_web++; total_usd_web += usd; break;
-          case 3: reserva++; total_usd_reserva += usd; break;
+          case 1: 
+            venta++; 
+            total_usd_venta += usd; 
+            break;
+          case 2: 
+            pedido_web++; 
+            total_usd_web += usd; 
+            break;
+          case 3: 
+            reserva++; 
+            total_usd_reserva += usd; 
+            break;
         }
       }
     });
@@ -389,6 +360,10 @@ document.querySelectorAll('.ver-estadisticas').forEach(btn => {
       ${cardPedido('fas fa-globe', 'Pedidos Web', pedido_web, total_usd_web, 'info')}
       ${cardPedido('fas fa-calendar-check', 'Reservas', reserva, total_usd_reserva, 'warning')}
     `;
+
+   // console.log("Venta:", total_usd_venta);
+   // console.log("Web:", total_usd_web);
+   // console.log("Reserva:", total_usd_reserva);
   });
 });
 

@@ -1,0 +1,51 @@
+.telefono-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .telefono-text {
+    color: #212529;
+    font-size: 0.95rem;
+  }
+  
+  .btn-copiar {
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border: 1px solid #ccc;
+    color: #ff59f7ff;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-copiar:hover {
+    background-color: #e2e6ea;
+  }
+  
+  .correo-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .correo-text {
+    color: #212529;
+    font-size: 0.95rem;
+  }
+
+
+
+
+  .text-g{
+    font-size:15px;
+  }
+  .input-group #rolSelect2 {
+  flex: 0 0 30%;
+  max-width: 60%;
+}
+
+.input-group .form-control {
+  flex: 1 1 auto;
+}
