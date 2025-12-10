@@ -100,7 +100,7 @@ if(isset($_POST['actualizar'])){ /*|||||||||||||||||||||||||||||||||||||||||||||
                 
                 //// Validar Datos  V5
                 if (!preg_match('/^[0-9]{7,8}$/', $Cedula)) {
-                    echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0410 - Cedula inválida"]);
+                    echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - Cedula inválida"]);
                     exit;
                 }
                 
