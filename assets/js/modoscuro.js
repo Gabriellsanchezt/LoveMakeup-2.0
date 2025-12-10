@@ -37,6 +37,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function actualizarBotonModo(activo) {
   const boton = document.querySelector('.lk');
+  
+  // Añadir animación al texto del botón
+  boton.classList.add('animar-boton');
+  setTimeout(() => boton.classList.remove('animar-boton'), 300);
+
   if (activo) {
     boton.classList.remove('text-dark');
     boton.classList.add('texto-secundario');

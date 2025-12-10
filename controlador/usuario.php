@@ -180,6 +180,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                             echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - rol inválido"]);
                             exit;
                         }
+                        
                         if (!preg_match('/^[A-Za-z0-9\.\$\#\*\/]{8,16}$/', $clave)) {
                             echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - Clave inválida"]);
                             exit;

@@ -93,6 +93,12 @@
         <button type="button" class="btn-close bg-danger p-2 rounded" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body bg-s">
+        <div class="mb-3">
+            <a href="assets/Manual.pdf" class="texto-secundario text-center" target="_blank">
+               <b>  Ver Manual de Usuario PDF <i class="fa-solid fa-location-arrow"></i></b> 
+            </a>
+        </div>
+
         <!-- Buscador -->
         <div class="mb-3">
         <input type="text" class="form-control" id="searchInput" placeholder="Buscar en ayuda...">

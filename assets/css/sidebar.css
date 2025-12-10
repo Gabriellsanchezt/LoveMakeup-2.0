@@ -493,3 +493,27 @@
 }
 
 
+/* Transición general para el body */
+body {
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Estilo del modo oscuro */
+body.modo-oscuro {
+  background-color: #121212;
+  color: #f1f1f1;
+}
+
+/* Estilo del modo claro */
+body:not(.modo-oscuro) {
+  background-color: #ffffff;
+}
+
+/* Animación para el botón */
+.lk {
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+.lk:active {
+  transform: scale(0.95); /* efecto de "clic" */
+}
