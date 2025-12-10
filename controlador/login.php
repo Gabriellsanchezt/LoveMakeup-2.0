@@ -15,33 +15,94 @@ function validarTipoDocumento($tipo_documento) {
         return in_array($tipo_documento, $tipos_validos, true);
 }
 
+function validarEntradaSQL($input) {
+    // Lista negra de palabras y símbolos comunes en SQL Injection
+    $blacklist = [
+        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
+        'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
+        'FROM', 'TABLE', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE',
+        '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
+        'EXEC', 'EXECUTE', 'xp_', 'sp_', 'OR', 'AND'
+    ];
+
+    // Normalizar a mayúsculas para comparar
+    $inputUpper = strtoupper($input);
+
+    foreach ($blacklist as $prohibida) {
+        if (strpos($inputUpper, $prohibida) !== false) {
+            return false; // Contiene palabra prohibida
+        }
+    }
+    return true; // Seguro
+}
+
 if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  INGRESAR AL SISTEMA */
     
     if ( !empty($_POST['fecha']) && !empty($_POST['usuario']) && !empty($_POST['clave'])&& !empty($_POST['tipo_documento'])) {
 
-        $fecha = $_POST['fecha'];  $dolar = $_POST['tasa'];  $usuario = $_POST['usuario'];
-        $clave = $_POST['clave'];  $documento = $_POST['tipo_documento'];
+        $fecha = $_POST['fecha'];  $dolar = $_POST['tasa'];  
+        $usuario = $_POST['usuario']; $clave = $_POST['clave'];  $documento = $_POST['tipo_documento'];
 
-         // Validar tipo_documento
-        if (!validarTipoDocumento($documento)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => 'El tipo de documento no es válido']);
-            exit;
-        }
+        $campos = [
+            'Fecha' => $fecha,
+            'Dolar' => $dolar,
+            'Usuario' => $usuario,
+            'Clave' => $clave,
+            'Documento' => $documento
+        ];
+        /// Sanitización de Entradas
+            foreach ($campos as $nombre => $valor) {  /* V2 */ 
+                if (!validarEntradaSQL($valor)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0200 - Entrada inválida detectada en el campo: $nombre"]);
+                    exit;
+                }
+            }
 
-        if (isset($usuario) && ctype_digit($usuario)) {
-            //--------------------------------------------------------
-            $datosLogin = [
-                'operacion' => 'verificar',
-                    'datos' => [
-                        'tipo_documento' => $documento,
-                        'cedula' => $usuario,
-                        'clave' => $clave
-                    ]
+                 //// Validar Datos  V3
+                 if (!preg_match('/^[0-9]{7,8}$/', $usuario)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Cedula inválida"]);
+                    exit;
+                }
+
+                if (!preg_match('/^[A-Za-z]{1}$/', $documento)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Documento inválido."]);
+                    exit;
+                }
+
+                if (!preg_match('/^[A-Za-z0-9\.\$\#\*\/]{8,16}$/', $clave)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Clave inválida"]);
+                    exit;
+                }
+
+                $hoy = date('Y-m-d');
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || $fecha < $hoy) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Fecha inválida o menor a hoy ($fecha)"]);
+                    exit;
+                }
+
+                if (!preg_match('/^\d{1,5}([.,]\d{1,3})?$/', $dolar) || strlen(str_replace([',','.'],'',$dolar)) < 4 || strlen(str_replace([',','.'],'',$dolar)) > 8) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Tasa inválida ($dolar)"]);
+                    exit;
+                }
+
+                // Validar tipo_documento
+                if (!validarTipoDocumento($documento)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => '#0320 - El tipo de documento no es válido']);
+                    exit;
+                }
+
+                $datosLogin = [
+                    'operacion' => 'verificar',
+                        'datos' => [
+                            'tipo_documento' => $documento,
+                            'cedula' => $usuario,
+                            'clave' => $clave
+                        ]
                 ];
-
+    
                 $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
 
-                if ($resultado && isset($resultado->cedula)) {
+                if ($resultado && isset($resultado->cedula)) { // VERIFICADOR QUE NO ESTE ACTIVO
                     if ((int)$resultado->estatus === 2) {
                         echo json_encode([
                             'respuesta' => 0,
@@ -51,13 +112,14 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                         exit;
                     }
 
-                    if ((int)$resultado->estatus === 1) {
+                    if ((int)$resultado->estatus === 1) { // VERIFICADOR QUE SI ESTE ACTIVO
         
                         $_SESSION["id"] = $resultado->cedula;
 
                         $id_persona = $_SESSION["id"]; 
                         $resultadopermiso = $objlogin->consultar($id_persona);
                         $_SESSION["permisos"] = $resultadopermiso;
+
                         $_SESSION['id_usuario']= $resultado->id_usuario;
                         $_SESSION['documento']= $resultado->tipo_documento;
                         $_SESSION["nombre"] = $resultado->nombre;
@@ -71,16 +133,16 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                                 $datosLogin = [
                                     'operacion' => 'dolar',
                                     'datos' => [
-                                        'fecha' => $_POST['fecha'],
-                                        'tasa' => $_POST['tasa'],
+                                        'fecha' => $fecha,
+                                        'tasa' => $dolar,
                                         'fuente' => 'Automatico'
                                     ]
                                 ];
                                 $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
                             } 
                         
-                        $resultadoT = $objlogin->consultaTasaUltima();
-                        $_SESSION["tasa"] = $resultadoT;
+                            $resultadoT = $objlogin->consultaTasaUltima();
+                            $_SESSION["tasa"] = $resultadoT;
                         
                             if ($_SESSION["nivel_rol"] == 1) {
                                 echo json_encode(['respuesta' => 1, 'accion' => 'ingresar']);
@@ -91,36 +153,17 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                                 exit;
 
                             } else {
-                                echo json_encode([
-                                    'respuesta' => 0,
-                                    'accion' => 'ingresar',
-                                    'text' => 'Su nivel de acceso no está definido.'
-                                ]);
+                                echo json_encode(['respuesta' => 0,'accion' => 'ingresar','text' => 'Su nivel de acceso no está definido.' ]);
                                 exit;
                             }
                     }
 
-                } else if($resultado === "10"){
-                        echo json_encode([
-                            'respuesta' => 0,
-                            'accion' => 'ingresar',
-                            'text' => 'Error en Credenciales ERROR#10'
-                        ]);
-
                 } else {
-                        echo json_encode([
-                            'respuesta' => 0,
-                            'accion' => 'ingresar',
-                            'text' => 'Cédula y/o Clave inválida.'
-                        ]);
+                    echo json_encode(['respuesta' => 0,'accion' => 'ingresar','text' => 'Cédula y/o Clave inválida.']);
+                    exit;
                 }
-           // ----------------------------------------------------------    
-        } else { /* CEDULA NO NUMERICA | ELIMINAR  */
-            echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => 'La cédula no es válida. Debe contener solo números']);
-            exit; 
-        }
     } else{
-        echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => 'DATOS VACIOS']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => '#0100 - DATOS VACIOS']);
         exit; 
     }
         
@@ -132,41 +175,88 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
         $telefono  = $_POST['telefono']; $correoR = $_POST['correo']; $tipoDocumento = $_POST['tipo_documento'];
         $claveRegistro = $_POST['clave'];
 
-        // Validar tipo_documento
-        if (!validarTipoDocumento($tipoDocumento)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => 'El tipo de documento no es válido']);
-            exit;
-        }
-
-        if (ctype_digit($cedulaR) && filter_var($correoR, FILTER_VALIDATE_EMAIL) ) {
-             $datosRegistro = [
-                'operacion' => 'registrar',
-                'datos' => [
-                    'nombre' => $nombre,
-                    'apellido' => $apellido,
-                    'cedula' => $cedulaR,
-                    'telefono' => $telefono,
-                    'correo' => $correoR,
-                    'tipo_documento' => $tipoDocumento,
-                    'clave' => $claveRegistro
-                ]
-            ];
-
-            $resultado = $objlogin->procesarLogin(json_encode($datosRegistro));
-
-            if ($resultado['respuesta'] == 1) {
-                require_once 'modelo/CORREObienvenida.php';
-                $envio = enviarBienvenida($correoR);
+        $campos = [
+            'Nombre' => $nombre,
+            'Apellido' => $apellido,
+            'Cedula' => $cedulaR,
+            'Telefono' => $telefono,
+           // 'Correo' => $correoR,
+            'Documento' => $tipoDocumento,
+            'Clave' => $claveRegistro
+        ];
+        /// Sanitización de Entradas
+            foreach ($campos as $nombree => $valor) {  /* V2 */ 
+                if (!validarEntradaSQL($valor)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0200 - Entrada inválida detectada en el campo: $nombree"]);
+                    exit;
+                }
             }
 
-            echo json_encode($resultado);
-            exit;
-        }else{
-            echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => 'Formatos invalidos cedula y correo']);
-            exit; 
-        }    
+                 //// Validar Datos  V5
+                 if (!preg_match('/^[0-9]{7,8}$/', $cedulaR)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Cedula inválida"]);
+                    exit;
+                }
+               
+                if (!filter_var($correoR, FILTER_VALIDATE_EMAIL) || strlen($correoR) < 5 || strlen($correoR) > 200) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Correo inválido."]);
+                    exit;
+                }
+                
+                if (!preg_match('/^[A-Za-z]{1}$/', $tipoDocumento)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Documento inválido."]);
+                    exit;
+                }
+                
+                if (!preg_match('/^[A-Za-z0-9\.\$\#\*\/]{8,16}$/', $claveRegistro)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Clave inválida"]);
+                    exit;
+                }
+                
+                if (!preg_match('/^[0-9]{4}-[0-9]{7}$/', $telefono)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Teléfono inválido"]);
+                    exit;
+                }
+                
+                if (!preg_match('/^[A-Za-z]{3,20}$/', $nombre)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Nombre inválido"]);
+                    exit;
+                }
+                
+                if (!preg_match('/^[A-Za-z]{3,20}$/', $apellido)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "#0310 - Apellido inválido"]);
+                    exit;
+                }
+
+                if (!validarTipoDocumento($tipoDocumento)) { // Validar tipo_documento
+                    echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => '#0320 - El tipo de documento no es válido']);
+                    exit;
+                }
+
+                $datosRegistro = [
+                    'operacion' => 'registrar',
+                    'datos' => [
+                        'nombre' => $nombre,
+                        'apellido' => $apellido,
+                        'cedula' => $cedulaR,
+                        'telefono' => $telefono,
+                        'correo' => $correoR,
+                        'tipo_documento' => $tipoDocumento,
+                        'clave' => $claveRegistro
+                    ]
+                ];
+    
+                $resultado = $objlogin->procesarLogin(json_encode($datosRegistro));
+    
+                if ($resultado['respuesta'] == 1) {
+                    require_once 'modelo/CORREObienvenida.php';
+                    $envio = enviarBienvenida($correoR);
+                }
+    
+                echo json_encode($resultado);
+                exit;
     }else{
-        echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => 'DATOS VACIOS']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => '#0100 - DATOS VACIOS']);
         exit; 
     }
 // -------------
@@ -174,44 +264,61 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
 
     if(!empty($_POST['cedula'])&&!empty($_POST['tipo_documentos'])){
 
-        $cedulaClave = $_POST['cedula'];
-        $documentoClave = $_POST['tipo_documentos'];
+        $cedulaClave = $_POST['cedula'];  $documentoClave = $_POST['tipo_documentos'];
+
+        $campos = [
+            'Cedula' => $cedulaClave,
+            'Documento' => $documentoClave
+        ];
+        /// Sanitización de Entradas
+            foreach ($campos as $nombre => $valor) {  /* V2 */ 
+                if (!validarEntradaSQL($valor)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => "#0200 - Entrada inválida detectada en el campo: $nombre"]);
+                    exit;
+                }
+            }
+
+             //// Validar Datos  V3
+             if (!preg_match('/^[0-9]{7,8}$/', $cedulaClave)) {
+                echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => "#0310 - Cedula inválida"]);
+                exit;
+            }
+            
+            if (!preg_match('/^[A-Za-z]{1}$/', $documentoClave)) {
+                echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => "#0310 - Documento inválido."]);
+                exit;
+            }
      
-      // Validar tipo_documento
-        if (!validarTipoDocumento($documentoClave)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => 'El tipo de documento no es válido']);
-            exit;
-        }   
+            if (!validarTipoDocumento($documentoClave)) { // Validar tipo_documento
+                echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => '#0320 - El tipo de documento no es válido']);
+                exit;
+            }   
 
-            if (ctype_digit($cedulaClave)) {
-                    $datosValidar = [
-                        'operacion' => 'validar',
-                        'datos' => [
-                            'cedula' => $cedulaClave,
-                            'tipo_documento' => $documentoClave
-                        ]
-                    ];
+                $datosValidar = [
+                    'operacion' => 'validar',
+                    'datos' => [
+                        'cedula' => $cedulaClave,
+                        'tipo_documento' => $documentoClave
+                    ]
+                ];
 
-                    $resultado = $objlogin->procesarLogin(json_encode($datosValidar));
-
-                    if ($resultado && isset($resultado->cedula)) {
-                        $_SESSION["cedula"] = $resultado->cedula;
-                        $_SESSION["nombres"] = $resultado->nombre;
-                        $_SESSION["apellidos"] = $resultado->apellido;
-                        $_SESSION["correos"] = $resultado->correo;
-                        $_SESSION["iduser"] = 1;
-                        $_SESSION["nivel"] = $resultado->nivel;
+                $resultado = $objlogin->procesarLogin(json_encode($datosValidar));
+               
+                if ($resultado && isset($resultado->cedula)) {
+                    $_SESSION["cedula"] = $resultado->cedula;
+                    $_SESSION["nombres"] = $resultado->nombre;
+                    $_SESSION["apellidos"] = $resultado->apellido;
+                    $_SESSION["correos"] = $resultado->correo;
+                    $_SESSION["iduser"] = 1;
+                    $_SESSION["nivel"] = $resultado->nivel;
                         echo json_encode(['respuesta' => 1, 'accion' => 'validarclave']);
                         exit;
-                    } else {
-                        echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => 'Cédula incorrecta o no hay registro']);
-                    }
-            }else{
-                echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => 'Formatos invalidos cedula']);
-                exit; 
-            } 
+                } else {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => 'Cédula incorrecta o no hay registro']);
+                    exit;
+                }   
     }else{
-        echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => 'DATOS VACIOS']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'validarclave', 'text' => '#0100 - DATOS VACIOS']);
         exit;
     }
  // ------------------
@@ -220,24 +327,41 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
     if (!empty($_POST['cedula']) ) {   /*  VACIOS   | VERIFICAR CEDULA   */
         $cedulaValidar = $_POST['cedula'];
         
-        if (isset($cedulaValidar) && ctype_digit($cedulaValidar)) {
-            $datosLogin = [
-                'operacion' => 'verificarcedula',
-                'datos' => [
-                    'cedula' => $_POST['cedula']
-                ] 
-            ];
+        $campos = [
+            'Cedula' => $cedulaValidar
+        ];
+        /// Sanitización de Entradas
+            foreach ($campos as $nombre => $valor) {  /* V2 */ 
+                if (!validarEntradaSQL($valor)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => "#0200 - Entrada inválida detectada en el campo: $nombre"]);
+                    exit;
+                }
+            }
 
-            $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
-            echo json_encode($resultado);
-            exit;
-        } else {
-            echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => 'La cédula no es válida. Debe contener solo números']);
-            exit; 
-        }
+            //// Validar Datos  V3
+            if (!preg_match('/^[0-9]{7,8}$/', $cedulaValidar)) {
+                echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => "#0310 - Cedula inválida"]);
+                exit;
+            }
+
+                if (ctype_digit($cedulaValidar)) {
+                    $datosLogin = [
+                        'operacion' => 'verificarcedula',
+                        'datos' => [
+                            'cedula' => $_POST['cedula']
+                        ] 
+                    ];
+
+                    $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
+                    echo json_encode($resultado);
+                    exit;
+                } else {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => '#0320 - La cédula no es válida.']);
+                    exit; 
+                }
 
      }else{ /* DATOS VACIOS | VERIFICAR CEDULA  */
-        echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => 'Datos Vacios']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'verificar', 'text' => '#0100 - Datos Vacios']);
         exit; 
      }
 
@@ -246,7 +370,12 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
      if (!empty($_POST['correo']) ) {   /*  VACIOS   | VERIFICAR CORREO   */
         $correo = trim($_POST['correo']);
 
-        if (filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            // Validar datos V3
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL) || strlen($correo) < 5 || strlen($correo) > 200) {
+                echo json_encode(['respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => "#0310 - Correo inválido."]);
+                exit;
+            }
+
             $datosLogin = [
                 'operacion' => 'verificarCorreo',
                 'datos' => [
@@ -257,13 +386,9 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
             $resultado = $objlogin->procesarLogin(json_encode($datosLogin));
             echo json_encode($resultado);
             exit; 
-        } else {
-            echo json_encode(['respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => 'Correo inválido']);
-            exit; 
-        }
 
      }else{ /* DATOS VACIOS | VERIFICAR CEDULA  */
-        echo json_encode(['respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => 'Datos Vacios']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'verificarcorreo', 'text' => '#0100 - Datos Vacios']);
         exit; 
      }
 //--------------------------------
@@ -310,3 +435,6 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
 } else {    
     require_once 'vista/login.php';
 }
+
+?>
+

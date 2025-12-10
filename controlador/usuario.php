@@ -167,17 +167,17 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                         }
                        
                         if (!filter_var($correo, FILTER_VALIDATE_EMAIL) || strlen($correo) < 5 || strlen($correo) > 200) {
-                            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - Correo inválido."]);
+                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - Correo inválido."]);
                             exit;
                         }
                         
                         if (!preg_match('/^[A-Za-z]{1}$/', $documento)) {
-                            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - Documento inválido."]);
+                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - Documento inválido."]);
                             exit;
                         }
                     
                         if (!preg_match('/^[0-9]{1,3}$/', $id_rol)) {
-                            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - rol inválido"]);
+                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - rol inválido"]);
                             exit;
                         }
                         if (!preg_match('/^[A-Za-z0-9\.\$\#\*\/]{8,16}$/', $clave)) {
@@ -191,7 +191,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                         }
                         
                         if (!preg_match('/^[A-Za-z]{3,20}$/', $nombre)) {
-                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - Nombre inválido $nombre"]);
+                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0510 - Nombre inválido"]);
                             exit;
                         }
                         
