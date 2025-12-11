@@ -105,14 +105,14 @@
           <div class="d-flex flex-column flex-md-row gap-2">
            <button id="btn-personales" class="btn btn-custom active" onclick="mostrarFormulario('personales')">Datos personales</button>
             <button id="btn-seguridad" class="btn btn-custom" onclick="mostrarFormulario('seguridad')">Seguridad</button>
-            <button id="btn-direcciones" class="btn btn-custom" onclick="mostrarFormulario('direcciones')">Direcciones</button>
+            
             </div>
           </div>
         </div>
       </div>
       <hr>
     <!-- Formularios -->
-        <div id="form-personales" class="formulario mt-3">
+        <div id="form-personales" class="formulario mt-3"> <!-- F1 --->
           <div class="row">
         <div class="section-header d-flex align-items-center justify-content-between mb-lg-2">
           <h2 class="section-title text-titel-1">Datos Personales </h2>
@@ -267,151 +267,13 @@
         </div> <!-- f2 / -->
 
 
- <!--|||||||||||||||||||||||| DIRECCION -->
 
-        <div id="form-direcciones" class="formulario d-none"> <!-- f3 -->
-        <?php
-// Mapeamos las direcciones por método de entrega
-$direccionMap = [];
-foreach ($direccion as $dir) {
-    $direccionMap[$dir['id_metodoentrega']] = $dir;
-}
-
-foreach ($entrega as $item) {
-    if ($item['estatus'] == 1) {
-        $id = $item['id_entrega'];
-        $nombre = htmlspecialchars($item['nombre']);
-        $dirData = $direccionMap[$id] ?? null;
-
-        if ($id == 1) { // DELIVERY ?>
-            <div class="row">
-                <div class="section-header d-flex align-items-center justify-content-between mb-lg-2">
-                    <h2 class="section-title text-titel-1">Direcciones</h2>
-                </div>
-            </div>
-            <table class="table" width="100%" cellspacing="0">
-                <thead class="bg-table">
-                    <tr>
-                        <th class="text-white"><i class="fa-solid fa-bicycle me-2"></i> DELIVERY</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <input type="hidden" name="id_entrega[]" value="<?= $id ?>">
-                            <div class="container">
-                                <div class="row g-3 align-items-center mb-3">
-                                    <div class="col-md-1 col-12">
-                                        <p class="text-dark"><b><?= $nombre ?></b></p>
-                                    </div>
-                                    <div class="col-md-9 col-12">
-                                        <input type="text" class="form-control text-dark" name="direccion_envio_<?= $id ?>" placeholder="Dirección de mi casa" disabled
-                                            value="<?= isset($dirData['direccion_envio']) ? htmlspecialchars($dirData['direccion_envio']) : '' ?>">
-                                    </div>
-                                    <div class="col-md-2 col-12 d-flex gap-2">
-                                        <?php if ($dirData): ?>
-                                          <button class="btn-editar"
-                                              data-bs-toggle="modal"
-                                              data-bs-target="#modalEditarDelivery"
-                                              data-id="<?= $dirData['id_direccion'] ?>"
-                                              data-direccion="<?= htmlspecialchars($dirData['direccion_envio']) ?>"
-                                          >
-                                              <i class="fa-solid fa-pen-to-square me-2"></i> Editar
-                                          </button>
-                                        <?php else: ?>
-                                            <button class="btn-registrar"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalAgregarDireccion"
-                                                data-metodo="<?= $id ?>"
-                                                data-nombre="<?= $nombre ?>"
-                                            >
-                                                <i class="fa-solid fa-file-circle-plus me-2"></i> Agregar
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-<?php
-        } elseif ($id == 2 || $id == 3) {
-            if (!isset($renderedNational)) {
-                $renderedNational = true; ?>
-                <table class="table" width="100%" cellspacing="0">
-                    <thead class="bg-table">
-                        <tr>
-                            <th class="text-white"><i class="fa-solid fa-truck me-2"></i> ENVIOS NACIONALES</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div class="container">
-<?php } ?>
-                                    <input type="hidden" name="id_entrega[]" value="<?= $id ?>">
-                                    <div class="row g-3 align-items-center mb-3">
-                                        <div class="col-md-1 col-12">
-                                            <p class="text-dark"><b><?= $nombre ?></b></p>
-                                        </div>
-                                        <div class="col-md-2 col-12">
-                                            <input type="text" class="form-control text-dark" name="sucursal_envio_<?= $id ?>" placeholder="Sucursal" disabled
-                                                value="<?= isset($dirData['sucursal_envio']) ? htmlspecialchars($dirData['sucursal_envio']) : '' ?>">
-                                        </div>
-                                        <div class="col-md-7 col-12">
-                                            <input type="text" class="form-control text-dark" name="direccion_envio_<?= $id ?>" placeholder="Dirección" disabled
-                                                value="<?= isset($dirData['direccion_envio']) ? htmlspecialchars($dirData['direccion_envio']) : '' ?>">
-                                        </div>
-                                        <div class="col-md-2 col-12 d-flex gap-2">
-                                            <?php if ($dirData): ?>
-                                                 <button class="btn-editar"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalEditarDireccion"
-                                                    data-id="<?= $dirData['id_direccion'] ?>"
-                                                    data-metodo="<?= $id ?>"
-                                                    data-nombre="<?= $nombre ?>"
-                                                    data-direccion="<?= htmlspecialchars($dirData['direccion_envio']) ?>"
-                                                    <?php if (in_array($id, [2, 3])): ?>
-                                                        data-sucursal="<?= htmlspecialchars($dirData['sucursal_envio']) ?>"
-                                                    <?php endif; ?>
-                                                >
-                                                    <i class="fa-solid fa-pen-to-square me-2"></i> Editar
-                                                </button>
-                                            <?php else: ?>
-                                                <button class="btn-registrar"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalAgregarDireccion"
-                                                    data-metodo="<?= $id ?>"
-                                                    data-nombre="<?= $nombre ?>"
-                                                >
-                                                    <i class="fa-solid fa-file-circle-plus me-2"></i> Agregar
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-<?php
-        }
-    }
-}
-if (isset($renderedNational)) {
-    echo '                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>';
-}
-?>
-
-        </div><!-- f3 /-->
+       
       
-      </div> 
-    
-    
-    </div>
-  </div>
-     
+        </div> 
       </div>
+    </div>   
+  </div>
 
   </section>
 
@@ -432,179 +294,6 @@ if (isset($renderedNational)) {
     if (btnActivo) btnActivo.classList.add('active');
   }
 </script>
-
-
-
-<!-- |||||||||||||||||FOR LISTO-->
-<div class="modal fade" id="modalEditarDireccion" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <form method="POST" action="?pagina=catalogo_datos" autocomplete="off" id="editardireccion"> <!-- ajusta ruta según tu backend -->
-      <div class="modal-content modal-productoo">
-        <div class="modal-header">
-          <h5 class="modal-title text-white" id="modalLabel">Editar Dirección</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="id_direccion" id="modal_id_direccion">
-          <input type="hidden" name="id_metodoentrega" id="modal_id_metodo">
-        
-            <div class="seccion-formularioo">
-          <div class="mb-3">
-            <label for="modal_direccion" class="form-label">Dirección</label>
-            <input type="text" class="form-control text-dark" name="direccion_envio" id="modal_direccion">
-             <p id="textodir" class="text-danger"></p>
-          </div>
-
-          <div class="mb-3" id="modal_sucursal_group" style="display: none;">
-            <label for="modal_sucursal" class="form-label">Sucursal</label>
-            <input type="text" class="form-control text-dark" name="sucursal_envio" id="modal_sucursal">
-             <p id="textosur" class="text-danger"></p>
-          </div>
-        </div>
-           </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-registrar" name="actualizardireccion" id="direccion">Guardar cambios</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const modal = document.getElementById('modalEditarDireccion');
-  modal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-
-    const idDireccion = button.getAttribute('data-id');
-    const metodo = button.getAttribute('data-metodo');
-    const direccion = button.getAttribute('data-direccion');
-    const sucursal = button.getAttribute('data-sucursal');
-
-    document.getElementById('modal_id_direccion').value = idDireccion;
-    document.getElementById('modal_id_metodo').value = metodo;
-    document.getElementById('modal_direccion').value = direccion || '';
-
-    const sucursalGroup = document.getElementById('modal_sucursal_group');
-    const sucursalInput = document.getElementById('modal_sucursal');
-
-    if (metodo === '2' || metodo === '3') {
-      sucursalGroup.style.display = 'block';
-      sucursalInput.value = sucursal || '';
-    } else {
-      sucursalGroup.style.display = 'none';
-      sucursalInput.value = '';
-    }
-  });
-});
-</script>
-
-<div class="modal fade" id="modalEditarDelivery" tabindex="-1" aria-labelledby="modalDeliveryLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-   
-      <div class="modal-content modal-productoo">
-        <div class="modal-header">
-          <h5 class="modal-title text-white" id="modalDeliveryLabel">Editar Dirección (Delivery)</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="seccion-formularioo">
-           <form method="POST" action="?pagina=catalogo_datos" autocomplete="off" id="editardelivery">
-          <input type="hidden" name="id_direccion" id="delivery_id_direccion">
-          <input type="hidden" name="id_metodoentrega" value="1">
-          <input type="hidden" name="sucursal_envio" value="no aplica">
-
-          <div class="mb-3">
-            <label for="delivery_direccion" class="form-label">Dirección</label>
-            <input type="text" class="form-control text-dark" name="direccion_envio" id="delivery_direccion">
-            <p id="textodir1" class="text-danger"></p>
-          </div>
-        </div>
-         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-registrar" name="actualizardireccion" id="direccionedit">Guardar cambios</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const modalDelivery = document.getElementById('modalEditarDelivery');
-  modalDelivery.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const idDireccion = button.getAttribute('data-id');
-    const direccion = button.getAttribute('data-direccion');
-
-    document.getElementById('delivery_id_direccion').value = idDireccion;
-    document.getElementById('delivery_direccion').value = direccion || '';
-  });
-});
-</script>
-
-
-
-
-<div class="modal fade" id="modalAgregarDireccion" tabindex="-1" aria-labelledby="modalAgregarLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-      <div class="modal-content modal-productoo">
-        <div class="modal-header">
-        <h5 class="modal-title text-white" id="modalAgregarLabel">Agregar Dirección para <span id="modalNombreMetodo"></span></h5>
-          <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-             <div class="seccion-formularioo">
-           <form method="POST" action="?pagina=catalogo_datos" autocomplete="off" id="incluir">
-          <input type="hidden" name="id_metodoentrega" id="agregar_id_metodo">
-
-          <div class="mb-3">
-            <label for="agregar_direccion" class="form-label">Dirección</label>
-            <input type="text" class="form-control text-dark" name="direccion_envio" id="agregar_direccion">
-            <p id="textodir2" class="text-danger"></p>
-          </div>
-
-          <div class="mb-3" id="agregar_sucursal_group" style="display: none;">
-            <label for="agregar_sucursal" class="form-label">Sucursal</label>
-            <input type="text" class="form-control text-dark" name="sucursal_envio" id="agregar_sucursal">
-            <p id="textosur1" class="text-danger"></p>
-          </div>
-        </div>
-          </div>
-        <div class="modal-footer">
-          <button type="button" id="agregardireccion" name="incluir" class="btn btn-registrar">Registrar</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const modalAgregar = document.getElementById('modalAgregarDireccion');
-  modalAgregar.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const metodo = button.getAttribute('data-metodo');
-    const nombre = button.getAttribute('data-nombre');
-
-    document.getElementById('agregar_id_metodo').value = metodo;
-    document.getElementById('modalNombreMetodo').textContent = nombre;
-
-    document.getElementById('agregar_direccion').value = '';
-    document.getElementById('agregar_sucursal').value = '';
-
-    const sucursalGroup = document.getElementById('agregar_sucursal_group');
-    if (metodo === '2' || metodo === '3') {
-      sucursalGroup.style.display = 'block';
-    } else {
-      sucursalGroup.style.display = 'none';
-      
-    }
-  });
-});
-</script>
-
-
 
 
 <!-- php Publicidad Insta, Publicidad calidad, footer y JS--> 

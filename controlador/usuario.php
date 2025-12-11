@@ -259,8 +259,8 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
             exit;
         }      
     } else{ /* V1 */ 
-    echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => '#0100 - Session no encontrada']);
-    exit;
+        echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => '#0100 - Session no encontrada']);
+        exit;
     } 
 } else  if(isset($_POST['modificar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| PARA BUSCAR Y VER LOS PERMISOS  */
 
