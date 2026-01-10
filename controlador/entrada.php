@@ -202,6 +202,13 @@ if (isset($_POST['registrar_compra'])) {
         }
     }
     
+    // Normalizar fecha: extraer solo la parte de fecha (YYYY-MM-DD) si viene con formato datetime
+    $fecha_entrada = trim($fecha_entrada);
+    if (strlen($fecha_entrada) > 10 && strpos($fecha_entrada, ' ') !== false) {
+        // Si tiene hora, extraer solo la fecha (primeros 10 caracteres)
+        $fecha_entrada = substr($fecha_entrada, 0, 10);
+    }
+    
     // Validar formato de fecha (YYYY-MM-DD)
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_entrada)) {
         $mensaje_error = 'Formato de fecha inválido. Use el formato YYYY-MM-DD.';
@@ -640,6 +647,13 @@ if (isset($_POST['modificar_compra'])) {
             header("Location: ?pagina=entrada");
             exit;
         }
+    }
+    
+    // Normalizar fecha: extraer solo la parte de fecha (YYYY-MM-DD) si viene con formato datetime
+    $fecha_entrada = trim($fecha_entrada);
+    if (strlen($fecha_entrada) > 10 && strpos($fecha_entrada, ' ') !== false) {
+        // Si tiene hora, extraer solo la fecha (primeros 10 caracteres)
+        $fecha_entrada = substr($fecha_entrada, 0, 10);
     }
     
     // Validar formato de fecha (YYYY-MM-DD)

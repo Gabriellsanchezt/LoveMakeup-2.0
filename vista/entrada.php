@@ -546,9 +546,17 @@
                   <?php 
                     $fecha_hoy = date('Y-m-d');
                     $fecha_dos_dias_atras = date('Y-m-d', strtotime('-2 days'));
+                    // Extraer solo la fecha (YYYY-MM-DD) del formato datetime si existe
+                    $fecha_entrada_value = $compra['fecha_entrada'];
+                    if (!empty($fecha_entrada_value)) {
+                        if (strlen($fecha_entrada_value) > 10 && strpos($fecha_entrada_value, ' ') !== false) {
+                            // Si tiene hora, extraer solo la fecha (primeros 10 caracteres)
+                            $fecha_entrada_value = substr($fecha_entrada_value, 0, 10);
+                        }
+                    }
                   ?>
                   <input type="date" class="form-control" id="fecha_entrada" name="fecha_entrada" 
-                         value="<?php echo $compra['fecha_entrada']; ?>" 
+                         value="<?php echo $fecha_entrada_value; ?>" 
                          min="<?php echo $fecha_dos_dias_atras; ?>" 
                          max="<?php echo $fecha_hoy; ?>" 
                          required>
