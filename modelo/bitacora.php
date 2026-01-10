@@ -193,7 +193,7 @@ class Bitacora extends Conexion {
         }
     }
 
-    public function consultar(){
+    public function consultar($limite = 100, $offset = 0){
         try {
             $registro = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario,
                                 DATE_FORMAT(b.fecha_hora, '%d/%m/%Y %H:%i:%s') as fecha_hora_formateada
@@ -201,8 +201,11 @@ class Bitacora extends Conexion {
                          INNER JOIN persona p ON b.cedula = p.cedula
                          INNER JOIN usuario u ON p.cedula = u.cedula
                          INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
-                         ORDER BY b.fecha_hora DESC";
+                         ORDER BY b.fecha_hora DESC
+                         LIMIT :limite OFFSET :offset";
             $consulta = $this->conex2->prepare($registro);
+            $consulta->bindValue(':limite', (int)$limite, \PDO::PARAM_INT);
+            $consulta->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
             $consulta->execute();
 
             $datos = $consulta->fetchAll(\PDO::FETCH_ASSOC);
@@ -227,6 +230,35 @@ class Bitacora extends Conexion {
         }
     }
 
+    // Método para contar el total de registros en la bitácora
+    public function contarTotal(){
+        try {
+            $registro = "SELECT COUNT(*) as total
+                         FROM bitacora b
+                         INNER JOIN persona p ON b.cedula = p.cedula
+                         INNER JOIN usuario u ON p.cedula = u.cedula
+                         INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol";
+            $consulta = $this->conex2->prepare($registro);
+            $consulta->execute();
+
+            $resultado = $consulta->fetch(\PDO::FETCH_ASSOC);
+            
+            return (int)($resultado['total'] ?? 0);
+        } catch (\PDOException $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error de base de datos al contar bitácora', [
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage()
+            ]);
+            return 0;
+        } catch (\Exception $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error inesperado al contar bitácora', [
+                'exception_type' => get_class($e),
+                'error_message' => $e->getMessage()
+            ]);
+            return 0;
+        }
+    }
+
     public function obtenerRegistro($id_bitacora) {
         try {
             // Validar que el ID sea un número válido
@@ -234,7 +266,7 @@ class Bitacora extends Conexion {
                 return array('error' => 'ID de bitácora inválido');
             }
 
-            $query = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario,
+            $query = "SELECT b.*, p.nombre, p.apellido, p.cedula, p.correo, ru.nombre AS nombre_usuario,
                             DATE_FORMAT(b.fecha_hora, '%d/%m/%Y %H:%i:%s') as fecha_hora
                      FROM bitacora b
                      INNER JOIN persona p ON b.cedula = p.cedula

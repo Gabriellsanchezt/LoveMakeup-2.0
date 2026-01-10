@@ -3,7 +3,7 @@
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 
 // Manejo de solicitudes AJAX - debe ejecutarse antes de cualquier salida
-if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['eliminar_registro'])) {
+if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['eliminar_registro']) || isset($_POST['cargar_mas'])) {
     // Iniciar sesión solo si no está ya iniciada
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -31,11 +31,13 @@ if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['elimi
     error_reporting(0);
     ini_set('display_errors', 0);
     
+    // Configurar headers para respuesta JSON limpia
+    header('Content-Type: application/json; charset=utf-8');
+    
     $objBitacora = new Bitacora();
     
     // Obtener detalles de un registro específico
     if(isset($_POST['detalles'])) {
-        header('Content-Type: application/json');
         try {
             $id_bitacora = (int)$_POST['detalles'];
             if ($id_bitacora <= 0) {
@@ -65,7 +67,6 @@ if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['elimi
 
     // Limpiar bitácora (eliminar todos los registros)
     if(isset($_POST['limpiar'])) {
-        header('Content-Type: application/json');
         try {
             // Verificar permisos para limpiar
             if (!tieneAcceso(15, 'eliminar')) {
@@ -81,9 +82,31 @@ if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['elimi
         exit;
     }
 
+    // Cargar más registros (paginación)
+    if(isset($_POST['cargar_mas'])) {
+        try {
+            $offset = isset($_POST['offset']) ? (int)$_POST['offset'] : 0;
+            $limite = isset($_POST['limite']) ? (int)$_POST['limite'] : 100;
+            
+            $registros = $objBitacora->consultar($limite, $offset);
+            $total = $objBitacora->contarTotal();
+            
+            echo json_encode([
+                'success' => true,
+                'registros' => $registros,
+                'total' => $total,
+                'offset' => $offset,
+                'limite' => $limite,
+                'tiene_mas' => ($offset + $limite) < $total
+            ]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
     // Eliminar registro específico
     if(isset($_POST['eliminar_registro'])) {
-        header('Content-Type: application/json');
         try {
             // Verificar permisos para eliminar
             if (!tieneAcceso(15, 'eliminar')) {
@@ -159,7 +182,7 @@ function registrarEnBitacora($accion, $modulo, $detalle = '') {
 if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 'ver')) {
     // Registrar acceso al módulo de bitácora (solo en carga normal, no en AJAX)
     // Esto es independiente de otros módulos
-    if (!isset($_POST['detalles']) && !isset($_POST['limpiar']) && !isset($_POST['eliminar_registro'])) {
+    if (!isset($_POST['detalles']) && !isset($_POST['limpiar']) && !isset($_POST['eliminar_registro']) && !isset($_POST['cargar_mas'])) {
         try {
             $objBitacora->registrarOperacion('ACCESO A MÓDULO', 'Bitácora', 'Usuario accedió al módulo de Bitácora');
         } catch (\Exception $e) {

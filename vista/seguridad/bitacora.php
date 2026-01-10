@@ -71,22 +71,26 @@
                     <tr>
                       <th class="text-white">Fecha y Hora</th>
                       <th class="text-white">Acción</th>
-                      <th class="text-white">Descripción</th>
                       <th class="text-white">Usuario</th>
                       <th class="text-white">Rol</th>
                       <th class="text-white">Detalles</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody id="bitacora-tbody">
                   <?php 
-                    $registro = $objBitacora->consultar();
+                    // Cargar solo los primeros 100 registros inicialmente
+                    $limite_inicial = 100;
+                    $offset_inicial = 0;
+                    $registro = $objBitacora->consultar($limite_inicial, $offset_inicial);
+                    $total_registros = $objBitacora->contarTotal();
+                    $tiene_mas_registros = $total_registros > $limite_inicial;
+                    
                     if ($registro && is_array($registro) && count($registro) > 0) {
                       foreach ($registro as $dato) { 
                         // Validar que los datos requeridos existan
                         $id_bitacora = isset($dato['id_bitacora']) ? (int)$dato['id_bitacora'] : 0;
                         $fecha_hora = isset($dato['fecha_hora']) ? htmlspecialchars($dato['fecha_hora'], ENT_QUOTES, 'UTF-8') : '';
                         $accion = isset($dato['accion']) ? htmlspecialchars($dato['accion'], ENT_QUOTES, 'UTF-8') : 'Sin acción';
-                        $descripcion = isset($dato['descripcion']) ? htmlspecialchars($dato['descripcion'], ENT_QUOTES, 'UTF-8') : '';
                         $nombre = isset($dato['nombre']) ? htmlspecialchars($dato['nombre'], ENT_QUOTES, 'UTF-8') : '';
                         $apellido = isset($dato['apellido']) ? htmlspecialchars($dato['apellido'], ENT_QUOTES, 'UTF-8') : '';
                         $nombre_usuario = isset($dato['nombre_usuario']) ? htmlspecialchars($dato['nombre_usuario'], ENT_QUOTES, 'UTF-8') : 'N/A';
@@ -118,21 +122,6 @@
                               <?php echo $accion ?>
                             </span>
                           </td>
-                          <td class="texto-secundario">
-                            <?php 
-                              if (!empty($descripcion)) {
-                                if (preg_match('/\[(.*?)\]$/', $descripcion, $matches)) {
-                                    $desc_sin_modulo = str_replace($matches[0], '', $descripcion);
-                                    echo $desc_sin_modulo;
-                                    echo '<span class="fw-bold text-primary texto-sexto ms-1">' . htmlspecialchars($matches[0], ENT_QUOTES, 'UTF-8') . '</span>';
-                                } else {
-                                    echo $descripcion;
-                                }
-                              } else {
-                                echo '<span class="text-muted">Sin descripción</span>';
-                              }
-                            ?>
-                          </td>
                           <td class="texto-secundario"><?php echo trim($nombre . ' ' . $apellido) ?: 'N/A' ?></td>
                           <td class="texto-secundario"><?php echo $nombre_usuario ?></td>
                           <td class="text-center">
@@ -148,18 +137,40 @@
                       }
                     } else { ?>
                       <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="5" class="text-center text-muted">
                           <i class="fas fa-inbox me-2"></i>No hay registros en la bitácora
                         </td>
                       </tr>
                     <?php } ?>
                   </tbody>
                 </table>
+                
+                <!-- Botón Ver Más (solo si hay más registros) -->
+                <?php if ($tiene_mas_registros): ?>
+                <div class="text-center mt-3 mb-3" id="btn-ver-mas-container">
+                  <button type="button" class="btn btn-primary" id="btnVerMas">
+                    <i class="fas fa-arrow-down me-2"></i>Ver más registros
+                    <span class="badge bg-light text-dark ms-2" id="registros-mostrados">
+                      <?php echo is_array($registro) ? count($registro) : 0; ?> / <?php echo $total_registros; ?>
+                    </span>
+                  </button>
+                </div>
+                <?php endif; ?>
               </div>
             </div>
           </div>
         </div>  
     </div>
+    
+    <!-- Variable JavaScript con información de paginación -->
+    <script>
+      var bitacoraPaginacion = {
+        offset: <?php echo is_array($registro) ? count($registro) : 0; ?>,
+        limite: 100,
+        total: <?php echo $total_registros; ?>,
+        tieneMas: <?php echo $tiene_mas_registros ? 'true' : 'false'; ?>
+      };
+    </script>
 
 <!-- Modal de Detalles -->
 <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" aria-hidden="true">
@@ -169,13 +180,13 @@
         <h5 class="modal-title text-white" id="detallesModalLabel">
           <i class="fas fa-info-circle me-2"></i>Detalles del Registro
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white text-white" data-bs-dismiss="modal" aria-label="Close" style="filter: brightness(0) invert(1);"></button>
       </div>
       <div class="modal-body">
         <div class="row">
-          <!-- Columna Izquierda -->
-          <div class="col-md-6">
-            <div class="card shadow-sm">
+          <!-- Columna Izquierda - Información del Usuario (Tarjeta grande) -->
+          <div class="col-md-6 d-flex">
+            <div class="card shadow-sm w-100">
               <div class="card-header bg-light">
                 <h6 class="mb-0"><i class="fas fa-user me-2"></i>Información del Usuario</h6>
               </div>
@@ -185,15 +196,24 @@
                   <p class="fw-bold mb-2" id="detalle-usuario"></p>
                 </div>
                 <div class="mb-3">
+                  <label class="text-muted small">Cédula:</label>
+                  <p class="fw-bold mb-2" id="detalle-cedula"></p>
+                </div>
+                <div class="mb-3">
+                  <label class="text-muted small">Correo Electrónico:</label>
+                  <p class="fw-bold mb-2" id="detalle-correo"></p>
+                </div>
+                <div class="mb-3">
                   <label class="text-muted small">Rol del Usuario:</label>
                   <p class="fw-bold mb-2" id="detalle-rol"></p>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Columna Derecha -->
-          <div class="col-md-6">
-            <div class="card shadow-sm">
+          <!-- Columna Derecha - Evento y Descripción (dos tarjetas pequeñas) -->
+          <div class="col-md-6 d-flex flex-column">
+            <!-- Información del Evento -->
+            <div class="card shadow-sm mb-3 flex-fill">
               <div class="card-header bg-light">
                 <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Información del Evento</h6>
               </div>
@@ -208,22 +228,17 @@
                 </div>
               </div>
             </div>
+            <!-- Descripción Detallada -->
+            <div class="card shadow-sm flex-fill">
+              <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Descripción Detallada</h6>
+              </div>
+              <div class="card-body">
+                <div id="detalle-descripcion"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <!-- Descripción Completa -->
-        <div class="card shadow-sm mt-3">
-          <div class="card-header bg-light">
-            <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Descripción Detallada</h6>
-          </div>
-          <div class="card-body">
-            <div id="detalle-descripcion"></div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer bg-light">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="fas fa-times me-2"></i>Cerrar
-        </button>
       </div>
     </div>
   </div>

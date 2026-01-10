@@ -42,32 +42,147 @@ $(document).ready(function () {
         $.ajax({
           url: '?pagina=bitacora',
           type: 'POST',
+          dataType: 'json',
           data: { limpiar: 1 },
-          success: function(response) {
-            try {
-              var data = JSON.parse(response);
-              if (data.success) {
-                Swal.fire({
-                  title: '¡Éxito!',
-                  text: data.message,
-                  icon: 'success',
-                  timer: 2000,
-                  showConfirmButton: false
-                });
-                // Eliminar todas las filas de la tabla
-                $('#myTable tbody').empty();
-                $('#myTable tbody').append('<tr><td colspan="6" class="text-center">No hay registros en la bitácora</td></tr>');
-              } else {
-                Swal.fire('Error', data.message, 'error');
+          beforeSend: function() {
+            Swal.fire({
+              title: 'Limpiando...',
+              text: 'Por favor espere',
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
               }
-            } catch (e) {
-              Swal.fire('Error', 'Error al procesar la respuesta', 'error');
+            });
+          },
+          success: function(data) {
+            Swal.close();
+            if (data.success) {
+              Swal.fire({
+                title: '¡Éxito!',
+                text: data.message,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => {
+                // Recargar la página para mostrar el estado actualizado
+                location.reload();
+              });
+            } else {
+              Swal.fire('Error', data.message || 'Error al limpiar la bitácora', 'error');
             }
           },
-          error: function() {
-            Swal.fire('Error', 'Error de conexión', 'error');
+          error: function(xhr, status, error) {
+            Swal.close();
+            // Intentar parsear la respuesta si viene como texto
+            try {
+              var data = typeof xhr.responseText === 'string' ? JSON.parse(xhr.responseText) : xhr.responseJSON;
+              if (data && data.message) {
+                Swal.fire('Error', data.message, 'error');
+              } else {
+                Swal.fire('Error', 'Error de conexión al limpiar la bitácora', 'error');
+              }
+            } catch (e) {
+              Swal.fire('Error', 'Error de conexión al limpiar la bitácora', 'error');
+            }
           }
         });
+      }
+    });
+  });
+
+  // Función para cargar más registros
+  $('#btnVerMas').on('click', function() {
+    var $btn = $(this);
+    var $container = $('#btn-ver-mas-container');
+    var originalHtml = $btn.html();
+    
+    // Deshabilitar botón y mostrar carga
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Cargando...');
+    
+    $.ajax({
+      url: '?pagina=bitacora',
+      type: 'POST',
+      dataType: 'json',
+      data: {
+        cargar_mas: 1,
+        offset: bitacoraPaginacion.offset,
+        limite: bitacoraPaginacion.limite
+      },
+      success: function(response) {
+        if (response.success && response.registros && response.registros.length > 0) {
+          // Agregar los nuevos registros a la tabla
+          var tbody = $('#bitacora-tbody');
+          var html = '';
+          
+          response.registros.forEach(function(dato) {
+            // Formatear la fecha
+            var fechaFormateada = dato.fecha_hora_formateada || dato.fecha_hora || '';
+            
+            // Determinar el badge según la acción
+            var badgeClass = 'bg-secondary';
+            var accion = dato.accion || '';
+            switch(accion) {
+              case 'CREAR': badgeClass = 'bg-success'; break;
+              case 'MODIFICAR': badgeClass = 'bg-primary'; break;
+              case 'ELIMINAR': badgeClass = 'bg-danger'; break;
+              case 'ACCESO A MÓDULO': badgeClass = 'bg-secondary'; break;
+              case 'CAMBIO_ESTADO': badgeClass = 'bg-warning'; break;
+            }
+            
+             var nombre = (dato.nombre || '') + ' ' + (dato.apellido || '');
+             nombre = nombre.trim() || 'N/A';
+             var nombreUsuario = dato.nombre_usuario || 'N/A';
+             
+             html += '<tr>' +
+               '<td class="fecha-bitacora texto-secundario" data-fecha="' + (dato.fecha_hora || '') + '">' + fechaFormateada + '</td>' +
+               '<td><span class="badge ' + badgeClass + '">' + accion + '</span></td>' +
+               '<td class="texto-secundario">' + nombre + '</td>' +
+               '<td class="texto-secundario">' + nombreUsuario + '</td>' +
+               '<td class="text-center">' +
+               '<button class="btn btn-info btn-sm" onclick="verDetalles(' + dato.id_bitacora + ')" title="Ver detalles">' +
+               '<i class="fas fa-info-circle"></i>' +
+               '</button>' +
+               '</td>' +
+               '</tr>';
+          });
+          
+          tbody.append(html);
+          
+          // Actualizar información de paginación
+          bitacoraPaginacion.offset = response.offset + response.registros.length;
+          bitacoraPaginacion.tieneMas = response.tiene_mas;
+          
+          // Formatear fechas de los nuevos registros
+          tbody.find('.fecha-bitacora').each(function() {
+            var fechaUTC = $(this).data('fecha');
+            if (fechaUTC) {
+              var fechaLocal = new Date(fechaUTC.replace(' ', 'T'));
+              var opciones = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+              var fechaFormateada = fechaLocal.toLocaleString('es-VE', opciones);
+              $(this).text(fechaFormateada);
+            }
+          });
+          
+          // Actualizar contador y ocultar botón si no hay más
+          if (response.tiene_mas) {
+            $('#registros-mostrados').text(bitacoraPaginacion.offset + ' / ' + response.total);
+            $btn.prop('disabled', false).html(originalHtml);
+          } else {
+            $container.fadeOut(function() {
+              $(this).remove();
+            });
+          }
+        } else {
+          $btn.prop('disabled', false).html(originalHtml);
+          Swal.fire('Info', 'No hay más registros para mostrar', 'info');
+          $container.fadeOut(function() {
+            $(this).remove();
+          });
+        }
+      },
+      error: function(xhr, status, error) {
+        $btn.prop('disabled', false).html(originalHtml);
+        Swal.fire('Error', 'Error al cargar más registros', 'error');
       }
     });
   });
@@ -171,6 +286,8 @@ function verDetalles(id) {
       
       // Información del Usuario
       $('#detalle-usuario').text(response.nombre + ' ' + response.apellido);
+      $('#detalle-cedula').text(response.cedula || 'N/A');
+      $('#detalle-correo').text(response.correo || 'N/A');
       $('#detalle-rol').text(response.nombre_usuario);
       
       // Información del Evento
@@ -188,17 +305,57 @@ function verDetalles(id) {
       }
       $('#detalle-accion').html(`<span class="badge ${badgeClass}">${response.accion || 'N/A'}</span>`);
       
-      // Descripción con formato
-      let desc = response.descripcion || 'Sin descripción';
-      if (desc.match(/\[(.*?)\]$/)) {
-        let partes = desc.split(/\[(.*?)\]$/);
-        $('#detalle-descripcion').html(`
-          <p class="mb-2">${partes[0]}</p>
-          <span class="badge bg-primary">[${partes[1]}]</span>
-        `);
-      } else {
-        $('#detalle-descripcion').text(desc);
-      }
+       // Descripción limpia sin prefijos (igual que en la tabla)
+       let desc = response.descripcion || '';
+       let descHtml = '';
+       
+       if (!desc) {
+         descHtml = '<span class="text-muted">Sin descripción</span>';
+       } else {
+         let descLimpia = desc;
+         
+         // Si tiene pipes, extraer solo la parte de Descripcion:
+         if (desc.indexOf('|') !== -1) {
+           // Buscar la parte después de "Descripcion:" o "Descripción:"
+           let descMatch = desc.match(/Descripci[oó]n:\s*(.+?)(?:\s*\||$)/i);
+           if (descMatch) {
+             descLimpia = descMatch[1].trim();
+           } else {
+             // Si no encuentra "Descripcion:", tomar la última parte después del último pipe
+             let partes = desc.split('|');
+             descLimpia = partes[partes.length - 1].trim();
+           }
+         }
+         
+         // ELIMINAR CUALQUIER PREFIJO "Descripcion:" o "Descripción:" que pueda quedar (en cualquier caso)
+         descLimpia = descLimpia.replace(/^Descripci[oó]n:\s*/gi, '');
+         descLimpia = descLimpia.replace(/Descripci[oó]n:\s*/gi, '');
+         descLimpia = descLimpia.replace(/DESCRIPCION:\s*/gi, '');
+         descLimpia = descLimpia.replace(/descripcion:\s*/gi, '');
+         
+         // Extraer módulo si existe al final entre corchetes
+         let moduloMatch = descLimpia.match(/\[(.*?)\]$/);
+         let modulo = '';
+         if (moduloMatch) {
+           modulo = moduloMatch[1];
+           descLimpia = descLimpia.replace(/\[(.*?)\]$/, '').trim();
+         }
+         
+         // Si después de limpiar está vacía y hay módulo
+         if (!descLimpia && response.accion === 'ACCESO A MÓDULO' && modulo) {
+           descLimpia = 'Usuario accedió al módulo';
+         }
+         
+         // Construir HTML - asegurar que no haya "Descripcion:" restante
+         descLimpia = descLimpia.trim();
+         descHtml = '<p class="mb-0">' + descLimpia;
+         if (modulo) {
+           descHtml += ' <span class="badge bg-primary">[' + modulo + ']</span>';
+         }
+         descHtml += '</p>';
+       }
+       
+       $('#detalle-descripcion').html(descHtml);
       
       $('#detallesModal').modal('show');
     },
