@@ -523,86 +523,145 @@ if (isset($_POST['registrar'])) {
                                 }
                                 break;
                             case 'Pago Movil':
-                                if (isset($_POST['monto_pm_bs']) && $_POST['monto_pm_bs'] > 0) {
-                                    $metodo['monto_bs'] = floatval($_POST['monto_pm_bs']);
+                                // Leer desde array indexado si existe, sino desde campo único (compatibilidad hacia atrás)
+                                $montoPmBs = 0;
+                                if (isset($_POST['monto_pm_bs']) && is_array($_POST['monto_pm_bs']) && isset($_POST['monto_pm_bs'][$i])) {
+                                    $montoPmBs = floatval($_POST['monto_pm_bs'][$i]);
+                                } elseif (isset($_POST['monto_pm_bs']) && !is_array($_POST['monto_pm_bs'])) {
+                                    $montoPmBs = floatval($_POST['monto_pm_bs']);
+                                }
+                                if ($montoPmBs > 0) {
+                                    $metodo['monto_bs'] = $montoPmBs;
                                 }
                                 
-                                // Validaciones específicas de Pago Móvil
-                                if (!isset($_POST['banco_emisor_pm']) || empty($_POST['banco_emisor_pm'])) {
-                                    throw new \Exception('Seleccione un banco emisor para Pago Móvil');
+                                // Validaciones específicas de Pago Móvil - leer desde array indexado
+                                $bancoEmisor = '';
+                                if (isset($_POST['banco_emisor_pm']) && is_array($_POST['banco_emisor_pm']) && isset($_POST['banco_emisor_pm'][$i])) {
+                                    $bancoEmisor = $_POST['banco_emisor_pm'][$i];
+                                } elseif (isset($_POST['banco_emisor_pm']) && !is_array($_POST['banco_emisor_pm'])) {
+                                    $bancoEmisor = $_POST['banco_emisor_pm'];
                                 }
-                                $metodo['banco_emisor'] = validarNombreBanco($_POST['banco_emisor_pm'], 'banco emisor');
                                 
-                                if (!isset($_POST['banco_receptor_pm']) || empty($_POST['banco_receptor_pm'])) {
-                                    throw new \Exception('Seleccione un banco receptor para Pago Móvil');
+                                if (empty($bancoEmisor)) {
+                                    throw new \Exception('Seleccione un banco emisor para Pago Móvil en el método de pago #' . ($i + 1));
                                 }
-                                $metodo['banco_receptor'] = validarNombreBanco($_POST['banco_receptor_pm'], 'banco receptor');
+                                $metodo['banco_emisor'] = validarNombreBanco($bancoEmisor, 'banco emisor');
                                 
-                                if (!isset($_POST['referencia_pm']) || empty($_POST['referencia_pm'])) {
-                                    throw new \Exception('La referencia de Pago Móvil es obligatoria');
+                                $bancoReceptor = '';
+                                if (isset($_POST['banco_receptor_pm']) && is_array($_POST['banco_receptor_pm']) && isset($_POST['banco_receptor_pm'][$i])) {
+                                    $bancoReceptor = $_POST['banco_receptor_pm'][$i];
+                                } elseif (isset($_POST['banco_receptor_pm']) && !is_array($_POST['banco_receptor_pm'])) {
+                                    $bancoReceptor = $_POST['banco_receptor_pm'];
                                 }
-                                $referenciaPM = trim($_POST['referencia_pm']);
+                                
+                                if (empty($bancoReceptor)) {
+                                    throw new \Exception('Seleccione un banco receptor para Pago Móvil en el método de pago #' . ($i + 1));
+                                }
+                                $metodo['banco_receptor'] = validarNombreBanco($bancoReceptor, 'banco receptor');
+                                
+                                $referenciaPM = '';
+                                if (isset($_POST['referencia_pm']) && is_array($_POST['referencia_pm']) && isset($_POST['referencia_pm'][$i])) {
+                                    $referenciaPM = trim($_POST['referencia_pm'][$i]);
+                                } elseif (isset($_POST['referencia_pm']) && !is_array($_POST['referencia_pm'])) {
+                                    $referenciaPM = trim($_POST['referencia_pm']);
+                                }
+                                
+                                if (empty($referenciaPM)) {
+                                    throw new \Exception('La referencia de Pago Móvil es obligatoria en el método de pago #' . ($i + 1));
+                                }
                                 // Validar formato (solo números, 4-6 dígitos)
                                 if (!preg_match('/^\d{4,6}$/', $referenciaPM)) {
-                                    throw new \Exception('La referencia de Pago Móvil debe tener entre 4 y 6 dígitos numéricos');
+                                    throw new \Exception('La referencia de Pago Móvil debe tener entre 4 y 6 dígitos numéricos en el método de pago #' . ($i + 1));
                                 }
                                 // Validar contra SQL injection
                                 if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $referenciaPM)) {
-                                    throw new \Exception('La referencia contiene caracteres no permitidos');
+                                    throw new \Exception('La referencia contiene caracteres no permitidos en el método de pago #' . ($i + 1));
                                 }
                                 $metodo['referencia'] = $referenciaPM;
                                 
-                                if (!isset($_POST['telefono_emisor_pm']) || empty($_POST['telefono_emisor_pm'])) {
-                                    throw new \Exception('El teléfono emisor de Pago Móvil es obligatorio');
+                                $telefonoPM = '';
+                                if (isset($_POST['telefono_emisor_pm']) && is_array($_POST['telefono_emisor_pm']) && isset($_POST['telefono_emisor_pm'][$i])) {
+                                    $telefonoPM = trim($_POST['telefono_emisor_pm'][$i]);
+                                } elseif (isset($_POST['telefono_emisor_pm']) && !is_array($_POST['telefono_emisor_pm'])) {
+                                    $telefonoPM = trim($_POST['telefono_emisor_pm']);
                                 }
-                                $telefonoPM = trim($_POST['telefono_emisor_pm']);
+                                
+                                if (empty($telefonoPM)) {
+                                    throw new \Exception('El teléfono emisor de Pago Móvil es obligatorio en el método de pago #' . ($i + 1));
+                                }
                                 // Validar formato (solo números, 11 dígitos)
                                 if (!preg_match('/^\d{11}$/', $telefonoPM)) {
-                                    throw new \Exception('El teléfono emisor debe tener 11 dígitos numéricos');
+                                    throw new \Exception('El teléfono emisor debe tener 11 dígitos numéricos en el método de pago #' . ($i + 1));
                                 }
                                 // Validar contra SQL injection
                                 if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $telefonoPM)) {
-                                    throw new \Exception('El teléfono contiene caracteres no permitidos');
+                                    throw new \Exception('El teléfono contiene caracteres no permitidos en el método de pago #' . ($i + 1));
                                 }
                                 $metodo['telefono_emisor'] = $telefonoPM;
                                 break;
                             case 'Punto de Venta':
-                                if (isset($_POST['monto_pv_bs']) && $_POST['monto_pv_bs'] > 0) {
-                                    $metodo['monto_bs'] = floatval($_POST['monto_pv_bs']);
+                                // Leer desde array indexado si existe
+                                $montoPvBs = 0;
+                                if (isset($_POST['monto_pv_bs']) && is_array($_POST['monto_pv_bs']) && isset($_POST['monto_pv_bs'][$i])) {
+                                    $montoPvBs = floatval($_POST['monto_pv_bs'][$i]);
+                                } elseif (isset($_POST['monto_pv_bs']) && !is_array($_POST['monto_pv_bs'])) {
+                                    $montoPvBs = floatval($_POST['monto_pv_bs']);
+                                }
+                                if ($montoPvBs > 0) {
+                                    $metodo['monto_bs'] = $montoPvBs;
                                 }
                                 
-                                // Validación de referencia para Punto de Venta
-                                if (!isset($_POST['referencia_pv']) || empty($_POST['referencia_pv'])) {
-                                    throw new \Exception('La referencia de Punto de Venta es obligatoria');
+                                // Validación de referencia para Punto de Venta - leer desde array indexado
+                                $referenciaPV = '';
+                                if (isset($_POST['referencia_pv']) && is_array($_POST['referencia_pv']) && isset($_POST['referencia_pv'][$i])) {
+                                    $referenciaPV = trim($_POST['referencia_pv'][$i]);
+                                } elseif (isset($_POST['referencia_pv']) && !is_array($_POST['referencia_pv'])) {
+                                    $referenciaPV = trim($_POST['referencia_pv']);
                                 }
-                                $referenciaPV = trim($_POST['referencia_pv']);
+                                
+                                if (empty($referenciaPV)) {
+                                    throw new \Exception('La referencia de Punto de Venta es obligatoria en el método de pago #' . ($i + 1));
+                                }
                                 // Validar formato (solo números, 4-6 dígitos)
                                 if (!preg_match('/^\d{4,6}$/', $referenciaPV)) {
-                                    throw new \Exception('La referencia de Punto de Venta debe tener entre 4 y 6 dígitos numéricos');
+                                    throw new \Exception('La referencia de Punto de Venta debe tener entre 4 y 6 dígitos numéricos en el método de pago #' . ($i + 1));
                                 }
                                 // Validar contra SQL injection
                                 if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $referenciaPV)) {
-                                    throw new \Exception('La referencia contiene caracteres no permitidos');
+                                    throw new \Exception('La referencia contiene caracteres no permitidos en el método de pago #' . ($i + 1));
                                 }
                                 $metodo['referencia'] = $referenciaPV;
                                 break;
                             case 'Transferencia Bancaria':
-                                if (isset($_POST['monto_tb_bs']) && $_POST['monto_tb_bs'] > 0) {
-                                    $metodo['monto_bs'] = floatval($_POST['monto_tb_bs']);
+                                // Leer desde array indexado si existe
+                                $montoTbBs = 0;
+                                if (isset($_POST['monto_tb_bs']) && is_array($_POST['monto_tb_bs']) && isset($_POST['monto_tb_bs'][$i])) {
+                                    $montoTbBs = floatval($_POST['monto_tb_bs'][$i]);
+                                } elseif (isset($_POST['monto_tb_bs']) && !is_array($_POST['monto_tb_bs'])) {
+                                    $montoTbBs = floatval($_POST['monto_tb_bs']);
+                                }
+                                if ($montoTbBs > 0) {
+                                    $metodo['monto_bs'] = $montoTbBs;
                                 }
                                 
-                                // Validación de referencia para Transferencia Bancaria
-                                if (!isset($_POST['referencia_tb']) || empty($_POST['referencia_tb'])) {
-                                    throw new \Exception('La referencia de Transferencia Bancaria es obligatoria');
+                                // Validación de referencia para Transferencia Bancaria - leer desde array indexado
+                                $referenciaTB = '';
+                                if (isset($_POST['referencia_tb']) && is_array($_POST['referencia_tb']) && isset($_POST['referencia_tb'][$i])) {
+                                    $referenciaTB = trim($_POST['referencia_tb'][$i]);
+                                } elseif (isset($_POST['referencia_tb']) && !is_array($_POST['referencia_tb'])) {
+                                    $referenciaTB = trim($_POST['referencia_tb']);
                                 }
-                                $referenciaTB = trim($_POST['referencia_tb']);
+                                
+                                if (empty($referenciaTB)) {
+                                    throw new \Exception('La referencia de Transferencia Bancaria es obligatoria en el método de pago #' . ($i + 1));
+                                }
                                 // Validar formato (solo números, 4-6 dígitos)
                                 if (!preg_match('/^\d{4,6}$/', $referenciaTB)) {
-                                    throw new \Exception('La referencia de Transferencia Bancaria debe tener entre 4 y 6 dígitos numéricos');
+                                    throw new \Exception('La referencia de Transferencia Bancaria debe tener entre 4 y 6 dígitos numéricos en el método de pago #' . ($i + 1));
                                 }
                                 // Validar contra SQL injection
                                 if (preg_match('/[;\'\"\-\-]|(\/\*)|(\*\/)|(xp_)|(sp_)|(exec)|(union)|(select)|(insert)|(update)|(delete)|(drop)|(create)|(alter)/i', $referenciaTB)) {
-                                    throw new \Exception('La referencia contiene caracteres no permitidos');
+                                    throw new \Exception('La referencia contiene caracteres no permitidos en el método de pago #' . ($i + 1));
                                 }
                                 $metodo['referencia'] = $referenciaTB;
                                 break;
@@ -674,7 +733,7 @@ if (isset($_POST['registrar'])) {
    ============================================ */
 
 /* Procesa la búsqueda de un cliente por cédula. Retorna información del cliente si existe*/
-
+ 
 if (isset($_POST['buscar_cliente'])) {
     try {
         // ===== VALIDACIÓN DE SESIÓN =====

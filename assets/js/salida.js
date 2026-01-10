@@ -636,6 +636,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Función para agregar datos de métodos de pago al formulario
         function agregarDatosMetodosPago(formData) {
+            // Guardar valores de la fila activa antes de procesar
+            const filaActiva = document.querySelector('.metodo-pago-activa');
+            if (filaActiva) {
+                guardarValoresCamposActuales(filaActiva);
+            }
+            
             document.querySelectorAll('.metodo-pago-fila').forEach((fila, index) => {
                 const select = fila.querySelector('.metodo-pago-select');
                 const montoInput = fila.querySelector('input[name="monto_metodopago[]"]');
@@ -649,6 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     formData.append('monto_metodopago[]', montoInput.value);
                     
                     // Agregar detalles específicos según el método
+                    // Usar valores guardados en la fila si existen, sino usar los campos actuales
                     switch(nombreMetodo) {
                         case 'Divisas $':
                             // No necesitamos campo específico, ya usamos monto_metodopago[]
@@ -660,33 +667,39 @@ document.addEventListener('DOMContentLoaded', function() {
                             break;
                             
                         case 'Pago Movil':
-                            const bancoEmisor = document.querySelector('select[name="banco_emisor_pm"]')?.value || '';
-                            const bancoReceptor = document.querySelector('select[name="banco_receptor_pm"]')?.value || '';
-                            const referenciaPm = document.querySelector('input[name="referencia_pm"]')?.value || '';
-                            const telefonoEmisor = document.querySelector('input[name="telefono_emisor_pm"]')?.value || '';
+                            // Usar valores guardados en la fila o los campos actuales
+                            const bancoEmisor = fila.dataset.bancoEmisor || document.querySelector('select[name="banco_emisor_pm"]')?.value || '';
+                            const bancoReceptor = fila.dataset.bancoReceptor || document.querySelector('select[name="banco_receptor_pm"]')?.value || '';
+                            const referenciaPm = fila.dataset.referencia || document.querySelector('input[name="referencia_pm"]')?.value || '';
+                            const telefonoEmisor = fila.dataset.telefonoEmisor || document.querySelector('input[name="telefono_emisor_pm"]')?.value || '';
                             const montoPmBs = document.querySelector('input[name="monto_pm_bs"]')?.value || '0.00';
                             
-                            formData.append('banco_emisor_pm', bancoEmisor);
-                            formData.append('banco_receptor_pm', bancoReceptor);
-                            formData.append('referencia_pm', referenciaPm);
-                            formData.append('telefono_emisor_pm', telefonoEmisor);
-                            formData.append('monto_pm_bs', montoPmBs);
+                            // Enviar como arrays indexados para permitir múltiples métodos del mismo tipo
+                            formData.append('banco_emisor_pm[]', bancoEmisor);
+                            formData.append('banco_receptor_pm[]', bancoReceptor);
+                            formData.append('referencia_pm[]', referenciaPm);
+                            formData.append('telefono_emisor_pm[]', telefonoEmisor);
+                            formData.append('monto_pm_bs[]', montoPmBs);
                             break;
                             
                         case 'Punto de Venta':
-                            const referenciaPv = document.querySelector('input[name="referencia_pv"]')?.value || '';
+                            // Usar valor guardado en la fila o el campo actual
+                            const referenciaPv = fila.dataset.referencia || document.querySelector('input[name="referencia_pv"]')?.value || '';
                             const montoPvBs = document.querySelector('input[name="monto_pv_bs"]')?.value || '0.00';
                             
-                            formData.append('referencia_pv', referenciaPv);
-                            formData.append('monto_pv_bs', montoPvBs);
+                            // Enviar como arrays indexados
+                            formData.append('referencia_pv[]', referenciaPv);
+                            formData.append('monto_pv_bs[]', montoPvBs);
                             break;
                             
                         case 'Transferencia Bancaria':
-                            const referenciaTb = document.querySelector('input[name="referencia_tb"]')?.value || '';
+                            // Usar valor guardado en la fila o el campo actual
+                            const referenciaTb = fila.dataset.referencia || document.querySelector('input[name="referencia_tb"]')?.value || '';
                             const montoTbBs = document.querySelector('input[name="monto_tb_bs"]')?.value || '0.00';
                             
-                            formData.append('referencia_tb', referenciaTb);
-                            formData.append('monto_tb_bs', montoTbBs);
+                            // Enviar como arrays indexados
+                            formData.append('referencia_tb[]', referenciaTb);
+                            formData.append('monto_tb_bs[]', montoTbBs);
                             break;
                     }
                 }
@@ -1412,6 +1425,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (mensajeCompleto) mensajeCompleto.remove();
             if (mensajeSobrepago) mensajeSobrepago.remove();
         }
+        
+        // Actualizar opciones disponibles después de actualizar la lista
+        actualizarOpcionesMetodosPago();
     }
 
     // Función para obtener detalles específicos de cada método de pago
@@ -1432,16 +1448,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
                 
             case 'Pago Movil':
-                const bancoEmisor = document.querySelector('select[name="banco_emisor_pm"]')?.value || 'No especificado';
-                const bancoReceptor = document.querySelector('select[name="banco_receptor_pm"]')?.value || 'No especificado';
-                const referencia = document.querySelector('input[name="referencia_pm"]')?.value || 'No especificada';
-                const telefono = document.querySelector('input[name="telefono_emisor_pm"]')?.value || 'No especificado';
+                // Guardar valores actuales primero si la fila está activa
+                if (fila.classList.contains('metodo-pago-activa')) {
+                    guardarValoresCamposActuales(fila);
+                }
+                const bancoEmisor = fila.dataset.bancoEmisor || document.querySelector('select[name="banco_emisor_pm"]')?.value || 'No especificado';
+                const bancoReceptor = fila.dataset.bancoReceptor || document.querySelector('select[name="banco_receptor_pm"]')?.value || 'No especificado';
+                const referencia = fila.dataset.referencia || document.querySelector('input[name="referencia_pm"]')?.value || 'No especificada';
+                const telefono = fila.dataset.telefonoEmisor || document.querySelector('input[name="telefono_emisor_pm"]')?.value || 'No especificado';
                 const montoBsPagoMovil = document.querySelector('input[name="monto_pm_bs"]')?.value || '0.00';
                 detalles = `Emisor: ${bancoEmisor} | Receptor: ${bancoReceptor} | Ref: ${referencia} | Tel: ${telefono} | Monto: Bs ${montoBsPagoMovil}`;
                 break;
                 
             case 'Punto de Venta':
-                const referenciaPv = document.querySelector('input[name="referencia_pv"]')?.value || 'No especificada';
+                // Guardar valores actuales primero si la fila está activa
+                if (fila.classList.contains('metodo-pago-activa')) {
+                    guardarValoresCamposActuales(fila);
+                }
+                const referenciaPv = fila.dataset.referencia || document.querySelector('input[name="referencia_pv"]')?.value || 'No especificada';
                 const montoBsPuntoVenta = document.querySelector('input[name="monto_pv_bs"]')?.value || '0.00';
                 detalles = `Referencia: ${referenciaPv} | Monto: Bs ${montoBsPuntoVenta}`;
                 break;
@@ -1741,6 +1765,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar eventos de productos
     inicializarEventosProducto();
 
+    // Función para obtener los métodos de pago ya seleccionados
+    function obtenerMetodosPagoSeleccionados(excluirFila = null) {
+        const metodosSeleccionados = new Set();
+        const filas = document.querySelectorAll('.metodo-pago-fila');
+        
+        filas.forEach(fila => {
+            if (fila === excluirFila) return; // Excluir la fila actual si se especifica
+            
+            const select = fila.querySelector('.metodo-pago-select');
+            if (select && select.value) {
+                metodosSeleccionados.add(select.value);
+            }
+        });
+        
+        return metodosSeleccionados;
+    }
+    
+    // Función para actualizar las opciones disponibles en cada select
+    function actualizarOpcionesMetodosPago() {
+        const metodosSeleccionados = obtenerMetodosPagoSeleccionados();
+        const filas = document.querySelectorAll('.metodo-pago-fila');
+        
+        filas.forEach(fila => {
+            const select = fila.querySelector('.metodo-pago-select');
+            if (!select) return;
+            
+            const valorActual = select.value;
+            
+            // Habilitar/deshabilitar opciones según si ya están seleccionadas
+            Array.from(select.options).forEach(option => {
+                if (option.value === '') {
+                    // Opción vacía siempre habilitada
+                    option.disabled = false;
+                } else if (option.value === valorActual) {
+                    // La opción actual siempre habilitada
+                    option.disabled = false;
+                } else if (metodosSeleccionados.has(option.value)) {
+                    // Deshabilitar si ya está seleccionada en otra fila
+                    option.disabled = true;
+                } else {
+                    // Habilitar si no está seleccionada
+                    option.disabled = false;
+                }
+            });
+        });
+    }
+
     // Eventos para métodos de pago
     function inicializarEventosMetodoPago() {
         // Evento para agregar método de pago
@@ -1748,6 +1819,24 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.classList.contains('agregar-metodo-pago')) {
                 const fila = e.target.closest('.metodo-pago-fila');
                 if (!fila) return;
+                
+                // Obtener todos los métodos de pago disponibles
+                const selectPrimero = document.querySelector('.metodo-pago-select');
+                if (!selectPrimero) return;
+                
+                const totalMetodosDisponibles = selectPrimero.options.length - 1; // -1 por la opción vacía
+                const metodosSeleccionados = obtenerMetodosPagoSeleccionados();
+                
+                // Verificar si ya se han seleccionado todos los métodos disponibles
+                if (metodosSeleccionados.size >= totalMetodosDisponibles) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Todos los métodos seleccionados',
+                        text: 'Ya has agregado todos los métodos de pago disponibles. No puedes agregar más.',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
                 
                 const nuevaFila = fila.cloneNode(true);
                 
@@ -1777,6 +1866,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (container) {
                     container.appendChild(nuevaFila);
                     inicializarEventosFilaMetodoPago(nuevaFila);
+                    // Actualizar opciones después de agregar la nueva fila
+                    setTimeout(() => {
+                        actualizarOpcionesMetodosPago();
+                    }, 100);
                 }
             }
             
@@ -1793,6 +1886,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (filas.length > 1) {
                     filaActual.remove();
                     validarTotalMetodosPago();
+                    // Actualizar opciones después de eliminar una fila
+                    setTimeout(() => {
+                        actualizarOpcionesMetodosPago();
+                    }, 100);
                 } else {
                     Swal.fire('Error', 'Debe mantener al menos un método de pago', 'error');
                 }
@@ -1803,6 +1900,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.metodo-pago-fila').forEach(fila => {
             inicializarEventosFilaMetodoPago(fila);
         });
+        
+        // Actualizar opciones al inicializar
+        actualizarOpcionesMetodosPago();
     }
 
     function inicializarEventosFilaMetodoPago(fila) {
@@ -1822,7 +1922,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 const option = this.options[this.selectedIndex];
                 const nombreMetodo = option.getAttribute('data-nombre');
                 
+                // Marcar esta fila como activa
+                document.querySelectorAll('.metodo-pago-fila').forEach(f => f.classList.remove('metodo-pago-activa'));
+                fila.classList.add('metodo-pago-activa');
+                fila.dataset.metodoNombre = nombreMetodo;
+                
                 mostrarCamposMetodoPago(nombreMetodo);
+                
+                // Restaurar valores guardados después de que los campos se muestren
+                setTimeout(() => {
+                    if (nombreMetodo === 'Pago Movil') {
+                        const campoReferencia = document.querySelector('input[name="referencia_pm"]');
+                        const campoBancoEmisor = document.querySelector('select[name="banco_emisor_pm"]');
+                        const campoBancoReceptor = document.querySelector('select[name="banco_receptor_pm"]');
+                        const campoTelefono = document.querySelector('input[name="telefono_emisor_pm"]');
+                        
+                        if (campoReferencia && fila.dataset.referencia) campoReferencia.value = fila.dataset.referencia;
+                        if (campoBancoEmisor && fila.dataset.bancoEmisor) campoBancoEmisor.value = fila.dataset.bancoEmisor;
+                        if (campoBancoReceptor && fila.dataset.bancoReceptor) campoBancoReceptor.value = fila.dataset.bancoReceptor;
+                        if (campoTelefono && fila.dataset.telefonoEmisor) campoTelefono.value = fila.dataset.telefonoEmisor;
+                    } else if (nombreMetodo === 'Punto de Venta') {
+                        const campoReferencia = document.querySelector('input[name="referencia_pv"]');
+                        if (campoReferencia && fila.dataset.referencia) campoReferencia.value = fila.dataset.referencia;
+                    } else if (nombreMetodo === 'Transferencia Bancaria') {
+                        const campoReferencia = document.querySelector('input[name="referencia_tb"]');
+                        if (campoReferencia && fila.dataset.referencia) campoReferencia.value = fila.dataset.referencia;
+                    }
+                }, 100);
+                
                 validarTotalMetodosPago();
                 
                 // Actualizar montos cuando se seleccione un método
@@ -1832,9 +1959,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Actualizar estado del botón siguiente
                 actualizarBotonesNavegacion();
+                
+                // Agregar listeners para guardar valores cuando cambien
+                guardarValoresMetodoPago(fila, nombreMetodo);
             } else {
+                // Limpiar el método anterior cuando se deselecciona
+                fila.dataset.metodoAnteriorId = '';
+                fila.classList.remove('metodo-pago-activa');
                 ocultarTodosLosCamposMetodoPago();
                 actualizarBotonesNavegacion();
+                // Actualizar opciones cuando se deselecciona
+                setTimeout(() => {
+                    actualizarOpcionesMetodosPago();
+                }, 100);
             }
         });
         
@@ -1912,6 +2049,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarCamposMetodoPago(nombreMetodo) {
+        // Guardar valores de la fila activa anterior antes de ocultar
+        const filaActivaAnterior = document.querySelector('.metodo-pago-activa');
+        if (filaActivaAnterior) {
+            guardarValoresCamposActuales(filaActivaAnterior);
+        }
+        
         // Ocultar todos los campos primero
         ocultarTodosLosCamposMetodoPago();
         
@@ -1960,6 +2103,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function ocultarTodosLosCamposMetodoPago() {
+        // Guardar valores antes de ocultar si hay una fila activa
+        const filaActiva = document.querySelector('.metodo-pago-activa');
+        if (filaActiva) {
+            guardarValoresCamposActuales(filaActiva);
+        }
+        
         const campos = document.querySelectorAll('.campos-metodo');
         campos.forEach(campo => {
             if (campo) campo.style.display = 'none';
@@ -1972,6 +2121,94 @@ document.addEventListener('DOMContentLoaded', function() {
         const infoConversion = document.getElementById('info-conversion');
         if (infoConversion) {
             infoConversion.remove();
+        }
+    }
+    
+    // Función para guardar valores actuales de los campos en la fila
+    function guardarValoresCamposActuales(fila) {
+        if (!fila || !fila.dataset.metodoNombre) return;
+        
+        const nombreMetodo = fila.dataset.metodoNombre;
+        
+        if (nombreMetodo === 'Pago Movil') {
+            const referencia = document.querySelector('input[name="referencia_pm"]')?.value || '';
+            const bancoEmisor = document.querySelector('select[name="banco_emisor_pm"]')?.value || '';
+            const bancoReceptor = document.querySelector('select[name="banco_receptor_pm"]')?.value || '';
+            const telefono = document.querySelector('input[name="telefono_emisor_pm"]')?.value || '';
+            
+            fila.dataset.referencia = referencia;
+            fila.dataset.bancoEmisor = bancoEmisor;
+            fila.dataset.bancoReceptor = bancoReceptor;
+            fila.dataset.telefonoEmisor = telefono;
+        } else if (nombreMetodo === 'Punto de Venta') {
+            const referencia = document.querySelector('input[name="referencia_pv"]')?.value || '';
+            fila.dataset.referencia = referencia;
+        } else if (nombreMetodo === 'Transferencia Bancaria') {
+            const referencia = document.querySelector('input[name="referencia_tb"]')?.value || '';
+            fila.dataset.referencia = referencia;
+        }
+    }
+    
+    // Función para guardar valores de método de pago en la fila
+    function guardarValoresMetodoPago(fila, nombreMetodo) {
+        // Limpiar listeners anteriores si existen
+        const camposReferencia = document.querySelectorAll('input[name="referencia_pm"], input[name="referencia_pv"], input[name="referencia_tb"]');
+        const camposBancoEmisor = document.querySelectorAll('select[name="banco_emisor_pm"]');
+        const camposBancoReceptor = document.querySelectorAll('select[name="banco_receptor_pm"]');
+        const camposTelefono = document.querySelectorAll('input[name="telefono_emisor_pm"]');
+        
+        // Guardar valores de referencia
+        camposReferencia.forEach(campo => {
+            // Remover listener anterior si existe
+            campo.removeEventListener('input', campo._saveHandler);
+            
+            // Crear nuevo handler
+            campo._saveHandler = function() {
+                const filaActiva = document.querySelector('.metodo-pago-activa');
+                if (filaActiva && filaActiva.dataset.metodoNombre === nombreMetodo) {
+                    filaActiva.dataset.referencia = this.value;
+                }
+            };
+            
+            campo.addEventListener('input', campo._saveHandler);
+            campo.addEventListener('blur', campo._saveHandler);
+        });
+        
+        // Guardar valores de banco emisor (solo para Pago Móvil)
+        if (nombreMetodo === 'Pago Movil') {
+            camposBancoEmisor.forEach(campo => {
+                campo.removeEventListener('change', campo._saveHandler);
+                campo._saveHandler = function() {
+                    const filaActiva = document.querySelector('.metodo-pago-activa');
+                    if (filaActiva && filaActiva.dataset.metodoNombre === nombreMetodo) {
+                        filaActiva.dataset.bancoEmisor = this.value;
+                    }
+                };
+                campo.addEventListener('change', campo._saveHandler);
+            });
+            
+            camposBancoReceptor.forEach(campo => {
+                campo.removeEventListener('change', campo._saveHandler);
+                campo._saveHandler = function() {
+                    const filaActiva = document.querySelector('.metodo-pago-activa');
+                    if (filaActiva && filaActiva.dataset.metodoNombre === nombreMetodo) {
+                        filaActiva.dataset.bancoReceptor = this.value;
+                    }
+                };
+                campo.addEventListener('change', campo._saveHandler);
+            });
+            
+            camposTelefono.forEach(campo => {
+                campo.removeEventListener('input', campo._saveHandler);
+                campo._saveHandler = function() {
+                    const filaActiva = document.querySelector('.metodo-pago-activa');
+                    if (filaActiva && filaActiva.dataset.metodoNombre === nombreMetodo) {
+                        filaActiva.dataset.telefonoEmisor = this.value;
+                    }
+                };
+                campo.addEventListener('input', campo._saveHandler);
+                campo.addEventListener('blur', campo._saveHandler);
+            });
         }
     }
 
@@ -2213,15 +2450,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validaciones según el método específico de esta fila
             if (nombreMetodo.toLowerCase().includes('pago móvil') || nombreMetodo.toLowerCase().includes('movil')) {
-                if (!validarPagoMovil()) {
+                if (!validarPagoMovilFila(fila)) {
                     return false;
                 }
             } else if (nombreMetodo.toLowerCase().includes('punto de venta') || nombreMetodo.toLowerCase().includes('pos')) {
-                if (!validarPuntoVenta()) {
+                if (!validarPuntoVentaFila(fila)) {
                     return false;
                 }
             } else if (nombreMetodo.toLowerCase().includes('transferencia bancaria') || nombreMetodo.toLowerCase().includes('transferencia')) {
-                if (!validarTransferenciaBancaria()) {
+                if (!validarTransferenciaBancariaFila(fila)) {
                     return false;
                 }
             }
@@ -2231,34 +2468,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validarPagoMovil() {
-        // Verificar si los campos de pago móvil están visibles
-        const camposPagoMovil = document.getElementById('campos-pago-movil');
-        if (!camposPagoMovil || camposPagoMovil.style.display === 'none') {
-            return true; // Si los campos no están visibles, no hay nada que validar
+        // Función legacy - mantener para compatibilidad
+        return validarPagoMovilFila(null);
+    }
+    
+    function validarPagoMovilFila(fila) {
+        // Si se pasa una fila, usar valores guardados en ella
+        let bancoEmisor, bancoReceptor, referencia, telefono;
+        
+        if (fila && fila.dataset.metodoNombre === 'Pago Movil') {
+            // Guardar valores actuales primero
+            guardarValoresCamposActuales(fila);
+            
+            bancoEmisor = fila.dataset.bancoEmisor || '';
+            bancoReceptor = fila.dataset.bancoReceptor || '';
+            referencia = fila.dataset.referencia || '';
+            telefono = fila.dataset.telefonoEmisor || '';
+        } else {
+            // Usar campos actuales del formulario
+            const camposPagoMovil = document.getElementById('campos-pago-movil');
+            if (!camposPagoMovil || camposPagoMovil.style.display === 'none') {
+                return true;
+            }
+            
+            bancoEmisor = document.querySelector('select[name="banco_emisor_pm"]')?.value || '';
+            bancoReceptor = document.querySelector('select[name="banco_receptor_pm"]')?.value || '';
+            referencia = document.querySelector('input[name="referencia_pm"]')?.value || '';
+            telefono = document.querySelector('input[name="telefono_emisor_pm"]')?.value || '';
         }
         
-        const bancoEmisor = document.querySelector('select[name="banco_emisor_pm"]').value;
-        const bancoReceptor = document.querySelector('select[name="banco_receptor_pm"]').value;
-        const referencia = document.querySelector('input[name="referencia_pm"]').value;
-        const telefono = document.querySelector('input[name="telefono_emisor_pm"]').value;
-        
         if (!bancoEmisor) {
-            Swal.fire('Error', 'Seleccione un banco emisor', 'error');
+            Swal.fire('Error', 'Seleccione un banco emisor para Pago Móvil', 'error');
             return false;
         }
         
         if (!bancoReceptor) {
-            Swal.fire('Error', 'Seleccione un banco receptor', 'error');
+            Swal.fire('Error', 'Seleccione un banco receptor para Pago Móvil', 'error');
             return false;
         }
         
         if (!referencia || referencia.length < 4 || referencia.length > 6 || !/^\d+$/.test(referencia)) {
-            Swal.fire('Error', 'La referencia debe tener entre 4 y 6 dígitos numéricos', 'error');
+            Swal.fire('Error', 'La referencia de Pago Móvil debe tener entre 4 y 6 dígitos numéricos', 'error');
             return false;
         }
         
         if (!telefono || telefono.length !== 11 || !/^\d+$/.test(telefono)) {
-            Swal.fire('Error', 'El teléfono debe tener 11 dígitos numéricos', 'error');
+            Swal.fire('Error', 'El teléfono emisor debe tener 11 dígitos numéricos', 'error');
             return false;
         }
         
@@ -2266,16 +2521,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validarPuntoVenta() {
-        // Verificar si los campos de punto de venta están visibles
-        const camposPuntoVenta = document.getElementById('campos-punto-venta');
-        if (!camposPuntoVenta || camposPuntoVenta.style.display === 'none') {
-            return true; // Si los campos no están visibles, no hay nada que validar
+        // Función legacy - mantener para compatibilidad
+        return validarPuntoVentaFila(null);
+    }
+    
+    function validarPuntoVentaFila(fila) {
+        let referencia;
+        
+        if (fila && fila.dataset.metodoNombre === 'Punto de Venta') {
+            // Guardar valores actuales primero
+            guardarValoresCamposActuales(fila);
+            referencia = fila.dataset.referencia || '';
+        } else {
+            // Usar campos actuales del formulario
+            const camposPuntoVenta = document.getElementById('campos-punto-venta');
+            if (!camposPuntoVenta || camposPuntoVenta.style.display === 'none') {
+                return true;
+            }
+            referencia = document.querySelector('input[name="referencia_pv"]')?.value || '';
         }
         
-        const referencia = document.querySelector('input[name="referencia_pv"]').value;
-        
         if (!referencia || referencia.length < 4 || referencia.length > 6 || !/^\d+$/.test(referencia)) {
-            Swal.fire('Error', 'La referencia debe tener entre 4 y 6 dígitos numéricos', 'error');
+            Swal.fire('Error', 'La referencia de Punto de Venta debe tener entre 4 y 6 dígitos numéricos', 'error');
             return false;
         }
         
@@ -2283,16 +2550,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validarTransferenciaBancaria() {
-        // Verificar si los campos de transferencia bancaria están visibles
-        const camposTransferencia = document.getElementById('campos-transferencia');
-        if (!camposTransferencia || camposTransferencia.style.display === 'none') {
-            return true; // Si los campos no están visibles, no hay nada que validar
+        // Función legacy - mantener para compatibilidad
+        return validarTransferenciaBancariaFila(null);
+    }
+    
+    function validarTransferenciaBancariaFila(fila) {
+        let referencia;
+        
+        if (fila && fila.dataset.metodoNombre === 'Transferencia Bancaria') {
+            // Guardar valores actuales primero
+            guardarValoresCamposActuales(fila);
+            referencia = fila.dataset.referencia || '';
+        } else {
+            // Usar campos actuales del formulario
+            const camposTransferencia = document.getElementById('campos-transferencia');
+            if (!camposTransferencia || camposTransferencia.style.display === 'none') {
+                return true;
+            }
+            referencia = document.querySelector('input[name="referencia_tb"]')?.value || '';
         }
         
-        const referencia = document.querySelector('input[name="referencia_tb"]').value;
-        
         if (!referencia || referencia.length < 4 || referencia.length > 6 || !/^\d+$/.test(referencia)) {
-            Swal.fire('Error', 'La referencia debe tener entre 4 y 6 dígitos numéricos', 'error');
+            Swal.fire('Error', 'La referencia de Transferencia Bancaria debe tener entre 4 y 6 dígitos numéricos', 'error');
             return false;
         }
         
@@ -2324,6 +2603,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializar eventos de métodos de pago
     inicializarEventosMetodoPago();
+    
+    // Actualizar opciones de métodos de pago al cargar la página
+    setTimeout(() => {
+        actualizarOpcionesMetodosPago();
+    }, 500);
 
     // Función de inicialización para debugging
     function inicializarDebugMetodoPago() {

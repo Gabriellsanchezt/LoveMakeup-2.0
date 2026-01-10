@@ -419,10 +419,10 @@ class Salida extends Conexion {
             $conex->beginTransaction();
             
             // Verificar si la cédula ya existe en persona
-            $sql_verificar_persona = "SELECT cedula FROM persona WHERE cedula = :cedula";
+            $sql_verificar_persona = "SELECT cedula, correo FROM persona WHERE cedula = :cedula";
             $stmt_verificar_persona = $conex->prepare($sql_verificar_persona);
             $stmt_verificar_persona->execute(['cedula' => $datos['cedula']]);
-            $persona_existe = $stmt_verificar_persona->fetch();
+            $persona_existe = $stmt_verificar_persona->fetch(\PDO::FETCH_ASSOC);
             
             // Verificar si ya tiene usuario con rol de cliente (id_rol = 1)
             $sql_verificar_cliente = "SELECT id_usuario FROM usuario WHERE cedula = :cedula AND id_rol = 1 AND estatus = 1";
@@ -435,7 +435,19 @@ class Salida extends Conexion {
                 throw new \Exception('La cédula ya está registrada como cliente');
             }
             
-            // Si la persona no existe, insertar en persona
+            // Validar si el correo ya existe y pertenece a otra persona
+            $correo_normalizado = strtolower(trim($datos['correo']));
+            $sql_verificar_correo = "SELECT cedula, correo FROM persona WHERE LOWER(TRIM(correo)) = :correo";
+            $stmt_verificar_correo = $conex->prepare($sql_verificar_correo);
+            $stmt_verificar_correo->execute(['correo' => $correo_normalizado]);
+            $correo_existe = $stmt_verificar_correo->fetch(\PDO::FETCH_ASSOC);
+            
+            // Si el correo existe y pertenece a otra cédula, lanzar error
+            if ($correo_existe && $correo_existe['cedula'] !== $datos['cedula']) {
+                throw new \Exception('El correo electrónico ya está registrado para otra persona');
+            }
+            
+            // Si la persona no existe, insertar en persona con el correo
             if (!$persona_existe) {
                 $sql_persona = "INSERT INTO persona (cedula, nombre, apellido, telefono, correo, tipo_documento) 
                                VALUES (:cedula, :nombre, :apellido, :telefono, :correo, 'V')";
@@ -445,10 +457,10 @@ class Salida extends Conexion {
                     'nombre' => $datos['nombre'],
                     'apellido' => $datos['apellido'],
                     'telefono' => $datos['telefono'],
-                    'correo' => $datos['correo']
+                    'correo' => $correo_normalizado
                 ]);
             } else {
-                // Si la persona existe, actualizar sus datos
+                // Si la persona existe, actualizar sus datos incluyendo el correo
                 $sql_actualizar_persona = "UPDATE persona SET nombre = :nombre, apellido = :apellido, 
                                           telefono = :telefono, correo = :correo 
                                           WHERE cedula = :cedula";
@@ -458,7 +470,7 @@ class Salida extends Conexion {
                     'nombre' => $datos['nombre'],
                     'apellido' => $datos['apellido'],
                     'telefono' => $datos['telefono'],
-                    'correo' => $datos['correo']
+                    'correo' => $correo_normalizado
                 ]);
             }
             
@@ -722,26 +734,79 @@ class Salida extends Conexion {
 
         $conex = $this->getConex1();
         try {
-            // Consulta para obtener métodos de pago de la venta
-            // detalle_pago se relaciona con pedido a través de id_pago
+            // Primero obtener el id_pago del pedido
+            $sql_pedido = "SELECT id_pago FROM pedido WHERE id_pedido = :id_pedido";
+            $stmt_pedido = $conex->prepare($sql_pedido);
+            $stmt_pedido->execute(['id_pedido' => $id_pedido]);
+            $pedido_info = $stmt_pedido->fetch(\PDO::FETCH_ASSOC);
+            
+            if (!$pedido_info || empty($pedido_info['id_pago'])) {
+                return [];
+            }
+            
+            $id_pago_inicial = intval($pedido_info['id_pago']);
+            
+            
+            
+            // Primero, obtener el siguiente id_pago que pertenece a otro pedido
+            $sql_siguiente_pago = "SELECT MIN(p2.id_pago) as siguiente_id_pago
+                                   FROM pedido p2
+                                   WHERE p2.id_pago > :id_pago_inicial
+                                   AND p2.id_pedido != :id_pedido";
+            $stmt_siguiente = $conex->prepare($sql_siguiente_pago);
+            $stmt_siguiente->execute([
+                'id_pago_inicial' => $id_pago_inicial,
+                'id_pedido' => $id_pedido
+            ]);
+            $siguiente_pago = $stmt_siguiente->fetch(\PDO::FETCH_ASSOC);
+            
+            // Determinar el límite superior para la búsqueda
+            $limite_superior = $id_pago_inicial + 20; // Límite por defecto: 20 métodos de pago
+            if ($siguiente_pago && !empty($siguiente_pago['siguiente_id_pago'])) {
+                $limite_superior = min($limite_superior, intval($siguiente_pago['siguiente_id_pago']));
+            }
+            
+            // Buscar todos los métodos de pago en el rango
             $sql = "SELECT mp.nombre as nombre_metodo, dp.monto_usd, dp.monto as monto_bs, 
                            rp.referencia, rp.banco_emisor, 
                            rp.banco_receptor, rp.telefono_emisor
-                    FROM pedido p
-                    JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                    FROM detalle_pago dp
                     JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
                     LEFT JOIN referencia_pago rp ON dp.id_pago = rp.id_pago
-                    WHERE p.id_pedido = :id_pedido";
+                    WHERE dp.id_pago >= :id_pago_inicial
+                    AND dp.id_pago < :limite_superior
+                    ORDER BY dp.id_pago ASC";
             
             $stmt = $conex->prepare($sql);
-            $stmt->execute(['id_pedido' => $id_pedido]);
+            $stmt->execute([
+                'id_pago_inicial' => $id_pago_inicial,
+                'limite_superior' => $limite_superior
+            ]);
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            // Si no encontramos resultados, usar la consulta original como fallback
+            if (empty($resultado)) {
+                $sql_fallback = "SELECT mp.nombre as nombre_metodo, dp.monto_usd, dp.monto as monto_bs, 
+                                       rp.referencia, rp.banco_emisor, 
+                                       rp.banco_receptor, rp.telefono_emisor
+                                FROM pedido p
+                                JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+                                JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
+                                LEFT JOIN referencia_pago rp ON dp.id_pago = rp.id_pago
+                                WHERE p.id_pedido = :id_pedido";
+                
+                $stmt_fallback = $conex->prepare($sql_fallback);
+                $stmt_fallback->execute(['id_pedido' => $id_pedido]);
+                $resultado = $stmt_fallback->fetchAll(\PDO::FETCH_ASSOC);
+            }
+            
             $conex = null;
             return $resultado;
         } catch (\PDOException $e) {
             if ($conex) {
                 $conex = null;
             }
+            error_log("Error en consultarMetodosPagoVenta: " . $e->getMessage());
             return [];
         }
     }
@@ -1106,10 +1171,10 @@ class Salida extends Conexion {
             $conex->beginTransaction();
             
             // Verificar si la cédula ya existe en persona
-            $sql_verificar_persona = "SELECT cedula FROM persona WHERE cedula = ?";
+            $sql_verificar_persona = "SELECT cedula, correo FROM persona WHERE cedula = ?";
             $stmt_verificar_persona = $conex->prepare($sql_verificar_persona);
             $stmt_verificar_persona->execute([$datos['cedula']]);
-            $persona_existe = $stmt_verificar_persona->fetch();
+            $persona_existe = $stmt_verificar_persona->fetch(\PDO::FETCH_ASSOC);
             
             // Verificar si ya tiene usuario con rol de cliente (id_rol = 1)
             $sql_verificar_cliente = "SELECT id_usuario FROM usuario WHERE cedula = ? AND id_rol = 1 AND estatus = 1";
@@ -1122,7 +1187,19 @@ class Salida extends Conexion {
                 throw new \Exception('La cédula ya está registrada como cliente');
             }
             
-            // Si la persona no existe, insertar en persona
+            // Validar si el correo ya existe y pertenece a otra persona
+            $correo_normalizado = strtolower(trim($datos['correo']));
+            $sql_verificar_correo = "SELECT cedula, correo FROM persona WHERE LOWER(TRIM(correo)) = ?";
+            $stmt_verificar_correo = $conex->prepare($sql_verificar_correo);
+            $stmt_verificar_correo->execute([$correo_normalizado]);
+            $correo_existe = $stmt_verificar_correo->fetch(\PDO::FETCH_ASSOC);
+            
+            // Si el correo existe y pertenece a otra cédula, lanzar error
+            if ($correo_existe && $correo_existe['cedula'] !== $datos['cedula']) {
+                throw new \Exception('El correo electrónico ya está registrado para otra persona');
+            }
+            
+            // Si la persona no existe, insertar en persona con el correo
             if (!$persona_existe) {
                 $sql_persona = "INSERT INTO persona (cedula, nombre, apellido, telefono, correo, tipo_documento) VALUES (?, ?, ?, ?, ?, 'V')";
                 $params_persona = [
@@ -1130,19 +1207,20 @@ class Salida extends Conexion {
                     $datos['nombre'],
                     $datos['apellido'],
                     $datos['telefono'],
-                    $datos['correo']
+                    $correo_normalizado
                 ];
                 $stmt_persona = $conex->prepare($sql_persona);
                 $stmt_persona->execute($params_persona);
             } else {
-                // Si la persona existe, actualizar sus datos
+                // Si la persona existe, actualizar sus datos incluyendo el correo
+                // Si el correo no existía o pertenece a esta persona, actualizar
                 $sql_actualizar_persona = "UPDATE persona SET nombre = ?, apellido = ?, telefono = ?, correo = ? WHERE cedula = ?";
                 $stmt_actualizar_persona = $conex->prepare($sql_actualizar_persona);
                 $stmt_actualizar_persona->execute([
                     $datos['nombre'],
                     $datos['apellido'],
                     $datos['telefono'],
-                    $datos['correo'],
+                    $correo_normalizado,
                     $datos['cedula']
                 ]);
             }
