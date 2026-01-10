@@ -56,13 +56,13 @@
                 <h4 class="mb-0 texto-quinto">
                   <i class="fas fa-history fa-sm text-primary-50"></i> Registro de Actividades
                 </h4>
-              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 'eliminar')): ?>
+              <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 'eliminar')): ?>
                 <div class="btn-group ms-2" role="group">
                   <button type="button" class="btn btn-warning btn-sm" id="limpiarBitacora" title="Limpiar bitácora antigua">
                     <i class="fas fa-broom me-1"></i> Limpiar
                   </button>
                 </div>
-               <?php endif; ?>
+              <?php endif; ?>
               </div>
 
               <div class="table-responsive"> <!-- comienzo div table-->
@@ -80,13 +80,33 @@
                   <tbody>
                   <?php 
                     $registro = $objBitacora->consultar();
-                    if ($registro && is_array($registro)) {
-                      foreach ($registro as $dato) { ?>
+                    if ($registro && is_array($registro) && count($registro) > 0) {
+                      foreach ($registro as $dato) { 
+                        // Validar que los datos requeridos existan
+                        $id_bitacora = isset($dato['id_bitacora']) ? (int)$dato['id_bitacora'] : 0;
+                        $fecha_hora = isset($dato['fecha_hora']) ? htmlspecialchars($dato['fecha_hora'], ENT_QUOTES, 'UTF-8') : '';
+                        $accion = isset($dato['accion']) ? htmlspecialchars($dato['accion'], ENT_QUOTES, 'UTF-8') : 'Sin acción';
+                        $descripcion = isset($dato['descripcion']) ? htmlspecialchars($dato['descripcion'], ENT_QUOTES, 'UTF-8') : '';
+                        $nombre = isset($dato['nombre']) ? htmlspecialchars($dato['nombre'], ENT_QUOTES, 'UTF-8') : '';
+                        $apellido = isset($dato['apellido']) ? htmlspecialchars($dato['apellido'], ENT_QUOTES, 'UTF-8') : '';
+                        $nombre_usuario = isset($dato['nombre_usuario']) ? htmlspecialchars($dato['nombre_usuario'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                        
+                        if ($id_bitacora > 0) {
+                      ?>
                         <tr>
-                          <td class="fecha-bitacora texto-secundario" data-fecha="<?php echo htmlspecialchars($dato['fecha_hora']) ?>"></td>
+                          <td class="fecha-bitacora texto-secundario" data-fecha="<?php echo $fecha_hora ?>">
+                            <?php 
+                              // Mostrar fecha formateada si existe
+                              if (isset($dato['fecha_hora_formateada'])) {
+                                echo $dato['fecha_hora_formateada'];
+                              } else {
+                                echo $fecha_hora;
+                              }
+                            ?>
+                          </td>
                           <td>
                             <span class="badge bg-<?php 
-                              switch($dato['accion']) {
+                              switch($accion) {
                                 case 'CREAR': echo 'success'; break;
                                 case 'MODIFICAR': echo 'primary'; break;
                                 case 'ELIMINAR': echo 'danger'; break;
@@ -95,34 +115,42 @@
                                 default: echo 'secondary';
                               }
                             ?>">
-                              <?php echo $dato['accion']?>
+                              <?php echo $accion ?>
                             </span>
                           </td>
                           <td class="texto-secundario">
                             <?php 
-                              $desc = $dato['descripcion'];
-                              if (preg_match('/\[(.*?)\]$/', $desc, $matches)) {
-                                  echo str_replace($matches[0], '', $desc);
-                                  echo '<span class="fw-bold text-primary texto-sexto">' . $matches[0] . '</span>';
+                              if (!empty($descripcion)) {
+                                if (preg_match('/\[(.*?)\]$/', $descripcion, $matches)) {
+                                    $desc_sin_modulo = str_replace($matches[0], '', $descripcion);
+                                    echo $desc_sin_modulo;
+                                    echo '<span class="fw-bold text-primary texto-sexto ms-1">' . htmlspecialchars($matches[0], ENT_QUOTES, 'UTF-8') . '</span>';
+                                } else {
+                                    echo $descripcion;
+                                }
                               } else {
-                                  echo $desc;
+                                echo '<span class="text-muted">Sin descripción</span>';
                               }
                             ?>
                           </td>
-                          <td class="texto-secundario"><?php echo $dato['nombre']." ".$dato["apellido"]?></td>
-                          <td class="texto-secundario"><?php echo $dato['nombre_usuario']?></td>
+                          <td class="texto-secundario"><?php echo trim($nombre . ' ' . $apellido) ?: 'N/A' ?></td>
+                          <td class="texto-secundario"><?php echo $nombre_usuario ?></td>
                           <td class="text-center">
                             <button class="btn btn-info btn-sm" 
-                                    onclick="verDetalles(<?php echo $dato['id_bitacora']?>)"
+                                    onclick="verDetalles(<?php echo $id_bitacora ?>)"
                                     title="Ver detalles">
                               <i class="fas fa-info-circle"></i>
                             </button>
                           </td>
                         </tr>
-                      <?php }
+                      <?php 
+                        }
+                      }
                     } else { ?>
                       <tr>
-                        <td colspan="6" class="text-center">No hay registros en la bitácora</td>
+                        <td colspan="6" class="text-center text-muted">
+                          <i class="fas fa-inbox me-2"></i>No hay registros en la bitácora
+                        </td>
                       </tr>
                     <?php } ?>
                   </tbody>
@@ -210,59 +238,6 @@
 <!-- Script para el manejo de bitácora -->
 <script src="assets/js/bitacora.js"></script>
 
-<!-- Script para el manejo de detalles -->
-<script>
-function verDetalles(id) {
-    $.ajax({
-        url: '?pagina=bitacora',
-        type: 'POST',
-        data: {detalles: id},
-        dataType: 'json',
-        success: function(response) {
-            if(response.error) {
-                Swal.fire('Error', response.error, 'error');
-                return;
-            }
-            
-            // Información del Usuario
-            $('#detalle-usuario').text(response.nombre + ' ' + response.apellido);
-            $('#detalle-rol').text(response.nombre_usuario);
-            
-            // Información del Evento
-            $('#detalle-fecha').text(response.fecha_hora);
-            
-            // Tipo de Acción con badge
-            let badgeClass = '';
-            switch(response.accion) {
-                case 'CREAR': badgeClass = 'bg-success'; break;
-                case 'MODIFICAR': badgeClass = 'bg-primary'; break;
-                case 'ELIMINAR': badgeClass = 'bg-danger'; break;
-                case 'ACCESO A MÓDULO': badgeClass = 'bg-secondary'; break;
-                case 'CAMBIO_ESTADO': badgeClass = 'bg-warning'; break;
-                default: badgeClass = 'bg-secondary';
-            }
-            $('#detalle-accion').html(`<span class="badge ${badgeClass}">${response.accion}</span>`);
-            
-            // Descripción con formato
-            let desc = response.descripcion;
-            if (desc.match(/\[(.*?)\]$/)) {
-                let partes = desc.split(/\[(.*?)\]$/);
-                $('#detalle-descripcion').html(`
-                    <p class="mb-2">${partes[0]}</p>
-                    <span class="badge bg-primary">[${partes[1]}]</span>
-                `);
-            } else {
-                $('#detalle-descripcion').text(desc);
-            }
-            
-            $('#detallesModal').modal('show');
-        },
-        error: function() {
-            Swal.fire('Error', 'No se pudieron cargar los detalles', 'error');
-        }
-    });
-}
-</script>
 
 </body>
 </html>

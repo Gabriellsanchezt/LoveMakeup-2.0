@@ -4,10 +4,16 @@ use LoveMakeup\Proyecto\Modelo\Salida;
 use LoveMakeup\Proyecto\Modelo\Bitacora;
 use LoveMakeup\Proyecto\Modelo\MetodoPago;
 
+/* ============================================
+   INICIALIZACIÓN Y VALIDACIÓN DE SESIÓN
+   ============================================ */
+
 // Iniciar sesión solo si no está ya iniciada
 if (session_status() === PHP_SESSION_NONE) {
-session_start();
+    session_start();
 }
+
+// Validar que el usuario esté logueado
 if (empty($_SESSION["id"])) {
     header("location:?pagina=login");
     exit;
@@ -22,30 +28,47 @@ $esAjaxRequest = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 
 // Solo cargar estos archivos si NO es una petición AJAX/POST que requiere respuesta JSON
 if (!$esAjaxRequest) {
-if (!empty($_SESSION['id'])) {
+    // Verificar validez de la sesión
+    if (!empty($_SESSION['id'])) {
         require_once 'verificarsession.php';
-} 
-
-if ($_SESSION["nivel_rol"] == 1) {
+    } 
+    
+    // Validar rol de usuario - Clientes no pueden acceder
+    if ($_SESSION["nivel_rol"] == 1) {
         header("Location: ?pagina=catalogo");
         exit();
     }
     
+    // Cargar sistema de permisos
     require_once 'permiso.php';
 }
     
+// Cargar modelos necesarios
 require_once 'modelo/salida.php';
 require_once 'modelo/metodopago.php';
+
+// Instanciar modelos
 $salida = new Salida();
 $metodoPago = new MetodoPago();
 
-// Detectar si la solicitud es AJAX
+/* ============================================
+   FUNCIONES AUXILIARES
+   ============================================ */
+
+/**
+ * Detecta si la solicitud es AJAX
+ * @return bool True si es una solicitud AJAX
+ */
 function esAjax() {
     return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
             strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 }
 
-// Función para sanitizar datos de entrada (protección XSS)
+/**
+ * Sanitiza datos de entrada para prevenir XSS
+ * @param mixed $dato Dato a sanitizar
+ * @return string|null Dato sanitizado o null si el dato es null
+ */
 function sanitizar($dato) {
     if (is_null($dato)) {
         return null;
@@ -53,7 +76,7 @@ function sanitizar($dato) {
     return htmlspecialchars(trim($dato), ENT_QUOTES, 'UTF-8');
 }
 
-// Función para validar y limpiar nombres (solo letras, espacios y caracteres especiales permitidos)
+/* Valida y sanitiza nombres (solo letras, espacios y caracteres especiales permitidos)*/
 function validarYLimpiarNombre($nombre, $campo = 'nombre', $maxLength = 100) {
     if (empty($nombre)) {
         throw new \Exception("El campo {$campo} es obligatorio");
@@ -82,7 +105,7 @@ function validarYLimpiarNombre($nombre, $campo = 'nombre', $maxLength = 100) {
     return sanitizar($nombre);
 }
 
-// Función para validar y limpiar texto general (para referencias, etc.)
+/* Valida y sanitiza texto general (para referencias, etc.)*/
 function validarYLimpiarTexto($texto, $campo = 'texto', $maxLength = 255, $soloNumeros = false) {
     if (empty($texto)) {
         throw new \Exception("El campo {$campo} es obligatorio");
@@ -118,7 +141,8 @@ function validarYLimpiarTexto($texto, $campo = 'texto', $maxLength = 255, $soloN
     return sanitizar($texto);
 }
 
-// Función para validar ID (debe ser entero positivo)
+/* Valida que un ID sea un entero positivo válido*/
+
 function validarId($id, $campo = 'ID') {
     if (empty($id)) {
         throw new \Exception("El campo {$campo} es obligatorio");
@@ -134,7 +158,7 @@ function validarId($id, $campo = 'ID') {
     return $id;
 }
 
-// Función para validar número decimal positivo
+/* Valida que un número sea decimal positivo válido*/
 function validarDecimal($numero, $campo = 'número', $min = 0) {
     if (!isset($numero) || $numero === '') {
         throw new \Exception("El campo {$campo} es obligatorio");
@@ -153,7 +177,7 @@ function validarDecimal($numero, $campo = 'número', $min = 0) {
     return floatval($numero);
 }
 
-// Función para validar que un ID de producto existe y está activo
+/* Valida que un ID de producto existe y está activo en la base de datos*/
 function validarIdProductoSalida($id_producto) {
     if (empty($id_producto) || !is_numeric($id_producto)) {
         return false;
@@ -180,7 +204,7 @@ function validarIdProductoSalida($id_producto) {
     }
 }
 
-// Función para validar que un ID de método de pago existe y está activo
+/* Valida que un ID de método de pago existe y está activo en la base de datos*/
 function validarIdMetodoPago($id_metodopago) {
     if (empty($id_metodopago) || !is_numeric($id_metodopago)) {
         return false;
@@ -207,7 +231,7 @@ function validarIdMetodoPago($id_metodopago) {
     }
 }
 
-// Función para validar nombre de banco (lista blanca de caracteres)
+/* Valida y sanitiza nombre de banco (lista blanca de caracteres)*/
 function validarNombreBanco($banco, $campo = 'banco') {
     if (empty($banco)) {
         throw new \Exception("El campo {$campo} es obligatorio");
@@ -236,7 +260,11 @@ function validarNombreBanco($banco, $campo = 'banco') {
     return sanitizar($banco);
 }
 
-// Procesar el registro de una nueva venta
+/* ============================================
+   OPERACIÓN: REGISTRAR NUEVA VENTA
+   ============================================ */
+
+    /* Procesa el registro de una nueva venta*/
 if (isset($_POST['registrar'])) {
     // Limpiar cualquier output previo y asegurar respuesta JSON limpia
     if (ob_get_level() > 0) {
@@ -244,6 +272,16 @@ if (isset($_POST['registrar'])) {
             }
     
     try {
+        // ===== VALIDACIÓN DE SESIÓN =====
+        if (empty($_SESSION["id"])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'respuesta' => 0,
+                'error' => 'Debe iniciar sesión para realizar esta acción'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        
         // Validar sesión y permisos básicos para peticiones POST
         if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] == 1) {
             header('Content-Type: application/json; charset=utf-8');
@@ -259,9 +297,16 @@ if (isset($_POST['registrar'])) {
             throw new \Exception('Error de validación del formulario');
         }
 
-            // Validar datos requeridos con validaciones robustas
-        $precio_total = validarDecimal($_POST['precio_total'] ?? 0, 'precio total', 0.01);
-        $precio_total_bs = validarDecimal($_POST['precio_total_bs'] ?? 0, 'precio total en bolívares', 0);
+        // ===== VALIDACIÓN DE VACÍOS Y SANITIZACIÓN =====
+        $precio_total_raw = isset($_POST['precio_total']) ? sanitizar($_POST['precio_total']) : '0';
+        $precio_total_bs_raw = isset($_POST['precio_total_bs']) ? sanitizar($_POST['precio_total_bs']) : '0';
+        
+        if (empty($precio_total_raw)) {
+            throw new \Exception('El precio total es obligatorio');
+        }
+        
+        $precio_total = validarDecimal($precio_total_raw, 'precio total', 0.01);
+        $precio_total_bs = validarDecimal($precio_total_bs_raw, 'precio total en bolívares', 0);
 
             if (!isset($_POST['id_producto']) || !is_array($_POST['id_producto'])) {
             throw new \Exception('Debe seleccionar al menos un producto');
@@ -286,8 +331,15 @@ if (isset($_POST['registrar'])) {
                     throw new \Exception('Todos los campos del cliente son obligatorios');
                 }
 
+                // ===== SANITIZACIÓN =====
+                $cedula_raw = sanitizar($_POST['cedula_cliente']);
+                $nombre_cliente_raw = sanitizar($_POST['nombre_cliente']);
+                $apellido_cliente_raw = sanitizar($_POST['apellido_cliente']);
+                $telefono_raw = sanitizar($_POST['telefono_cliente']);
+                $correo_raw = sanitizar($_POST['correo_cliente']);
+                
                 // Validar cédula (solo números, 7-8 dígitos)
-                $cedula = trim($_POST['cedula_cliente']);
+                $cedula = trim($cedula_raw);
                 if (empty($cedula)) {
                     throw new \Exception('La cédula es obligatoria');
                 }
@@ -301,13 +353,13 @@ if (isset($_POST['registrar'])) {
                 $datosCliente['cedula'] = $cedula;
 
                 // Validar nombre
-                $datosCliente['nombre'] = validarYLimpiarNombre($_POST['nombre_cliente'], 'nombre', 100);
+                $datosCliente['nombre'] = validarYLimpiarNombre($nombre_cliente_raw, 'nombre', 100);
 
                 // Validar apellido
-                $datosCliente['apellido'] = validarYLimpiarNombre($_POST['apellido_cliente'], 'apellido', 100);
+                $datosCliente['apellido'] = validarYLimpiarNombre($apellido_cliente_raw, 'apellido', 100);
 
                 // Validar teléfono (solo números, formato específico)
-                $telefono = trim($_POST['telefono_cliente']);
+                $telefono = trim($telefono_raw);
                 if (empty($telefono)) {
                     throw new \Exception('El teléfono es obligatorio');
                 }
@@ -321,7 +373,7 @@ if (isset($_POST['registrar'])) {
                 $datosCliente['telefono'] = $telefono;
 
                 // Validar correo electrónico
-                $correo = trim($_POST['correo_cliente']);
+                $correo = trim($correo_raw);
                 if (empty($correo)) {
                     throw new \Exception('El correo es obligatorio');
                 }
@@ -350,7 +402,9 @@ if (isset($_POST['registrar'])) {
                 if (empty($_POST['id_persona'])) {
                 throw new \Exception('ID de cliente no proporcionado');
                 }
-                $id_persona = validarId($_POST['id_persona'], 'ID de cliente');
+                // ===== SANITIZACIÓN =====
+                $id_persona_raw = sanitizar($_POST['id_persona']);
+                $id_persona = validarId($id_persona_raw, 'ID de cliente');
             }
 
         // Preparar datos de la venta
@@ -362,7 +416,7 @@ if (isset($_POST['registrar'])) {
             'metodos_pago' => []
             ];
 
-        // Procesar detalles de productos con validaciones robustas
+        /* Procesar detalles de productos con validaciones robustas*/
             $totalCantidadProductos = 0;
             // Validar que los arrays tengan la misma longitud
             if (count($_POST['id_producto']) !== count($_POST['cantidad'] ?? []) || 
@@ -371,23 +425,40 @@ if (isset($_POST['registrar'])) {
             }
             
             for ($i = 0; $i < count($_POST['id_producto']); $i++) {
-                if (!empty($_POST['id_producto'][$i]) && isset($_POST['cantidad'][$i]) && $_POST['cantidad'][$i] > 0) {
-                    // Validar ID de producto - verificar que existe y está activo
-                    $id_producto = validarId($_POST['id_producto'][$i], 'ID de producto en fila ' . ($i + 1));
-                    
-                    // Validar que el ID no haya sido manipulado
-                    if (!validarIdProductoSalida($id_producto)) {
-                        throw new \Exception('El producto en la fila ' . ($i + 1) . ' no es válido o no está disponible.');
-                    }
-                    
-                    // Validar cantidad (debe ser entero positivo)
-                    $cantidad = filter_var($_POST['cantidad'][$i], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 9999]]);
-                    if ($cantidad === false) {
-                        throw new \Exception('Cantidad inválida en la fila ' . ($i + 1) . '. Debe ser un número entero entre 1 y 9999');
-                    }
-                    
-                    // Validar precio unitario
-                    $precio_unitario = validarDecimal($_POST['precio_unitario'][$i] ?? 0, 'precio unitario en fila ' . ($i + 1), 0.01);
+                // ===== VALIDACIÓN DE VACÍOS =====
+                if (empty($_POST['id_producto'][$i])) {
+                    continue; // Saltar productos vacíos
+                }
+                
+                if (empty($_POST['cantidad'][$i]) || $_POST['cantidad'][$i] <= 0) {
+                    throw new \Exception('La cantidad en la fila ' . ($i + 1) . ' es obligatoria y debe ser mayor a cero');
+                }
+                
+                if (empty($_POST['precio_unitario'][$i])) {
+                    throw new \Exception('El precio unitario en la fila ' . ($i + 1) . ' es obligatorio');
+                }
+                
+                // ===== SANITIZACIÓN =====
+                $id_producto_raw = sanitizar($_POST['id_producto'][$i]);
+                $cantidad_raw = sanitizar($_POST['cantidad'][$i]);
+                $precio_unitario_raw = sanitizar($_POST['precio_unitario'][$i] ?? '0');
+                
+                // Validar ID de producto - verificar que existe y está activo
+                $id_producto = validarId($id_producto_raw, 'ID de producto en fila ' . ($i + 1));
+                
+                // Validar que el ID no haya sido manipulado
+                if (!validarIdProductoSalida($id_producto)) {
+                    throw new \Exception('El producto en la fila ' . ($i + 1) . ' no es válido o no está disponible.');
+                }
+                
+                // Validar cantidad (debe ser entero positivo)
+                $cantidad = filter_var($cantidad_raw, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 9999]]);
+                if ($cantidad === false) {
+                    throw new \Exception('Cantidad inválida en la fila ' . ($i + 1) . '. Debe ser un número entero entre 1 y 9999');
+                }
+                
+                // Validar precio unitario
+                $precio_unitario = validarDecimal($precio_unitario_raw, 'precio unitario en fila ' . ($i + 1), 0.01);
 
                         $datosVenta['detalles'][] = [
                         'id_producto' => $id_producto,
@@ -396,7 +467,6 @@ if (isset($_POST['registrar'])) {
                     ];
                     $totalCantidadProductos += $cantidad;
                 }
-            }
 
         if (empty($datosVenta['detalles'])) {
             throw new \Exception('Debe seleccionar al menos un producto válido');
@@ -407,7 +477,7 @@ if (isset($_POST['registrar'])) {
             throw new \Exception('La cantidad total de productos debe ser mayor a 0');
         }
 
-        // Procesar métodos de pago con validaciones robustas
+        /* Procesar métodos de pago con validaciones robustas*/
             if (isset($_POST['id_metodopago']) && is_array($_POST['id_metodopago'])) {
                 // Validar longitud de arrays para prevenir DoS
                 if (count($_POST['id_metodopago']) > 10) {
@@ -558,7 +628,7 @@ if (isset($_POST['registrar'])) {
             throw new \Exception('Debe seleccionar al menos un método de pago');
             }
 
-        // Registrar la venta
+        /* Registrar la venta*/
             $respuesta = $salida->registrarVentaPublico($datosVenta);
             
         if ($respuesta['respuesta'] == 1) {
@@ -599,16 +669,34 @@ if (isset($_POST['registrar'])) {
     }
 }
 
-// Procesar búsqueda de cliente (AJAX)
+/* ============================================
+   OPERACIÓN: BUSCAR CLIENTE (AJAX)
+   ============================================ */
+
+/* Procesa la búsqueda de un cliente por cédula. Retorna información del cliente si existe*/
+
 if (isset($_POST['buscar_cliente'])) {
     try {
+        // ===== VALIDACIÓN DE SESIÓN =====
+        if (empty($_SESSION["id"])) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'respuesta' => 0,
+                'error' => 'Debe iniciar sesión para realizar esta acción'
+            ]);
+            exit;
+        }
+        
         // Validar que la cédula esté presente
         if (!isset($_POST['cedula']) || empty($_POST['cedula'])) {
             throw new \Exception('La cédula es obligatoria');
         }
         
+        // ===== SANITIZACIÓN =====
+        $cedula_raw = sanitizar($_POST['cedula']);
+        
         // Validar formato de cédula (solo números, 7-8 dígitos)
-        $cedula = trim($_POST['cedula']);
+        $cedula = trim($cedula_raw);
         if (!preg_match('/^\d{7,8}$/', $cedula)) {
             throw new \Exception('Formato de cédula inválido. Debe tener entre 7 y 8 dígitos numéricos');
         }
@@ -633,9 +721,23 @@ if (isset($_POST['buscar_cliente'])) {
     }
 }
 
-// Procesar registro de cliente (AJAX)
+/* ============================================
+   OPERACIÓN: REGISTRAR NUEVO CLIENTE (AJAX)
+   ============================================ */
+
+/* Procesa el registro de un nuevo cliente*/
 if (isset($_POST['registrar_cliente'])) {
     try {
+        // ===== VALIDACIÓN DE SESIÓN =====
+        if (empty($_SESSION["id"])) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para realizar esta acción'
+            ]);
+            exit;
+        }
+        
         // Validar que todos los campos estén presentes
         if (!isset($_POST['cedula']) || !isset($_POST['nombre']) || 
             !isset($_POST['apellido']) || !isset($_POST['telefono']) || 
@@ -643,8 +745,15 @@ if (isset($_POST['registrar_cliente'])) {
             throw new \Exception('Todos los campos del cliente son obligatorios');
         }
         
+        // ===== SANITIZACIÓN =====
+        $cedula_raw = sanitizar($_POST['cedula']);
+        $nombre_raw = sanitizar($_POST['nombre']);
+        $apellido_raw = sanitizar($_POST['apellido']);
+        $telefono_raw = sanitizar($_POST['telefono']);
+        $correo_raw = sanitizar($_POST['correo']);
+        
         // Validar cédula (solo números, 7-8 dígitos)
-        $cedula = trim($_POST['cedula']);
+        $cedula = trim($cedula_raw);
         if (empty($cedula)) {
             throw new \Exception('La cédula es obligatoria');
         }
@@ -656,13 +765,13 @@ if (isset($_POST['registrar_cliente'])) {
         }
         
         // Validar nombre
-        $nombre = validarYLimpiarNombre($_POST['nombre'], 'nombre', 100);
+        $nombre = validarYLimpiarNombre($nombre_raw, 'nombre', 100);
         
         // Validar apellido
-        $apellido = validarYLimpiarNombre($_POST['apellido'], 'apellido', 100);
+        $apellido = validarYLimpiarNombre($apellido_raw, 'apellido', 100);
         
         // Validar teléfono (solo números, formato específico)
-        $telefono = trim($_POST['telefono']);
+        $telefono = trim($telefono_raw);
         if (empty($telefono)) {
             throw new \Exception('El teléfono es obligatorio');
         }
@@ -674,7 +783,7 @@ if (isset($_POST['registrar_cliente'])) {
         }
         
         // Validar correo electrónico
-        $correo = trim($_POST['correo']);
+        $correo = trim($correo_raw);
         if (empty($correo)) {
             throw new \Exception('El correo es obligatorio');
         }
@@ -710,20 +819,43 @@ if (isset($_POST['registrar_cliente'])) {
         }
     }
 
-    // Procesar actualización de venta
+    /* ============================================
+       OPERACIÓN: ACTUALIZAR ESTADO DE VENTA
+       ============================================ */
+
+        /* Procesa la actualización del estado de una venta*/
     if (isset($_POST['actualizar'])) {
         try {
-            // Validar ID de pedido
+            // ===== VALIDACIÓN DE SESIÓN =====
+            if (empty($_SESSION["id"])) {
+                if (esAjax()) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'respuesta' => 0,
+                        'error' => 'Debe iniciar sesión para realizar esta acción'
+                    ]);
+                    exit;
+                } else {
+                    header("location:?pagina=login");
+                    exit;
+                }
+            }
+            
+            // ===== VALIDACIÓN DE VACÍOS =====
             if (!isset($_POST['id_pedido']) || empty($_POST['id_pedido'])) {
                 throw new \Exception('ID de pedido no proporcionado');
             }
-            $id_pedido = validarId($_POST['id_pedido'], 'ID de pedido');
             
-            // Validar estado del pedido (lista blanca de valores permitidos)
             if (!isset($_POST['estado_pedido']) || empty($_POST['estado_pedido'])) {
                 throw new \Exception('El estado del pedido es obligatorio');
             }
-            $estado = trim($_POST['estado_pedido']);
+            
+            // ===== SANITIZACIÓN =====
+            $id_pedido_raw = sanitizar($_POST['id_pedido']);
+            $estado_raw = sanitizar($_POST['estado_pedido']);
+            
+            $id_pedido = validarId($id_pedido_raw, 'ID de pedido');
+            $estado = trim($estado_raw);
             
             // Lista blanca de estados permitidos (ajustar según los estados reales de tu sistema)
             $estadosPermitidos = ['1', '2', '3', '4', '5']; // Pendiente, Completado, Cancelado, etc.
@@ -785,14 +917,39 @@ if (isset($_POST['registrar_cliente'])) {
     }
 }
 
-    // Procesar eliminación de venta
+    /* ============================================
+       OPERACIÓN: ELIMINAR VENTA
+       ============================================ */
+
+    /**
+     * Procesa la eliminación de una venta
+     * Valida: sesión, ID de pedido válido
+     */
     if (isset($_POST['eliminar'])) {
         try {
-            // Validar ID de pedido
+            // ===== VALIDACIÓN DE SESIÓN =====
+            if (empty($_SESSION["id"])) {
+                if (esAjax()) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'respuesta' => 0,
+                        'error' => 'Debe iniciar sesión para realizar esta acción'
+                    ]);
+                    exit;
+                } else {
+                    header("location:?pagina=login");
+                    exit;
+                }
+            }
+            
+            // ===== VALIDACIÓN DE VACÍOS =====
             if (!isset($_POST['eliminar']) || empty($_POST['eliminar'])) {
                 throw new \Exception('ID de pedido no proporcionado');
             }
-            $id_pedido = validarId($_POST['eliminar'], 'ID de pedido');
+            
+            // ===== SANITIZACIÓN =====
+            $id_pedido_raw = sanitizar($_POST['eliminar']);
+            $id_pedido = validarId($id_pedido_raw, 'ID de pedido');
             
             $datosVenta = ['id_pedido' => $id_pedido];
             $respuesta = $salida->eliminarVentaPublico($datosVenta);
@@ -840,21 +997,32 @@ if (isset($_POST['registrar_cliente'])) {
     }
 }
 
-// Generar o verificar el token CSRF
+/* ============================================
+   GENERACIÓN DE TOKEN CSRF
+   ============================================ */
+
+// Generar o verificar el token CSRF para protección contra ataques CSRF
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-    // Solo consultar datos para la vista si NO es una petición POST/AJAX
-    if (!$esAjaxRequest && $_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Consultar datos para la vista
-        try {
-        // Consultar datos
+/* ============================================
+   CONSULTA DE DATOS PARA LA VISTA
+   ============================================ */
+
+// Solo consultar datos para la vista si NO es una petición POST/AJAX
+if (!$esAjaxRequest && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    try {
+        // Consultar todas las ventas para mostrar en la lista
         $ventas = $salida->consultarVentas();
+        
+        // Consultar productos activos disponibles para venta
         $productos_lista = $salida->consultarProductos();
-        // Usar el modelo MetodoPago para obtener métodos de pago de forma transaccional
+        
+        // Consultar métodos de pago disponibles (usando el modelo MetodoPago)
         $metodos_pago = $metodoPago->consultar();
-        // Ordenar métodos de pago por nombre (manteniendo la misma funcionalidad que antes)
+        
+        // Ordenar métodos de pago alfabéticamente por nombre
         if (is_array($metodos_pago) && !empty($metodos_pago)) {
             usort($metodos_pago, function($a, $b) {
                 return strcmp($a['nombre'], $b['nombre']);
@@ -900,25 +1068,34 @@ if (!isset($_SESSION['csrf_token'])) {
         $metodos_pago = [];
     }
 
-    // Registrar acceso en bitácora
-    try {
-        require_once 'modelo/bitacora.php';
-    $bitacora = [
-        'id_persona' => $_SESSION["id"],
-        'accion' => 'Acceso a Módulo',
-        'descripcion' => 'módulo de Ventas'
-    ];
-    $bitacoraObj = new Bitacora();
-    $bitacoraObj->registrarOperacion($bitacora['accion'], 'salida', $bitacora);
-    } catch (\Exception $e) {
-        error_log("Error al registrar en bitácora: " . $e->getMessage());
-    }
+        /* ============================================
+           REGISTRO EN BITÁCORA
+           ============================================ */
+        
+        // Registrar acceso al módulo en la bitácora
+        try {
+            require_once 'modelo/bitacora.php';
+            $bitacora = [
+                'id_persona' => $_SESSION["id"],
+                'accion' => 'Acceso a Módulo',
+                'descripcion' => 'módulo de Ventas'
+            ];
+            $bitacoraObj = new Bitacora();
+            $bitacoraObj->registrarOperacion($bitacora['accion'], 'salida', $bitacora);
+        } catch (\Exception $e) {
+            error_log("Error al registrar en bitácora: " . $e->getMessage());
+        }
 
-    // Cargar la vista
-    if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'ver')) {
-             $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'salida';
+        /* ============================================
+           CARGA DE VISTA
+           ============================================ */
+        
+        // Verificar permisos y cargar la vista correspondiente
+        if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'ver')) {
+            $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'salida';
             require_once 'vista/salida.php';
-    } else {
+        } else {
+            // Usuario sin permisos - mostrar página de privilegios insuficientes
             require_once 'vista/seguridad/privilegio.php';
+        }
     }
-}

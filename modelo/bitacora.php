@@ -13,59 +13,20 @@ class Bitacora extends Conexion {
     private $fecha_hora;
     private $descripcion;
     private $id_persona;
+    private static $timezoneConfigurado = false;
 
-    // Constantes para tipos de acciones
+    // Constantes para tipos de acciones (mantenidas para compatibilidad si otros módulos las usan) 
     const CREAR = 'CREAR';
     const MODIFICAR = 'MODIFICAR';
     const ELIMINAR = 'ELIMINAR';
     const ACCESO_MODULO = 'ACCESO A MÓDULO';
     const CAMBIO_ESTADO = 'CAMBIO_ESTADO';
 
-    // Mapeo de acciones por módulo
-    private $accionesModulos = [
-        'productos' => [
-            'registrar' => self::CREAR,
-            'actualizar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ],
-        'categoria' => [
-            'registrar' => self::CREAR,
-            'actualizar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ],
-        'cliente' => [
-            'registrar' => self::CREAR,
-            'actualizar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ],
-        'proveedor' => [
-            'registrar' => self::CREAR,
-            'actualizar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ],
-        'metodo_pago' => [
-            'registrar' => self::CREAR,
-            'actualizar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ],
-        'metodo_entrega' => [
-            'registrar' => self::CREAR,
-            'actualizar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ],
-        'tipousuario' => [
-            'registrar' => self::CREAR,
-            'modificar' => self::MODIFICAR,
-            'eliminar' => self::ELIMINAR,
-            'cambiar_estado' => self::CAMBIO_ESTADO
-        ]
-    ];
+    // Niveles de log para observabilidad estructurada
+    const LOG_ERROR = 'ERROR';
+    const LOG_WARN = 'WARN';
+    const LOG_INFO = 'INFO';
+    const LOG_DEBUG = 'DEBUG';
 
     function __construct(){ 
         parent::__construct(); // Llama al constructor de la clase padre
@@ -73,217 +34,196 @@ class Bitacora extends Conexion {
         // Obtener las conexiones de la clase padre
         $this->conex1 = $this->getConex1();
         $this->conex2 = $this->getConex2();
-        $this->detectarAccion();
-    } 
-
-    private function detectarAccion() {
-        if (!isset($_SESSION['id'])) return;
-
-        // Obtener el módulo actual de la URL
-        $modulo = isset($_GET['pagina']) ? $_GET['pagina'] : '';
-        if (empty($modulo)) return;
-
-        // Detectar la acción del POST
-        foreach ($_POST as $key => $value) {
-            if (isset($this->accionesModulos[$modulo][$key])) {
-                $accion = $this->accionesModulos[$modulo][$key];
-                $this->registrarAccionAutomatica($accion, $modulo, $_POST);
-                break;
-            }
-        }
-
-        // Registrar acceso al módulo
-        if (empty($_POST) && $modulo != 'bitacora') {
-            $this->registrarOperacion(
-                self::ACCESO_MODULO,
-                ucfirst($modulo)
-            );
-        }
-    }
-
-    private function registrarAccionAutomatica($accion, $modulo, $datos) {
-        $detalle = $this->generarDetalle($modulo, $accion, $datos);
-        $this->registrarOperacion($accion, ucfirst($modulo), $detalle);
-    }
-
-    private function generarDetalle($modulo, $accion, $datos) {
-        $detalle = '';
         
-        // Mapeo de campos por módulo con etiquetas personalizadas
-        $camposModulo = [
-            'productos' => [
-                'nombre' => 'Nombre del Producto',
-                'descripcion' => 'Descripción',
-                'marca' => 'Marca',
-                'cantidad_mayor' => 'Cantidad al Mayor',
-                'precio_mayor' => 'Precio al Mayor',
-                'precio_detal' => 'Precio al Detal',
-                'stock_disponible' => 'Stock Disponible',
-                'stock_maximo' => 'Stock Máximo',
-                'stock_minimo' => 'Stock Mínimo',
-                'id_categoria' => 'Categoría'
-            ],
-            'categoria' => [
-                'nombre' => 'Nombre de Categoría',
-                'estatus' => 'Estado'
-            ],
-            'cliente' => [
-                'cedula' => 'Cédula',
-                'nombre' => 'Nombre',
-                'apellido' => 'Apellido',
-                'correo' => 'Correo',
-                'telefono' => 'Teléfono'
-            ],
-            'proveedor' => [
-                'numero_documento' => 'RIF/Cédula',
-                'tipo_documento' => 'Tipo de Documento',
-                'nombre' => 'Nombre/Razón Social',
-                'correo' => 'Correo',
-                'telefono' => 'Teléfono',
-                'direccion' => 'Dirección'
-            ],
-            'metodo_pago' => [
-                'nombre' => 'Nombre del Método',
-                'descripcion' => 'Descripción'
-            ],
-            'metodo_entrega' => [
-                'nombre' => 'Nombre del Método',
-                'descripcion' => 'Descripción'
-            ],
-            'tipousuario' => [
-                'nombre' => 'Nombre del Tipo',
-                'nivel' => 'Nivel',
-                'estatus' => 'Estado'
-            ]
-        ];
-
-        // Función para formatear valores específicos
-        $formatearValor = function($campo, $valor) {
-            switch($campo) {
-                case 'estatus':
-                    return $valor == 1 ? 'Activo' : 'Inactivo';
-                case 'precio_mayor':
-                case 'precio_detal':
-                    return number_format($valor, 2) . ' $';
-                default:
-                    return $valor;
-            }
-        };
-
-        // Generar detalle según la acción
-        switch ($accion) {
-            case self::CREAR:
-                if (isset($camposModulo[$modulo])) {
-                    $detalles = [];
-                    foreach ($camposModulo[$modulo] as $campo => $etiqueta) {
-                        if (isset($datos[$campo]) && !empty($datos[$campo])) {
-                            $valor = $formatearValor($campo, $datos[$campo]);
-                            $detalles[] = "{$etiqueta}: {$valor}";
-                        }
-                    }
-                    $detalle = "Se ha registrado un nuevo {$modulo} con los siguientes datos: " . implode(' | ', $detalles);
-                }
-                break;
-
-            case self::MODIFICAR:
-                if (isset($camposModulo[$modulo])) {
-                    $detalles = [];
-                    foreach ($camposModulo[$modulo] as $campo => $etiqueta) {
-                        if (isset($datos[$campo]) && !empty($datos[$campo])) {
-                            $valor = $formatearValor($campo, $datos[$campo]);
-                            $detalles[] = "{$etiqueta}: {$valor}";
-                        }
-                    }
-                    $detalle = "Se ha modificado el {$modulo} con los siguientes datos: " . implode(' | ', $detalles);
-                }
-                break;
-
-            case self::ELIMINAR:
-                $identificador = '';
-                if (isset($datos['id'])) {
-                    $identificador = "ID: " . $datos['id'];
-                } elseif (isset($datos['cedula'])) {
-                    $identificador = "Cédula: " . $datos['cedula'];
-                } elseif (isset($datos['numero_documento'])) {
-                    $identificador = "RIF/Cédula: " . $datos['numero_documento'];
-                }
-                $detalle = "Se ha eliminado el {$modulo} con " . $identificador;
-                break;
-
-            case self::CAMBIO_ESTADO:
-                $estado = isset($datos['estatus']) ? ($datos['estatus'] == 1 ? 'Activo' : 'Inactivo') : 'Desconocido';
-                $identificador = '';
-                
-                if (isset($datos['nombre'])) {
-                    $identificador = "Nombre: " . $datos['nombre'];
-                } elseif (isset($datos['cedula'])) {
-                    $identificador = "Cédula: " . $datos['cedula'];
-                } elseif (isset($datos['numero_documento'])) {
-                    $identificador = "RIF/Cédula: " . $datos['numero_documento'];
-                }
-                
-                $detalle = "Se ha cambiado el estado del {$modulo} a: {$estado} | {$identificador}";
-                break;
-
-            case self::ACCESO_MODULO:
-                $detalle = "El usuario ha accedido al módulo de " . ucfirst($modulo);
-                break;
+        // Configurar zona horaria una sola vez (optimización)
+        if (!self::$timezoneConfigurado) {
+            date_default_timezone_set('America/Caracas');
+            self::$timezoneConfigurado = true;
         }
-
-        return $detalle;
+        
+        // NOTA: Ya no se detecta automáticamente ninguna acción
+        // El módulo de bitácora solo funciona cuando se llama explícitamente
     }
 
-    public function registrarOperacion($accion, $modulo, $datos = []) {
-        if (!isset($_SESSION['id'])) {
+    /* Log estructurado para observabilidad */
+    private function logEstructurado($nivel, $mensaje, array $contexto = []) {
+        $logData = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'level' => $nivel,
+            'component' => 'Bitacora',
+            'message' => $mensaje,
+            'context' => $contexto
+        ];
+        
+        // Agregar información de sesión si está disponible
+        if (session_status() !== PHP_SESSION_NONE && isset($_SESSION['id'])) {
+            $logData['context']['usuario'] = $_SESSION['id'] ?? 'unknown';
+        }
+        
+        // Agregar información de request si está disponible
+        if (isset($_SERVER['REQUEST_URI'])) {
+            $logData['context']['endpoint'] = $_SERVER['REQUEST_URI'];
+        }
+        
+        // Log en formato JSON para mejor parseo
+        error_log('[BITACORA] ' . json_encode($logData, JSON_UNESCAPED_UNICODE));
+    }
+
+    /* Registra una operación en la bitácora */
+    public function registrarOperacion($accion, $modulo, $datos = '') {
+        // Validar que exista sesión (sin depender de variables globales no inicializadas)
+        if (session_status() === PHP_SESSION_NONE) {
+            return false;
+        }
+        
+        if (!isset($_SESSION['id']) || empty($_SESSION['id'])) {
             return false;
         }
 
         try {
-            date_default_timezone_set('America/Caracas');
+            // Validar parámetros de entrada
+            if (empty($accion) || !is_string($accion)) {
+                $this->logEstructurado(self::LOG_WARN, 'Intento de registrar operación con acción inválida', [
+                    'accion_recibida' => $accion,
+                    'tipo_accion' => gettype($accion)
+                ]);
+                return false;
+            }
+            
+            if (empty($modulo) || !is_string($modulo)) {
+                $this->logEstructurado(self::LOG_WARN, 'Intento de registrar operación con módulo inválido', [
+                    'modulo_recibido' => $modulo,
+                    'tipo_modulo' => gettype($modulo)
+                ]);
+                return false;
+            }
+
+            // La zona horaria ya está configurada en el constructor (optimización)
             $fecha = date('Y-m-d H:i:s');
-            $detalle = $this->generarDetalle($modulo, $accion, $datos);
+            
+            // Generar descripción según el tipo de datos recibidos
+            $detalle = '';
+            $moduloLower = strtolower(trim($modulo));
+            
+            // Si $datos es string, usarlo directamente (llamada explícita con descripción)
+            if (is_string($datos) && !empty($datos)) {
+                $detalle = trim($datos);
+            } 
+            // Si $datos es array, intentar generar descripción básica desde el array
+            elseif (is_array($datos) && !empty($datos)) {
+                // Generar descripción básica desde el array
+                $detalles_parts = [];
+                foreach ($datos as $key => $value) {
+                    if (!empty($value) && is_scalar($value)) {
+                        $detalles_parts[] = ucfirst($key) . ": " . $value;
+                    }
+                }
+                if (!empty($detalles_parts)) {
+                    $detalle = implode(' | ', $detalles_parts);
+                } else {
+                    $detalle = "Acción: {$accion} en módulo: " . ucfirst($modulo);
+                }
+            }
+            // Si no hay datos o está vacío, generar descripción básica
+            else {
+                $detalle = "Acción: {$accion} en módulo: " . ucfirst($modulo);
+            }
             
             // Agregar el módulo al final de la descripción, excepto si es 'bitacora'
-            if (strtolower($modulo) !== 'bitacora') {
+            if ($moduloLower !== 'bitacora' && !empty($detalle)) {
                 $detalle .= " [" . ucfirst($modulo) . "]";
             }
 
+            // Validar que la descripción no exceda el límite de la base de datos (250 caracteres)
+            if (strlen($detalle) > 250) {
+                $detalle = substr($detalle, 0, 247) . '...';
+            }
+
+            // Validar que la acción no exceda el límite (250 caracteres)
+            if (strlen($accion) > 250) {
+                $accion = substr($accion, 0, 247) . '...';
+            }
+
+            // Insertar registro en bitácora
             $registro = "INSERT INTO bitacora (accion, fecha_hora, descripcion, cedula) 
                         VALUES (:accion, :fecha_hora, :descripcion, :cedula)";
             
             $stmt = $this->conex2->prepare($registro);
-            $stmt->bindParam(':accion', $accion);
-            $stmt->bindParam(':fecha_hora', $fecha);
-            $stmt->bindParam(':descripcion', $detalle);
-            $stmt->bindParam(':cedula', $_SESSION['id']);
+            $stmt->bindParam(':accion', $accion, \PDO::PARAM_STR);
+            $stmt->bindParam(':fecha_hora', $fecha, \PDO::PARAM_STR);
+            $stmt->bindParam(':descripcion', $detalle, \PDO::PARAM_STR);
+            $cedula = $_SESSION['id'];
+            $stmt->bindParam(':cedula', $cedula, \PDO::PARAM_STR);
             
             $result = $stmt->execute();
             
             if ($result) {
+                // Log estructurado para observabilidad
+                $this->logEstructurado(self::LOG_INFO, 'Operación registrada exitosamente en bitácora', [
+                    'accion' => $accion,
+                    'modulo' => $modulo,
+                    'cedula' => $cedula
+                ]);
+                
                 return array('respuesta' => 1, 'mensaje' => 'Operación registrada exitosamente');
             } else {
+                $this->logEstructurado(self::LOG_ERROR, 'Fallo al ejecutar INSERT en bitácora', [
+                    'accion' => $accion,
+                    'modulo' => $modulo
+                ]);
                 return array('respuesta' => 0, 'mensaje' => 'Error al registrar la operación');
             }
         } catch (\PDOException $e) {
-            return array('respuesta' => 0, 'mensaje' => 'Error: ' . $e->getMessage());
+            // Log estructurado del error sin exponer detalles sensibles en respuesta
+            $this->logEstructurado(self::LOG_ERROR, 'Error de base de datos al registrar en bitácora', [
+                'accion' => $accion ?? 'unknown',
+                'modulo' => $modulo ?? 'unknown',
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage()
+            ]);
+            return array('respuesta' => 0, 'mensaje' => 'Error al registrar la operación');
+        } catch (\Exception $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error inesperado al registrar en bitácora', [
+                'accion' => $accion ?? 'unknown',
+                'modulo' => $modulo ?? 'unknown',
+                'exception_type' => get_class($e),
+                'error_message' => $e->getMessage()
+            ]);
+            return array('respuesta' => 0, 'mensaje' => 'Error inesperado al registrar la operación');
         }
     }
 
     public function consultar(){
-        $registro = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario
-                     FROM bitacora b
-                     INNER JOIN persona p ON b.cedula = p.cedula
-                     INNER JOIN usuario u ON p.cedula = u.cedula
-                     INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
-                     ORDER BY b.fecha_hora DESC";
-        $consulta = $this->conex2->prepare($registro);
-        $resul = $consulta->execute();
+        try {
+            $registro = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario,
+                                DATE_FORMAT(b.fecha_hora, '%d/%m/%Y %H:%i:%s') as fecha_hora_formateada
+                         FROM bitacora b
+                         INNER JOIN persona p ON b.cedula = p.cedula
+                         INNER JOIN usuario u ON p.cedula = u.cedula
+                         INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                         ORDER BY b.fecha_hora DESC";
+            $consulta = $this->conex2->prepare($registro);
+            $consulta->execute();
 
-        $datos = $consulta->fetchAll(\PDO::FETCH_ASSOC);
-        if ($resul){
-            return $datos;
-        } else{
-            return $res = 0;
+            $datos = $consulta->fetchAll(\PDO::FETCH_ASSOC);
+            
+            if ($datos && is_array($datos)) {
+                return $datos;
+            } else {
+                return [];
+            }
+        } catch (\PDOException $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error de base de datos al consultar bitácora', [
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage()
+            ]);
+            return [];
+        } catch (\Exception $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error inesperado al consultar bitácora', [
+                'exception_type' => get_class($e),
+                'error_message' => $e->getMessage()
+            ]);
+            return [];
         }
     }
 
@@ -322,37 +262,80 @@ class Bitacora extends Conexion {
 
     public function eliminar(){
         try {
+            // Validar que el ID esté establecido
+            if (empty($this->id_bitacora) || !is_numeric($this->id_bitacora)) {
+                return array('respuesta' => 0, 'mensaje' => 'ID de bitácora inválido');
+            }
+
             $registro = "DELETE FROM bitacora WHERE id_bitacora = :id_bitacora";
             $strExec = $this->conex2->prepare($registro);
-            $strExec->bindParam(':id_bitacora', $this->id_bitacora);
+            $strExec->bindParam(':id_bitacora', $this->id_bitacora, \PDO::PARAM_INT);
             $result = $strExec->execute();
-            if ($result){
-                return array('respuesta'=>1,'mensaje'=>'Registro eliminado correctamente');
-            } else{
-                return array('respuesta'=>0,'mensaje'=>'Error al eliminar el registro');
+            
+            if ($result) {
+                $filas_afectadas = $strExec->rowCount();
+                if ($filas_afectadas > 0) {
+                    return array('respuesta' => 1, 'mensaje' => 'Registro eliminado correctamente');
+                } else {
+                    return array('respuesta' => 0, 'mensaje' => 'No se encontró el registro a eliminar');
+                }
+            } else {
+                return array('respuesta' => 0, 'mensaje' => 'Error al eliminar el registro');
             }
         } catch (\PDOException $e) {
-            return array('respuesta'=>0,'mensaje'=>'Error: ' . $e->getMessage());
+            $this->logEstructurado(self::LOG_ERROR, 'Error de base de datos al eliminar registro de bitácora', [
+                'id_bitacora' => $this->id_bitacora ?? 'unknown',
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage()
+            ]);
+            return array('respuesta' => 0, 'mensaje' => 'Error al eliminar el registro');
+        } catch (\Exception $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error inesperado al eliminar registro de bitácora', [
+                'id_bitacora' => $this->id_bitacora ?? 'unknown',
+                'exception_type' => get_class($e),
+                'error_message' => $e->getMessage()
+            ]);
+            return array('respuesta' => 0, 'mensaje' => 'Error inesperado al eliminar el registro');
         }
     }
 
     // Eliminar todos los registros de la bitácora
     public function limpiarBitacora() {
         try {
+            // Primero contar los registros que se van a eliminar
+            $countQuery = "SELECT COUNT(*) as total FROM bitacora";
+            $countStmt = $this->conex2->prepare($countQuery);
+            $countStmt->execute();
+            $countResult = $countStmt->fetch(\PDO::FETCH_ASSOC);
+            $totalRegistros = $countResult['total'] ?? 0;
+
+            // Proceder con la eliminación
             $registro = "DELETE FROM bitacora";
             $strExec = $this->conex2->prepare($registro);
             $result = $strExec->execute();
+            
             if ($result) {
-                $filas_eliminadas = $strExec->rowCount();
                 return array(
                     'success' => true,
-                    'message' => "Se eliminaron {$filas_eliminadas} registros de la bitácora"
+                    'message' => "Se eliminaron {$totalRegistros} registros de la bitácora"
                 );
             } else {
                 return array('success' => false, 'message' => 'Error al limpiar la bitácora');
             }
         } catch (\PDOException $e) {
-            return array('success' => false, 'message' => 'Error: ' . $e->getMessage());
+            $this->logEstructurado(self::LOG_ERROR, 'Error de base de datos al limpiar bitácora', [
+                'registros_previos' => $totalRegistros ?? 0,
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage()
+            ]);
+            return array('success' => false, 'message' => 'Error al limpiar la bitácora');
+        } catch (\Exception $e) {
+            $this->logEstructurado(self::LOG_ERROR, 'Error inesperado al limpiar bitácora', [
+                'registros_previos' => $totalRegistros ?? 0,
+                'exception_type' => get_class($e),
+                'error_message' => $e->getMessage()
+            ]);
+            return array('success' => false, 'message' => 'Error inesperado al limpiar la bitácora');
         }
     }
 
