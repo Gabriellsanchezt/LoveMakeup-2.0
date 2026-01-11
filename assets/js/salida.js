@@ -2541,8 +2541,8 @@ document.addEventListener('DOMContentLoaded', function() {
             referencia = document.querySelector('input[name="referencia_pv"]')?.value || '';
         }
         
-        if (!referencia || referencia.length < 4 || referencia.length > 6 || !/^\d+$/.test(referencia)) {
-            Swal.fire('Error', 'La referencia de Punto de Venta debe tener entre 4 y 6 dígitos numéricos', 'error');
+        if (!referencia || referencia.length < 4 || referencia.length > 6 || !/^[A-Za-z0-9]+$/.test(referencia)) {
+            Swal.fire('Error', 'La referencia de Punto de Venta debe tener entre 4 y 6 caracteres alfanuméricos', 'error');
             return false;
         }
         

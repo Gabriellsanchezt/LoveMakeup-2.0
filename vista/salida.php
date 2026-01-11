@@ -1306,7 +1306,7 @@
                     <div class="col-md-6">
                       <div class="mb-3">
                         <label class="form-label">Referencia del Punto</label>
-                        <input type="text" class="form-control" name="referencia_pv" placeholder="4-6 dígitos" minlength="4" maxlength="6" pattern="[0-9]{4,6}">
+                        <input type="text" class="form-control" name="referencia_pv" placeholder="4-6 caracteres" minlength="4" maxlength="6" pattern="[A-Za-z0-9]{4,6}">
                       </div>
                     </div>
                     <div class="col-md-6">
