@@ -144,18 +144,6 @@
                     <?php } ?>
                   </tbody>
                 </table>
-                
-                <!-- Botón Ver Más (solo si hay más registros) -->
-                <?php if ($tiene_mas_registros): ?>
-                <div class="text-center mt-3 mb-3" id="btn-ver-mas-container">
-                  <button type="button" class="btn btn-primary" id="btnVerMas">
-                    <i class="fas fa-arrow-down me-2"></i>Ver más registros
-                    <span class="badge bg-light text-dark ms-2" id="registros-mostrados">
-                      <?php echo is_array($registro) ? count($registro) : 0; ?> / <?php echo $total_registros; ?>
-                    </span>
-                  </button>
-                </div>
-                <?php endif; ?>
               </div>
             </div>
           </div>
