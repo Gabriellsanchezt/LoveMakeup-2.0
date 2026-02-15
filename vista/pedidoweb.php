@@ -203,7 +203,7 @@
  <?php if (!in_array($pedido['estatus'], [0])): ?>
 
 <!-- Botón Tracking: solo si método de entrega es 2 o 3 -->
-<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 'especial') && in_array($pedido['metodo_entrega'], ['MRW','ZOOM' ])&&
+<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 5) && in_array($pedido['metodo_entrega'], ['MRW','ZOOM' ])&&
   in_array($pedido['estatus'], [2, 3])): ?>
   <button type="button"  title="Enviar Codigo Tracking " class="btn btn-primary btn-tracking" data-bs-toggle="modal" data-bs-target="#modalTracking<?php echo $pedido['id_pedido']; ?>">
     <i class="fa-regular fa-envelope"></i>
@@ -241,7 +241,7 @@ if (
 
 
 <!-- Botones Validar y Eliminar: solo si estatus es 1 -->
-<?php if ($pedido['estatus'] == 1): ?>
+<?php if ($pedido['estatus'] == 1 && tieneAcceso(5,5)): ?>
   <button type="button" title="Confirmar Pago" class="btn btn-secundary btn-validar btn-success" data-id="<?= $pedido['id_pedido'] ?>">
     <i class="fa-solid fa-check"></i>
   </button>

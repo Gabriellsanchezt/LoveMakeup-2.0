@@ -584,7 +584,7 @@
            
        <!-- Button que abre el Modal N1 Registro -->
        <div class="d-flex gap-2"> 
-          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'registrar')): ?>
+          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 2)): ?>
           <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registroModal">
             <span class="icon text-white">
             <i class="fas fa-file-medical"></i>
@@ -668,13 +668,11 @@
                       <td class="texto-secundario">$<?php echo number_format($precio_total, 2); ?></td>
                       <td class="texto-secundario"><?php echo $metodo_pago; ?></td>
                       <td class="text-center">
-                        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'especial') && $id_pedido > 0): ?>
+                        
                           <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#verDetallesModal<?php echo $id_pedido; ?>">
                             <i class="fas fa-eye" title="Ver Detalles"></i>
                           </button>
-                        <?php else: ?>
-                          <span class="text-muted">-</span>
-                        <?php endif; ?>
+               
                       </td>
                     </tr>
                   <?php endforeach; ?>

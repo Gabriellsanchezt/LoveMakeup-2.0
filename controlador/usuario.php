@@ -228,7 +228,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                                         'telefono' => $telefono,
                                         'correo' => $correo,
                                         'clave' => $clave,
-                                        'id_rol' => $id_rol,
+                                        'id_rol' => $id_rol, 
                                         'nivel' => $nivel_valido
                                     ]
                             ];

@@ -240,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         echo json_encode($res);
         exit;
     }
-} else  if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'ver')) {
+} else  if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 1)) {
         $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Acceso a Módulo',

@@ -1282,7 +1282,7 @@ function generarGrafico() {
 generarGrafico();
 
 // Verificar permisos y cargar la vista correspondiente
-if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 'ver')) {
+if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 1)) {
     $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'entrada';
     require_once 'vista/entrada.php';
 } else {

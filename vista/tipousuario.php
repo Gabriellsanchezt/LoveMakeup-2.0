@@ -4,15 +4,7 @@
   <?php include 'complementos/head.php'; ?>
   <title> Tipo de Usuario | LoveMakeup </title>
   <link rel="stylesheet" href="assets/css/formulario.css">
-  <style>
-    .text-danger {
-      min-height: 2.2em;
-      display: block;
-      margin-top: 0.1em;
-      color: #dc3545;
-      font-size: 1rem;
-    }
-  </style>
+
 </head>
 <body class="g-sidenav-show bg-gray-100">
   <?php include 'complementos/sidebar.php'; ?>
@@ -46,7 +38,7 @@
                   <i class="fa-solid fa-user-group me-2 icoM" style="color: #f6c5b4;"></i> Tipo Usuario
                 </h4>
                 <div class="d-flex align-items-center gap-2">
-                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'registrar')): ?>
+                  <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17,2)): ?>
                   <button type="button"
                           class="btn btn-success"
                           data-bs-toggle="modal"
@@ -68,9 +60,9 @@
                 <table class="table table-m table-hover" id="myTable" width="100%" cellspacing="0">
                   <thead class="table-color">
                     <tr>
-                      <th class="text-white text-center">Tipo de Usuario</th>
+                      <th class="text-white text-center">Nombre</th>
                       <th class="text-white text-center">Nivel</th>
-                      <th class="text-white text-center">Estatus</th>
+                      <th class="text-white text-center">Permisos</th>
                       <th class="text-white text-center">Acciones</th>
                     </tr>
                   </thead>
@@ -98,7 +90,7 @@
                                 <b><?= htmlspecialchars($dato['nombre']) ?></b>
                               </div>
                               <div style="font-size: 12px; color: #6c757d;" class="texto-tercero">
-                                ID: <?= $dato['id_rol'] ?>
+                                # <?= $dato['id_rol'] ?>
                               </div>
                             </div>
                           </div>
@@ -108,25 +100,21 @@
                             <span class="badge bg-primary">Nivel <?= htmlspecialchars($dato['nivel']) ?></span>
                           </div>
                         </td>
-                        <td class="text-center">
-                          <span class="<?= $estatus_classes[$dato['estatus']] ?>">
-                            <?= $estatus_texto[$dato['estatus']] ?>
-                          </span>
+                        <td class="text-center text-dark">
+                
+                            <form action="?pagina=tipousuario" method="POST">
+                      
+                            <button type="submit" class="btn btn-warning btn-sm permisotur" name="modificar" title="Modificar Permiso del usuario" value="<?php echo $dato['id_rol']?>">
+                                <i class="fa-solid fa-users-gear me-2" title="Modificar Permiso"></i> Ver
+                            </button> 
+                             <input type="hidden" name="RolNombre" value=" <?php echo $dato['nombre']; ?>">
+                             
+                            </form> 
                         </td>
+                      
                         <td class="text-center">
-                          <button type="button" 
-                                  class="btn btn-info btn-sm me-1" 
-                                  title="Ver información del tipo de usuario"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#infoModal"
-                                  data-nombre="<?= htmlspecialchars($dato['nombre']) ?>"
-                                  data-nivel="<?= $dato['nivel'] ?>"
-                                  data-estatus="<?= $dato['estatus'] ?>"
-                                  data-id="<?= $dato['id_rol'] ?>">
-                            <i class="fas fa-eye" title="Ver Detalles"></i>
-                          </button>
                           
-                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'editar')): ?>
+                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 3)): ?>
                           <button type="button"
                                   class="btn btn-primary btn-sm me-1 modificar"
                                   title="Editar tipo de usuario"
@@ -140,12 +128,12 @@
                           </button>
                           <?php endif; ?>
                           
-                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'eliminar')): ?>
+                          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 4)): ?>
                           <button type="button"
                                   class="btn btn-danger btn-sm eliminar"
                                   title="Eliminar tipo de usuario"
-                                  value="<?= $dato['id_rol'] ?>"
-                                  data-nombre="<?= htmlspecialchars($dato['nombre']) ?>">
+                               
+                                  onclick="eliminarRol(<?php echo $dato['id_rol']; ?>)">
                             <i class="fas fa-trash-alt"></i>
                           </button>
                           <?php endif; ?>
@@ -174,7 +162,7 @@
           </div>
 
           <div class="modal-body bg-s">
-            <form id="u" autocomplete="off">
+            <form id="ForRegistrar" action="?pagina=tipousuario" method="POST" autocomplete="off">
               <div class="seccion-formulario">
                 <h6 class="texto-quinto"><i class="fas fa-user-tag"></i> Datos del Tipo de Usuario</h6>
                 <div class="row g-3">
@@ -183,17 +171,17 @@
                     <label for="nombre">NOMBRE DEL TIPO</label>
                     <div class="input-group">
                       <span class="input-group-text"><i class="fa-solid fa-user-tag"></i></span>
-                      <input type="text" class="form-control" name="nombre" id="nombre" placeholder="Ejemplo: Administrador, Vendedor, Supervisor" required>
+                      <input type="text" class="form-control" name="nombreRol" id="nombre" placeholder="Ejemplo: Administrador, Vendedor, Supervisor" required>
                     </div>
                     <span id="snombre" class="error-message"></span>
                   </div>
 
                   <!-- Nivel -->
-                  <div class="col-md-6">
+                  <div class="col-md-12">
                     <label for="nivel">NIVEL DE ACCESO</label>
                     <div class="input-group">
                       <span class="input-group-text"><i class="fa-solid fa-layer-group"></i></span>
-                      <select class="form-select" name="nivel" id="nivel" required>
+                      <select class="form-select" name="nivelRol" id="nivel" required>
                         <option value="">Seleccione nivel</option>
                         <option value="2">Nivel 2 - Acceso Limitado</option>
                         <option value="3">Nivel 3 - Acceso Completo</option>
@@ -202,17 +190,7 @@
                     <span id="snivel" class="error-message"></span>
                   </div>
 
-                  <!-- Estatus -->
-                  <div class="col-md-6">
-                    <label for="estatus">ESTADO</label>
-                    <div class="input-group">
-                      <span class="input-group-text"><i class="fa-solid fa-toggle-on"></i></span>
-                      <select class="form-select" name="estatus" id="estatus" required>
-                        <option value="1">Activo</option>
-                        <option value="2">Inactivo</option>
-                      </select>
-                    </div>
-                  </div>
+                 
                 </div>
               </div>
 
@@ -236,7 +214,7 @@
 
               <!-- Botones -->
               <div class="col-12 text-center">
-                <button type="button" class="btn btn-modern btn-guardar me-3" id="registrar">
+                <button type="button" class="btn btn-modern btn-guardar me-3" name="registrar" id="registrar">
                   <i class="fa-solid fa-floppy-disk me-2"></i> Registrar
                 </button>
                 <button type="reset" class="btn btn-modern btn-limpiar">
@@ -262,7 +240,7 @@
           </div>
           <div class="modal-body bg-s">
             <form id="formModificar" autocomplete="off">
-              <input type="hidden" name="id_tipo" id="id_tipo_modificar">
+              <input type="hidden" name="id_rol" id="id_tipo_modificar">
               
               <div class="seccion-formulario">
                 <h6 class="texto-quinto"><i class="fas fa-edit"></i> Modificar Datos del Tipo de Usuario</h6>
@@ -338,74 +316,13 @@
       </div>
     </div>
 
-    <!-- Modal de Información -->
-    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-producto">
-          <div class="modal-header header-color text-white">
-            <h5 class="modal-title" id="infoModalLabel">
-              <i class="fas fa-user-tag me-2"></i>Información del Tipo de Usuario
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body bg-s">
-            <div class="seccion-formulario table-responsive">
-              <table class="table">
-                <tr>
-                  <th class="texto-secundario">ID del Tipo</th>
-                  <td id="modalId" class="texto-secundario"></td>
-                </tr>
-                <tr>
-                  <th class="texto-secundario">Nombre</th>
-                  <td id="modalNombre" class="texto-secundario"></td>
-                </tr>
-                <tr>
-                  <th class="texto-secundario">Nivel</th>
-                  <td id="modalNivel" class="texto-secundario"></td>
-                </tr>
-                <tr>
-                  <th class="texto-secundario">Estatus</th>
-                  <td id="modalEstatus" class="texto-secundario"></td>
-                </tr>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <?php include 'complementos/footer.php'; ?>
     <!-- para el datatable-->
     <script src="assets/js/demo/datatables-demo.js"></script>
     <script src="assets/js/tipousuario.js"></script>
 
-    <script>
-      // Script para el modal de información
-      const infoModal = document.getElementById('infoModal');
-      infoModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
+   
 
-        const id = button.getAttribute('data-id');
-        const nombre = button.getAttribute('data-nombre');
-        const nivel = button.getAttribute('data-nivel');
-        const estatus = button.getAttribute('data-estatus');
-
-        const estatusTexto = {
-          1: 'Activo',
-          2: 'Inactivo'
-        };
-
-        const estatusClase = {
-          1: 'badge bg-success text-dark',
-          2: 'badge bg-danger text-white'
-        };
-
-        document.getElementById('modalId').textContent = id;
-        document.getElementById('modalNombre').textContent = nombre;
-        document.getElementById('modalNivel').innerHTML = `<span class="badge bg-primary">Nivel ${nivel}</span>`;
-        document.getElementById('modalEstatus').innerHTML = `<span class="${estatusClase[estatus]}">${estatusTexto[estatus]}</span>`;
-      });
-    </script>
-  </main>
 </body>
 </html>

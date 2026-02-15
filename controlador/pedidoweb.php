@@ -376,7 +376,7 @@ foreach ($pedidos as &$p) {
     $p['detalles'] = $objPedidoWeb->consultarDetallesPedido($p['id_pedido']);
 }
 
-if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 'ver')) {
+if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 1)) {
     $pagina_actual = 'pedidoweb';
     require_once __DIR__ . '/../vista/pedidoweb.php';
 } else {

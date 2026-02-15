@@ -9,7 +9,7 @@
             <i class="fa-solid fa-circle-question texto-secundario" style="color: #004adf;"></i>
           </a>
 
-         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'ver')): ?>
+         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 1)): ?>
             <a href="?pagina=notificacion"
             class="notification-icon card-m1 me-2"
             style="background:white; padding:8px; border-radius:12px; text-decoration:none;">

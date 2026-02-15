@@ -318,7 +318,7 @@
   </h4>
  
   <div class="d-flex gap-2">
-      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'registrar')): ?>
+      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 2)): ?>
   <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar">
     <span class="icon text-white">
       <i class="fas fa-file-medical"></i>
@@ -370,14 +370,14 @@
                     <td>
                       <form method="POST" action="">
                       
-                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'editar')): ?>
+                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 3)): ?>
                       <button type="button" class="btn btn-primary btn-s modificar" 
                           onclick="abrirModalModificar(this)" <?php echo ($dato['estatus'] == 2) ? 'disabled' : ''; ?>> 
                           <i class="fas fa-pencil-alt" title="Editar"></i>
                       </button>
                        <?php endif; ?>
                        
-                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'eliminar')): ?>
+                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 4)): ?>
                         <button type="button" class="btn btn-danger btn-s eliminar"
                               onclick="eliminarproducto(<?php echo $dato['id_producto']; ?>)" <?php echo ($dato['estatus'] == 2) ? 'disabled' : ''; ?>>
                               <i class="fas fa-trash-alt" title="Eliminar"></i>
@@ -388,7 +388,7 @@
                           <i class="fa fa-eye"></i>
                         </button>
 
-                          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'especial')): ?>
+                          <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 5)): ?>
                             <button type="button" class="btn btn-warning text-light btn-desactivar" 
                                 onclick="cambiarEstatusProducto(<?php echo $dato['id_producto']; ?>, <?php echo $dato['estatus']; ?>)">
                                 <i class="fa-solid fa-triangle-exclamation"></i>

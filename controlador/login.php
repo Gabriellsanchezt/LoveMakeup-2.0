@@ -115,8 +115,9 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                     if ((int)$resultado->estatus === 1) { // VERIFICADOR QUE SI ESTE ACTIVO
         
                         $_SESSION["id"] = $resultado->cedula;
+                        $_SESSION["rol"] = $resultado->id_rol;
 
-                        $id_persona = $_SESSION["id"]; 
+                        $id_persona = $_SESSION["rol"]; 
                         $resultadopermiso = $objlogin->consultar($id_persona);
                         $_SESSION["permisos"] = $resultadopermiso;
 

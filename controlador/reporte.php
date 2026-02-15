@@ -625,7 +625,7 @@ $marcas_lista      = (new Marca())->consultar();
 
 
 
-if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(1, 'ver')) {
+if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(1, 1)) {
      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'reporte';
         require_once 'vista/reporte.php';
 } else {

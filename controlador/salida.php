@@ -1150,7 +1150,7 @@ if (!$esAjaxRequest && $_SERVER['REQUEST_METHOD'] === 'GET') {
            ============================================ */
         
         // Verificar permisos y cargar la vista correspondiente
-        if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'ver')) {
+        if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 1)) {
             $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'salida';
             require_once 'vista/salida.php';
         } else {

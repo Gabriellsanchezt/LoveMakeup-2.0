@@ -167,7 +167,7 @@
 
                   </td>
                     
-                  <?php // if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')): ?>
+                  <?php  if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 3)): ?>
                   <td class="text-center">
                       <form method="POST" action="?pagina=cliente" id="formestatus">
                   
@@ -183,7 +183,7 @@
                       </button>
                     </form>
                  </td>
-                     <?php // endif; ?>
+                     <?php endif; ?>
 
                      
                 </tr>

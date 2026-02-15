@@ -106,7 +106,7 @@
                   <th class="text-white text-center">Nombre y Cédula</th>
                  
                   <th class="text-white text-center">Rol</th>
-                    <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 'especial')): ?>
+                    <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 4)): ?>
                   <th class="text-white text-center">Permisos</th>
                     <?php endif; ?>
                   <th class="text-white text-center">Estatus</th>
@@ -167,7 +167,7 @@
                       </div>
                   </td>
                   
-                 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 'especial')): ?>
+                 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 4)): ?>
                     <td class="text-center">
                         <form action="?pagina=usuario" method="POST">
                             <?php
@@ -209,7 +209,7 @@
                       <i class="fas fa-eye" title="Ver Detalles"></i>
                     </button>
                 
-                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(13, 'editar')): ?>
+                      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(13, 3)): ?>
                       <button type="button" class="btn btn-primary btn-sm modificar" title="Editar datos del usuario"
                       data-bs-toggle="modal"
                       data-bs-target="#editarModal"
@@ -226,7 +226,7 @@
                 </button>
                     <?php endif; ?>
 
-                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 'eliminar')): ?>
+                        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 4)): ?>
                           <button 
                             name="eliminar" 
                             id="eliminar" 

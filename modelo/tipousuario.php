@@ -4,142 +4,302 @@ namespace LoveMakeup\Proyecto\Modelo;
 
 use LoveMakeup\Proyecto\Config\Conexion;
 
-// modelo/tipousuario.php
-
 class TipoUsuario extends Conexion {
 
-    public function procesarTipousuario(string $jsonDatos): array {
-        $p = json_decode($jsonDatos, true);
-        return match($p['operacion'] ?? '') {
-            'registrar'  => $this->registro($p['datos']),
-            'actualizar' => $this->actualizacion($p['datos']),
-            'eliminar'   => $this->eliminacion($p['datos']),
-            default      => ['respuesta'=>0,'accion'=>'','mensaje'=>'Operación inválida']
-        };
-    }
-
-    private function registro(array $d): array {
-        $c = $this->getConex2();
+    public function procesarRol($jsonDatos) {
+        $datos = json_decode($jsonDatos, true);
+        $operacion = $datos['operacion'];
+        $datosProcesar = $datos['datos'];
+        
         try {
-            // Verificar si ya existe un tipo de usuario con el mismo nombre
-            $sqlCheck = "SELECT COUNT(*) FROM rol_usuario WHERE LOWER(nombre) = LOWER(:nombre) AND estatus = 1";
-            $stmtCheck = $c->prepare($sqlCheck);
-            $stmtCheck->execute(['nombre' => $d['nombre']]);
-            
-            if ($stmtCheck->fetchColumn() > 0) {
-                return ['respuesta'=>0,'accion'=>'incluir','mensaje'=>"Ya existe un tipo de usuario registrado con el nombre \"{$d['nombre']}\"."];
-            }
-            
-            $nextId = (int)$c
-                ->query("SELECT COALESCE(MAX(id_rol),0) + 1 FROM rol_usuario")
-                ->fetchColumn();
+            switch ($operacion) {
+                case 'registrar':
+                    return $this->ejecutarRegistro($datosProcesar);
+                    
+               case 'actualizar':      
+                    return $this->ejecutarActualizacion($datosProcesar);
+                    
+                case 'eliminar':
+                    return $this->ejecutarEliminacion($datosProcesar);
 
-            $c->beginTransaction();
-            $sql = "INSERT INTO rol_usuario (id_rol, nombre, nivel, estatus)
-                    VALUES (:id_rol, :nombre, :nivel, :estatus)";
-            $stmt = $c->prepare($sql);
-            $ok   = $stmt->execute([
-                'id_rol' => $nextId,
-                'nombre' => $d['nombre'],
-                'nivel'  => $d['nivel'],
-                'estatus' => $d['estatus']
-            ]);
-
-            if ($ok) {
-                $c->commit();
-                $c = null;
-                return ['respuesta'=>1,'accion'=>'incluir','mensaje'=>'Tipo Usuario registrado'];
+                case 'actualizar_permisos':
+                    return $this->actualizarLotePermisos($datosProcesar);    
+                
+                default:
+                    return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
             }
-
-            $c->rollBack();
-            $c = null;
-            return ['respuesta'=>0,'accion'=>'incluir','mensaje'=>'Error al registrar'];
-        } catch (\Throwable $e) {
-            if (isset($c)) {
-                $c->rollBack();
-                $c = null;
-            }
-            return ['respuesta'=>0,'accion'=>'incluir','mensaje'=>$e->getMessage()];
+        } catch (\Exception $e) {
+            return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
         }
     }
 
-    private function actualizacion(array $d): array {
-        $c = $this->getConex2();
+    private function ejecutarRegistro($datos) {
+    $conex = $this->getConex2();
         try {
-            // Verificar si ya existe otro tipo de usuario con el mismo nombre
-            $sqlCheck = "SELECT COUNT(*) FROM rol_usuario WHERE LOWER(nombre) = LOWER(:nombre) AND id_rol != :id_tipo AND estatus = 1";
-            $stmtCheck = $c->prepare($sqlCheck);
-            $stmtCheck->execute([
-                'nombre' => $d['nombre'],
-                'id_tipo' => $d['id_tipo']
-            ]);
+            $conex->beginTransaction();
             
-            if ($stmtCheck->fetchColumn() > 0) {
-                return ['respuesta'=>0,'accion'=>'actualizar','mensaje'=>"Ya existe otro tipo de usuario registrado con el nombre \"{$d['nombre']}\"."];
-            }
-            
-            $c->beginTransaction();
-            $sql = "UPDATE rol_usuario
-                    SET nombre  = :nombre,
-                        nivel   = :nivel,
-                        estatus = :estatus
-                    WHERE id_rol = :id_tipo";
-            $ok = $c->prepare($sql)->execute([
-                'nombre'  => $d['nombre'],
-                'nivel'   => $d['nivel'],
-                'estatus' => $d['estatus'],
-                'id_tipo' => $d['id_tipo']
-            ]);
+            $sqlRol = "INSERT INTO rol (nombre, nivel, estatus)
+                        VALUES (:nombre, :nivel, 1)";
+            $paramRol = [
+                'nombre' => $datos['nombre'],
+                'nivel' => $datos['nivel']
+            ];
+            $stmtrol = $conex->prepare($sqlRol);
+            $stmtrol->execute($paramRol);
 
-            if ($ok) {
-                $c->commit();
-                $c = null;
-                return ['respuesta'=>1,'accion'=>'actualizar','mensaje'=>'Tipo Usuario actualizado'];
+            $id_rol = $conex->lastInsertId();
+
+            $nivel = $datos['nivel'];
+
+            $datosPermisos = $this->generarPermisosPorNivel($id_rol,$nivel);
+
+            $sqlPermiso = "INSERT INTO permiso_rol (id_rol, id_modulo, id_permiso, estado)
+                        VALUES (:id_rol, :id_modulo, :id_permiso, :estado)";
+            $stmtPermiso = $conex->prepare($sqlPermiso);
+
+            foreach ($datosPermisos as $permiso) {
+                $stmtPermiso->execute($permiso);
             }
 
-            $c->rollBack();
-            $c = null;
-            return ['respuesta'=>0,'accion'=>'actualizar','mensaje'=>'Error al actualizar'];
-        } catch (\Throwable $e) {
-            if (isset($c)) {
-                $c->rollBack();
-                $c = null;
+            $conex->commit();
+            $conex = null;
+            return ['respuesta' => 1, 'accion' => 'registrar'];
+
+        } catch (\PDOException $e) {
+            if ($conex) {
+                $conex->rollBack();
+                $conex = null;
+                return ['respuesta' => 0, 'accion' => 'registrar', 'text' => $e];
             }
-            return ['respuesta'=>0,'accion'=>'actualizar','mensaje'=>$e->getMessage()];
+            throw $e;
         }
     }
 
-    private function eliminacion(array $d): array {
-        $c = $this->getConex2();
+    /*||||||||||||||||||||||||||||||| ELIMINAR USUARIO (LOGICO)  |||||||||||||||||||||||||| 06 ||||*/
+    private function ejecutarEliminacion($datos) {
+        $conex = $this->getConex2();
         try {
-            $c->beginTransaction();
-            $sql = "UPDATE rol_usuario SET estatus = 0 WHERE id_rol = :id_tipo";
-            $ok = $c->prepare($sql)->execute(['id_tipo'=>$d['id_tipo']]);
+            $conex->beginTransaction();
+            
+            $sql = "UPDATE rol SET estatus = 0 WHERE id_rol = :id_rol";
+            
+            $stmt = $conex->prepare($sql);
+            $resultado = $stmt->execute($datos);
 
-            if ($ok) {
-                $c->commit();
-                $c = null;
-                return ['respuesta'=>1,'accion'=>'eliminar','mensaje'=>'Tipo Usuario eliminado'];
+            $sqlPermiso = "DELETE FROM permiso_rol WHERE id_rol = :id_rol";
+            
+            $stmt2 = $conex->prepare($sqlPermiso);
+            $resultado2 = $stmt2->execute($datos);
+            
+            $conex->commit();
+            $conex = null;
+            return ['respuesta' => 1, 'accion' => 'eliminar'];
+            
+        } catch (\PDOException $e) {
+            if ($conex) {
+                $conex->rollBack();
+                $conex = null;
+                return ['respuesta' => 0, 'accion' => 'eliminar', 'text' => $e];
             }
-
-            $c->rollBack();
-            $c = null;
-            return ['respuesta'=>0,'accion'=>'eliminar','mensaje'=>'Error al eliminar'];
-        } catch (\Throwable $e) {
-            if (isset($c)) {
-                $c->rollBack();
-                $c = null;
-            }
-            return ['respuesta'=>0,'accion'=>'eliminar','mensaje'=>$e->getMessage()];
+            throw $e;
         }
     }
 
-    public function consultar(): array {
-        $c = $this->getConex2();
-        $stmt = $c->prepare("SELECT * FROM rol_usuario WHERE estatus >= 1 AND id_rol > 1");
-        $stmt->execute();
-        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $c = null;
-        return $data;
+
+     private function ejecutarActualizacion($datos) {
+        $conex = $this->getConex2();
+        try {
+            $conex->beginTransaction();
+            
+            $sql = "UPDATE rol SET nombre = :nombre, nivel = :nivel WHERE id_rol = :id_rol";
+            
+            $paramRol = [
+                'id_rol' => $datos['id_rol'],
+                'nombre' => $datos['nombre'],
+                'nivel' => $datos['nivel']
+            ];
+            $stmtrol = $conex->prepare($sql);
+            $stmtrol->execute($paramRol);
+          
+            
+            $conex->commit();
+            $conex = null;
+            return ['respuesta' => 1, 'accion' => 'actualizar'];
+            
+        } catch (\PDOException $e) {
+            if ($conex) {
+                $conex->rollBack();
+                $conex = null;
+                return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => $e];
+            }
+            throw $e;
+        }
     }
+
+
+    public function consultar() {
+        $conex = $this->getConex2();
+        try {
+            $conex->beginTransaction();
+            $sql = "SELECT * FROM rol WHERE estatus >= 1 AND id_rol > 1 ORDER BY id_rol DESC";
+                    
+            $stmt = $conex->prepare($sql);
+            $stmt->execute();
+            $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $conex->commit();
+            $conex = null;
+            return $resultado;
+        } catch (\PDOException $e) {
+            if ($conex) {
+                $conex = null;
+            }
+            throw $e;
+        }
+    }
+
+    /*||||||||||||||||||||||||||||||| CONSULTAR PERMISO DEL USUARIO SELECCIONADO  |||||||||||||||||||||||||| 12 ||||*/
+    public function buscar($id_rol) {
+        $conex = $this->getConex2();
+        try { 
+        $sql = "SELECT 
+                permiso_rol.*, 
+                modulo.id_modulo, 
+                modulo.nombre
+                FROM permiso_rol
+                INNER JOIN modulo ON permiso_rol.id_modulo = modulo.id_modulo
+                WHERE permiso_rol.id_rol = :id_rol;
+                ";
+                    
+           $stmt = $conex->prepare($sql);
+            $stmt->execute(['id_rol' => $id_rol]);
+
+            $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $conex = null;
+            return $resultado;
+        } catch (\PDOException $e) {
+            if ($conex) {
+                $conex = null;
+            }
+            throw $e;
+        }
+    }
+
+    /*||||||||||||||||||||||||||||||| ACTUALIZAR PERMISOS DEL USUARIO  ||||||||||||||||||||||||| 14 |||||*/
+   /*||||||||||||||||||||||||||||||| ACTUALIZAR PERMISOS DEL ROL  |||||||||||||||||||||||||*/
+private function actualizarLotePermisos($lista) {
+    $conex = $this->getConex2();
+
+    try {
+        $conex->beginTransaction();
+
+        $sql = "UPDATE permiso_rol
+                SET estado = :estado
+                WHERE id_permiso_rol = :id_permiso_rol";
+
+        $stmt = $conex->prepare($sql);
+
+        foreach ($lista as $permiso) {
+
+            // Cada elemento contiene:
+            // id_permiso_rol, id_modulo, id_permiso, estado
+
+            $stmt->execute([
+                ':estado'         => $permiso['estado'],
+                ':id_permiso_rol' => $permiso['id_permiso_rol']
+            ]);
+        }
+
+        $conex->commit();
+        $conex = null;
+
+        return [
+            'respuesta' => 1,
+            'accion' => 'actualizar_permisos',
+            'text' => 'Permisos actualizados correctamente'
+        ];
+
+    } catch (\PDOException $e) {
+
+        if ($conex) {
+            $conex->rollBack();
+            $conex = null;
+        }
+
+        throw $e;
+    }
+}
+
+private function generarPermisosPorNivel($id_rol, $nivel){
+    // Matriz de permisos por nivel
+    $permisos_por_nivel = [
+    // NIVEL 3 
+    3 => [
+        // módulo => [permiso_id => estado]
+        1  => [1 => 1],
+        2  => [1 => 1, 2 => 1, 3 => 1],
+        3  => [1 => 1, 2 => 1],
+        4  => [1 => 1, 5 => 1],
+        5  => [1 => 1, 5 => 1],
+        6  => [1 => 1, 2 => 1, 3 => 1, 4 => 1, 5 => 1],
+        7  => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        8  => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        9  => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        10 => [1 => 1, 3 => 1],
+        11 => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        12 => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        13 => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        14 => [1 => 1, 3 => 1],
+        15 => [1 => 0, 4 => 0], // Bitácora
+        16 => [1 => 1, 2 => 1, 3 => 1, 4 => 1],
+        17 => [1 => 1, 2 => 1, 3 => 1, 4 => 1, 5 => 1],
+        18 => [1 => 1, 5 => 1]
+    ],
+
+    // NIVEL 2 (USUARIO BÁSICO)
+    2 => [
+        1  => [1 => 1],
+        3  => [1 => 1, 2 => 1],
+        4  => [1 => 1, 5 => 1],
+        5  => [1 => 1, 5 => 1],
+        6  => [1 => 1, 2 => 0, 3 => 0, 4 => 0, 5 => 0],
+        10 => [1 => 1, 3 => 1],
+        14 => [1 => 1, 3 => 1],
+        18 => [1 => 1, 5 => 1]
+    ]
+];
+
+    $permisos = [];
+
+    foreach ($permisos_por_nivel[$nivel] as $modulo_id => $permisosModulo) {
+        foreach ($permisosModulo as $id_permiso => $estado) {
+            $permisos[] = [
+                ':id_rol'     => $id_rol,
+                ':id_modulo'  => $modulo_id,
+                ':id_permiso' => $id_permiso,
+                ':estado'     => $estado
+            ];
+        }
+    }
+
+    return $permisos;
+}
+
+/*||||||||||||||||||||||||||||||| CONSULTAR EL NIVEL PARA EDITAR LOS PERMISOS  ||||||||||||||||||||||||| 13 |||||*/    
+    public function obtenerNivelPorId($id_usuario) {
+    $conex = $this->getConex2();
+    try {
+        $sql = "SELECT r.nivel
+                FROM usuario u
+                INNER JOIN rol r ON u.id_rol = r.id_rol
+                WHERE u.id_usuario = :id_usuario";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_usuario' => $id_usuario]);
+        $nivel = $stmt->fetchColumn();
+        $conex = null;
+        return $nivel !== false ? (int)$nivel : null;
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        throw $e;
+    }
+}
 }

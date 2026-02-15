@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     exit;
-} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 'ver')) {
+} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 1)) {
      /* $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Acceso a Módulo',

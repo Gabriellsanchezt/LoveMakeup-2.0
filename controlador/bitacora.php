@@ -179,7 +179,7 @@ function registrarEnBitacora($accion, $modulo, $detalle = '') {
 
 // Verificar permisos y mostrar vista
 // Módulo 15 = Bitácora según la base de datos
-if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 'ver')) {
+if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 1)) {
     // Registrar acceso al módulo de bitácora (solo en carga normal, no en AJAX)
     // Esto es independiente de otros módulos
     if (!isset($_POST['detalles']) && !isset($_POST['limpiar']) && !isset($_POST['eliminar_registro']) && !isset($_POST['cargar_mas'])) {

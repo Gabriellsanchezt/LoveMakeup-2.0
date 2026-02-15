@@ -106,13 +106,14 @@ class Login extends Conexion {
                     u.*, 
                     ru.nombre AS nombre_rol, 
                     ru.nivel, 
+                    ru.id_rol, 
                     p.nombre, 
                     p.apellido, 
                     p.correo, 
                     p.telefono, 
                     p.tipo_documento
                 FROM usuario u
-                INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                INNER JOIN rol ru ON u.id_rol = ru.id_rol
                 INNER JOIN persona p ON u.cedula = p.cedula
                 WHERE u.cedula = :cedula 
                   AND p.tipo_documento = :tipo_documento
@@ -262,18 +263,10 @@ class Login extends Conexion {
      public function consultar($id_persona) {
         $conex = $this->getConex2();
         try {
-        $sql = "SELECT 
-                ru.id_rol, 
-                p.cedula, 
-                permiso.*
-                FROM usuario p
-                INNER JOIN rol_usuario ru ON p.id_rol = ru.id_rol
-                INNER JOIN permiso ON p.cedula = permiso.cedula
-                WHERE p.cedula = :id_persona
-                ";
+        $sql = "SELECT * FROM permiso_rol WHERE id_rol = :id_persona ";
                     
-           $stmt = $conex->prepare($sql);
-             $stmt->execute(['id_persona' => $id_persona]);
+            $stmt = $conex->prepare($sql);
+            $stmt->execute(['id_persona' => $id_persona]);
 
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex = null;

@@ -44,10 +44,10 @@
               
             <div class="d-sm-flex align-items-center justify-content-between mb-3">
               <h4 class="mb-0 texto-quinto"><i class="fa-solid fa-users-gear me-2" style="color: #f6c5b4;"></i>
-                Permiso del Usuario: <strong><?php echo $nombre_usuario . ' ' . $apellido_usuario; ?></strong></h4>
+                Permiso de: <strong><?php echo $nombre_usuario; ?></strong></h4>
            
        <!-- Button que abre el Modal N1 Registro -->
-        <a href="?pagina=usuario" class="btn btn-primary"><i class="fa-solid fa-reply"></i> Regresar</a>
+        <a href="?pagina=tipousuario" class="btn btn-primary"><i class="fa-solid fa-reply"></i> Regresar</a>
 
       </div>
 
@@ -69,97 +69,123 @@
 </div>
 
 
-       <form action="?pagina=usuario" method="POST" autocomplete="off" id="forpermiso">
+       <form action="?pagina=tipousuario" method="POST" autocomplete="off" id="forpermiso">
           
       <div class="table-responsive">
-        <table class="table table-bordered table-m text-center align-middle table-hover">
-  <thead class="table-color">
-    <tr>
-      <th class="text-white">#</th>
-      <th class="text-white modulo">Módulo</th>
-      <th class="text-white ver">Ver</th>
-      <th class="text-white registrar">Registrar</th>
-      <th class="text-white editar">Editar</th>
-      <th class="text-white eliminar">Eliminar</th>
-      <th class="text-white especial">Especial</th>
-    </tr>
-  </thead>
-  <tbody>
-    <?php
-      $modulos_nivel_2 = [1, 3, 4, 5, 9];
+     <?php
+// Módulos permitidos para nivel 2
+$modulos_nivel_2 = [1, 3, 4, 5, 9];
 
-      $permisos_por_modulo = [];
+// Agrupar permisos por módulo
+$permisos_por_modulo = [];
 
-      foreach ($modificar as $permiso) {
-        $modulo_id = $permiso['id_modulo'];
-        $modulo_nombre = $permiso['nombre'];
-        $accion = $permiso['accion'];
-        $estado = $permiso['estado'];
-        $permiso_id = $permiso['id_permiso'];
+foreach ($modificar as $permiso) {
+    $modulo_id = $permiso['id_modulo'];
+    $modulo_nombre = $permiso['nombre'];
+    $id_permiso = $permiso['id_permiso']; // 1..5
+    $estado = $permiso['estado']; // 1 o 0
+    $id_permiso_rol = $permiso['id_permiso_rol'];
 
-        if (!isset($permisos_por_modulo[$modulo_id])) {
-          $permisos_por_modulo[$modulo_id] = [
+    if (!isset($permisos_por_modulo[$modulo_id])) {
+        $permisos_por_modulo[$modulo_id] = [
             'nombre' => $modulo_nombre,
             'acciones' => [],
             'ids' => []
-          ];
-        }
+        ];
+    }
 
-        $permisos_por_modulo[$modulo_id]['acciones'][$accion] = $estado;
-        $permisos_por_modulo[$modulo_id]['ids'][$accion] = $permiso_id;
-      }
+    // Guardar estado e ID del permiso
+    $permisos_por_modulo[$modulo_id]['acciones'][$id_permiso] = $estado;
+    $permisos_por_modulo[$modulo_id]['ids'][$id_permiso] = $id_permiso_rol;
+}
 
-      $acciones_por_modulo = [
-        1 => ['ver'],
-        2 => ['ver', 'registrar', 'editar'],
-        3 => ['ver', 'registrar'],
-        4 => ['ver', 'especial'],
-        5 => ['ver', 'especial'],
-        6 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
-        7 => ['ver', 'registrar', 'editar', 'eliminar'],
-        8 => ['ver', 'registrar', 'editar', 'eliminar'],
-        9 => ['ver', 'registrar', 'editar', 'eliminar'],
-        10 => ['ver','editar'],
-        11 => ['ver', 'registrar', 'editar', 'eliminar'],
-        12 => ['ver', 'registrar', 'editar', 'eliminar'],
-        13 => ['ver', 'registrar', 'editar', 'eliminar'],
-        14 => ['ver','editar'],
-        15 => ['ver', 'eliminar'],
-        16 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
-        17 => ['ver', 'registrar', 'editar', 'eliminar'],
-        18 => ['ver', 'especial']
-      ];
+// Mapa de acciones → ID de permiso
+$mapa_acciones = [
+    'ver' => 1,
+    'registrar' => 2,
+    'editar' => 3,
+    'eliminar' => 4,
+    'especial' => 5
+];
 
-      $contador = 1;
-      foreach ($permisos_por_modulo as $modulo_id => $info):
-        $acciones_validas = $acciones_por_modulo[$modulo_id] ?? [];
+// Acciones válidas por módulo
+$acciones_por_modulo = [
+    1 => ['ver'],
+    2 => ['ver', 'registrar', 'editar'],
+    3 => ['ver', 'registrar'],
+    4 => ['ver', 'especial'],
+    5 => ['ver', 'especial'],
+    6 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
+    7 => ['ver', 'registrar', 'editar', 'eliminar'],
+    8 => ['ver', 'registrar', 'editar', 'eliminar'],
+    9 => ['ver', 'registrar', 'editar', 'eliminar'],
+    10 => ['ver','editar'],
+    11 => ['ver', 'registrar', 'editar', 'eliminar'],
+    12 => ['ver', 'registrar', 'editar', 'eliminar'],
+    13 => ['ver', 'registrar', 'editar', 'eliminar'],
+    14 => ['ver','editar'],
+    15 => ['ver', 'eliminar'],
+    16 => ['ver', 'registrar', 'editar', 'eliminar'],
+    17 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
+    18 => ['ver', 'especial']
+];
+?>
 
-        if ($nivel_usuario == 2 && !in_array($modulo_id, $modulos_nivel_2)) {
-          continue;
-        }
-    ?>
-      <tr>
-        <td class="texto-secundario"><?= $contador++ ?></td>
-        <td class="texto-secundario"><?= htmlspecialchars($info['nombre']) ?></td>
-        <?php foreach (['ver', 'registrar', 'editar', 'eliminar', 'especial'] as $accion): ?>
-          <td>
-            <?php if (in_array($accion, $acciones_validas)): ?>
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox"
-                       name="permiso[<?= $modulo_id ?>][<?= $accion ?>]"
-                       <?= !empty($info['acciones'][$accion]) ? 'checked' : '' ?>>
+<table class="table table-bordered-m text-center align-middle table-hover">
+    <thead class="table-color">
+        <tr>
+            <th class="text-white">#</th>
+            <th class="text-white modulo">Módulo</th>
+            <th class="text-white ver">Ver</th>
+            <th class="text-white registrar">Registrar</th>
+            <th class="text-white editar">Editar</th>
+            <th class="text-white eliminar">Eliminar</th>
+            <th class="text-white especial">Especial</th>
+        </tr>
+    </thead>
 
-                <input type="hidden"
-                       name="permiso_id[<?= $modulo_id ?>][<?= $accion ?>]"
-                       value="<?= $info['ids'][$accion] ?? '' ?>">
-              </div>
-            <?php endif; ?>
-          </td>
+    <tbody>
+        <?php
+        $contador = 1;
+        foreach ($permisos_por_modulo as $modulo_id => $info):
+
+            // Filtrar por nivel de usuario
+            if ($nivel_usuario == 2 && !in_array($modulo_id, $modulos_nivel_2)) {
+                continue;
+            }
+
+            $acciones_validas = $acciones_por_modulo[$modulo_id] ?? [];
+        ?>
+        <tr>
+            <td class="texto-secundario"><?= $contador++ ?></td>
+            <td class="texto-secundario"><?= htmlspecialchars($info['nombre']) ?></td>
+
+            <?php foreach (['ver', 'registrar', 'editar', 'eliminar', 'especial'] as $accion): ?>
+                <td>
+                    <?php if (in_array($accion, $acciones_validas)): ?>
+                        <?php
+                            $id_permiso = $mapa_acciones[$accion];
+                            $estado = $info['acciones'][$id_permiso] ?? 0;
+                            $id_permiso_rol = $info['ids'][$id_permiso] ?? '';
+                        ?>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox"
+                                   name="permiso[<?= $modulo_id ?>][<?= $id_permiso ?>]"
+                                   <?= $estado == 1 ? 'checked' : '' ?>>
+
+                            <input type="hidden"
+                                   name="permiso_id[<?= $modulo_id ?>][<?= $id_permiso ?>]"
+                                   value="<?= $id_permiso_rol ?>">
+                        </div>
+                    <?php endif; ?>
+                </td>
+            <?php endforeach; ?>
+
+        </tr>
         <?php endforeach; ?>
-      </tr>
-    <?php endforeach; ?>
-  </tbody>
+    </tbody>
 </table>
+
 
 
           <hr class="bg-primary">
@@ -181,7 +207,7 @@
 <!-- php barra de navegacion-->
 <?php include 'vista/complementos/footer.php' ?>
 <script src="assets/js/permiso.js"></script>
-<script src="assets/js/usuario.js"></script>
+
 
 
 </body>

@@ -38,7 +38,7 @@
         </li>
           <?php } ?>
 
-        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(1, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(1, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'reporte' ? 'bg-activo' : '' ?>" href="?pagina=reporte">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -53,7 +53,7 @@
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder texto-cuarto">Gestión Comercial</h6>
         </li>
         
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2,1)): ?>
         <li class="nav-item">
             <a class="nav-link <?= $pagina_actual == 'entrada' ? 'bg-activo' : '' ?>" href="?pagina=entrada">
               <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -64,7 +64,7 @@
         </li>
          <?php endif; ?>
 
-        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'salida' ? 'bg-activo' : '' ?> " href="?pagina=salida">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -76,7 +76,7 @@
         </li>
         <?php endif; ?>
 
-        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 'ver')):?>
+        <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 1)):?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'reserva' ? 'bg-activo' : '' ?> " href="?pagina=reserva">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -88,7 +88,7 @@
         </li>
       <?php endif; ?>
 
-      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 'ver')):?>
+      <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(5, 1)):?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'pedidoweb' ? 'bg-activo' : '' ?> " href="?pagina=pedidoweb">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -103,7 +103,7 @@
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder  texto-cuarto">Inventario</h6>
         </li>
         
-         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 'ver')): ?>
+         <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'producto' ? 'bg-activo' : '' ?> " href="?pagina=producto">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -114,7 +114,7 @@
         </li>
         <?php endif; ?>
 
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'marca' ? 'bg-activo' : '' ?>" href="?pagina=marca">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -126,7 +126,7 @@
         </li>
         <?php endif; ?>
       
-       <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 'ver')): ?>
+       <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(8, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'categoria' ? 'bg-activo' : '' ?>" href="?pagina=categoria">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -138,7 +138,7 @@
         </li>
         <?php endif; ?>
        
-         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 'ver')): ?>
+         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'proveedor' ? 'bg-activo' : '' ?> " href="?pagina=proveedor">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -154,7 +154,7 @@
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder texto-cuarto">Clientes y Entregas</h6>
         </li>
 
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'cliente' ? 'bg-activo' : '' ?> " href="?pagina=cliente">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -165,7 +165,7 @@
         </li>
       <?php endif; ?>
 
-       <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 'ver')): ?>
+       <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(11, 1)): ?>
          <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'delivery' ? 'bg-activo' : '' ?>" href="?pagina=delivery">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -176,7 +176,7 @@
         </li>
       <?php endif; ?>
        
-      <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 'ver')): ?>
+      <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(12, 1)): ?>
          <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'metodoentrega' ? 'bg-activo' : '' ?>" href="?pagina=metodoentrega">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -191,7 +191,7 @@
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder  texto-cuarto">Finanza</h6>
       </li>
 
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'metodopago' ? 'bg-activo' : '' ?>" href="?pagina=metodopago">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -202,7 +202,7 @@
         </li>
         <?php endif; ?>
 
-         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'ver')): ?>
+         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'tasacambio' ? 'bg-activo' : '' ?>" href="?pagina=tasacambio">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -219,7 +219,7 @@
           </li>
         <?php } ?>
 
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(15, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'bitacora' ? 'bg-activo' : '' ?> " href="?pagina=bitacora">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -230,7 +230,7 @@
         </li>
        <?php endif; ?>
 
-       <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 'ver')): ?>
+       <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'usuario' ? 'bg-activo' : '' ?> " href="?pagina=usuario">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -241,7 +241,7 @@
         </li>
          <?php endif; ?>
         
-        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'ver')): ?>
+        <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 1)): ?>
         <li class="nav-item">
           <a class="nav-link <?= $pagina_actual == 'tipousuario' ? 'bg-activo' : '' ?>" href="?pagina=tipousuario">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">

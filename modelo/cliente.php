@@ -60,7 +60,7 @@ class Cliente extends Conexion
                         u.estatus
                     FROM usuario u
                     INNER JOIN persona per ON u.cedula = per.cedula
-                    INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                    INNER JOIN rol ru ON u.id_rol = ru.id_rol
                     WHERE ru.nivel IN (1) 
                     AND u.estatus >= 1
                     ORDER BY u.id_usuario DESC";

@@ -1,129 +1,271 @@
-// assets/js/tipousuario.js
+/*||| Funcion para cambiar el boton a loader |||*/
+function activarLoaderBoton(idBoton, texto = 'Cargando...') {
+    const $boton = $(idBoton);
+    const textoActual = $boton.html();
+    $boton.data('texto-original', textoActual); // Guarda el texto original
+    $boton.prop('disabled', true);
+    $boton.html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${texto}`);
+}
+
+function desactivarLoaderBoton(idBoton) {
+    const $boton = $(idBoton);
+    const textoOriginal = $boton.data('texto-original');
+    $boton.prop('disabled', false);
+    $boton.html(textoOriginal);
+}
+
+/*||| Funcion para validar compas de formulario |||*/
+function validarCampo(campo, regex, textoError, mensaje) {
+  const valor = campo.val();
+
+  if (campo.is("select")) {
+   
+    if (valor === "") {
+      campo.removeClass("is-valid").addClass("is-invalid");
+      textoError.text(mensaje);
+    } else {
+      campo.removeClass("is-invalid").addClass("is-valid");
+      textoError.text("");
+    }
+  } else {
+   
+    if (regex.test(valor)) {
+      campo.removeClass("is-invalid").addClass("is-valid");
+      textoError.text("");
+    } else {
+      campo.removeClass("is-valid").addClass("is-invalid");
+      textoError.text(mensaje);
+    }
+  }
+}
+
+function eliminarRol(id_rol) {
+  Swal.fire({
+    title: '¿Eliminar Tipo de usuario?',
+    text: '¿Desea eliminarlo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#116d15',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const datos = new FormData();
+      datos.append('id_rol', id_rol);
+      datos.append('eliminar', 'eliminar');
+      enviaAjax(datos); // Aquí sí usas tu flujo normal con muestraMensaje()
+    }
+  });
+}
+
+//Función para validar por Keypress
+function validarkeypress(er,e){
+  key = e.keyCode;
+    tecla = String.fromCharCode(key);
+    a = er.test(tecla);
+    if(!a){
+    e.preventDefault();
+    }
+}
+//Función para validar por keyup
+function validarkeyup(er,etiqueta,etiquetamensaje,
+mensaje){
+  a = er.test(etiqueta.val());
+  if(a){
+    etiquetamensaje.text("");
+    return 1;
+  }
+  else{
+    etiquetamensaje.text(mensaje);
+    return 0;
+  }
+} 
+
+/* ||| FUNCION PARA VALIDAR ENVIO REGISTRO ||| */
+function validarCampos() {
+  
+    let nombreValido = /^[a-zA-Z]{3,30}$/.test($("#nombre").val()); 
+    let nivelValido = $("#nivel").val() !== "";
+
+    function aplicarEstado(input, valido, feedback, mensaje = "") {
+        if (valido) {
+            $(input).removeClass("is-invalid").addClass("is-valid");
+            $(feedback).hide();
+        } else {
+            $(input).removeClass("is-valid").addClass("is-invalid");
+            $(feedback).text(mensaje).show();
+        }
+    }
+    
+    aplicarEstado("#nombre", nombreValido, "#snombre", "Solo letras (3 a 30 caracteres)");
+    aplicarEstado("#nivel", nivelValido, "#snivel", "Por favor, seleccione un nivel válido.");
+    
+    return nombreValido &&  nivelValido ;
+}
+
+$(document).ready(function() {
+
+  $("#nivel").on("change", function () {
+    validarCampo($(this), null, $("#snivel"), "Por favor, seleccione un rol válido.");
+  });
+
+  $("#nombre").on("keypress", function (e) {
+    validarkeypress(/^[A-Za-z\b\s\u00f1\u00d1\u00E0-\u00FC]*$/, e);
+  });
+
+  $("#nombre").on("keyup", function () {
+    validarCampo($(this),/^[a-zA-Z]{3,30}$/,
+    $("#snombre"), "El formato debe ser solo letras");
+  });
+
+  /*||| ENVIO AJAX FORMULARIO |||*/
+  $('#registrar').on("click", function () {
+      if (validarCampos()) {
+          Swal.fire({
+              title: '¿Deseas registrar?',
+              text: 'Se asignarán permisos predeterminados según el nivel seleccionado.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, registrar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#298a29',
+              cancelButtonColor: '#ac2424'
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  activarLoaderBoton('#registrar');
+                  var datos = new FormData($('#ForRegistrar')[0]);
+                  datos.append('registrar', 'registrar');
+                  enviaAjax(datos);
+              }
+          });
+      }
+  });
+
+    $('#btnModificar').on("click", function () {
+     
+          Swal.fire({
+              title: '¿Deseas Actualizar?',
+              text: '',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, actualizar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#298a29',
+              cancelButtonColor: '#ac2424'
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  activarLoaderBoton('#btnModificar');
+                  var datos = new FormData($('#formModificar')[0]);
+                  datos.append('actualizar', 'actualizar');
+                  enviaAjax(datos);
+              }
+          });
+     
+  });
+
+
+
+});
+
+$(document).on('click', '.modificar', function () {
+
+    let id     = $(this).data('id');
+    let nombre = $(this).data('nombre');
+    let nivel  = $(this).data('nivel');
+    let estatus = $(this).data('estatus');
+
+    // Asignar valores al formulario del modal
+    $('#id_tipo_modificar').val(id);
+    $('#nombre_modificar').val(nombre);
+    $('#nivel_modificar').val(nivel);
+    $('#estatus_modificar').val(estatus);
+
+    // Abrir modal (por si no se abre automáticamente)
+    $('#modificar').modal('show');
+});
+
+
+function muestraMensaje(icono, tiempo, titulo, mensaje) {
+  Swal.fire({
+    icon: icono,
+    timer: tiempo,
+    title: titulo,
+    html: mensaje,
+    showConfirmButton: false,
+  });
+}
+
+
+function enviaAjax(datos) {
+    $.ajax({
+      async: true,
+      url: "",
+      type: "POST",
+      contentType: false,
+      data: datos,
+      processData: false,
+      cache: false,
+      beforeSend: function () { },
+      timeout: 10000,
+      success: function (respuesta) {
+        console.log(respuesta);
+        var lee = JSON.parse(respuesta);
+        try {
+  
+           if (lee.accion == 'registrar') {
+                if (lee.respuesta == 1) {
+                  muestraMensaje("success", 1500, "Se ha registrado con éxito", "Agregado Tipo Usuario");
+                    desactivarLoaderBoton('#registrar'); 
+                      setTimeout(function () {
+                        location = '?pagina=tipousuario';
+                      }, 2000);
+                } else {
+                  muestraMensaje("error", 3000, "Error", lee.text);
+                  desactivarLoaderBoton('#registrar'); 
+                }
+            }else  if (lee.accion == 'actualizar') {
+                if (lee.respuesta == 1) {
+                  muestraMensaje("success", 1500, "Se ha Actualizado con éxito", "");
+                  desactivarLoaderBoton('#btnModificar'); 
+                  setTimeout(function () {
+                     location = '?pagina=tipousuario';
+                  }, 2000);
+                } else {
+                  muestraMensaje("error", 2000, "ERROR", lee.text);
+                  desactivarLoaderBoton('#btnModificar'); 
+                }
+            }else if (lee.accion == 'eliminar') {
+                if (lee.respuesta == 1) {
+                  muestraMensaje("success", 1500, "Se ha eliminado con éxito", "Tipo de usario Borrado");
+                 
+                    setTimeout(function () {
+                      location = '?pagina=tipousuario';
+                    }, 2000);
+                } else {
+                    muestraMensaje("error", 2000, "Error", lee.text);
+                 
+                }
+            }    
+   
+        } catch (e) {
+          alert("Error en JSON " + e.name);
+        }
+      },
+      error: function (request, status, err) {
+        Swal.close();
+        if (status == "timeout") {
+          muestraMensaje("error", 2000, "Error", "Servidor ocupado, intente de nuevo");
+        } else {
+          muestraMensaje("error", 2000, "Error", "ERROR: <br/>" + request + status + err);
+        }
+      },
+      complete: function () {
+      }
+    });
+  }
 
 $(function(){
-  // —— Helpers —— 
-  function mostrarMensaje(icon, time, title, msg) {
-    Swal.fire({ icon, timer: time, title, html: msg, showConfirmButton: false });
-  }
-  function mensajeOK(texto) {
-    Swal.fire({ icon:'success', timer:1000, title:texto, showConfirmButton:false });
-    setTimeout(()=> location.reload(), 1000);
-  }
-  function enviaAjax(fd) {
-    $.ajax({
-      url: '?pagina=tipousuario',
-      method: 'POST',
-      data: fd,
-      cache: false,
-      contentType: false,
-      processData: false,
-      dataType: 'json',
-      success(res) {
-        if (res.accion=='incluir'    && res.respuesta==1) return mensajeOK('Rol registrado con éxito');
-        if (res.accion=='actualizar' && res.respuesta==1) return mensajeOK('Rol modificado con éxito');
-        if (res.accion=='eliminar'   && res.respuesta==1) return mensajeOK('Rol eliminado con éxito');
-        mostrarMensaje('error',2000,'Error',res.text || res.mensaje);
-      },
-      error() {
-        mostrarMensaje('error',2000,'Error','Fallo de comunicación');
-      }
-    });
-  }
-
-  // —— 1) DataTables ——  
-  $('#myTable').DataTable();
-
-  // —— 2) Registrar ——  
-  $('#registrar').on('click', function(){
-    const nombre = $('#nombre').val().trim();
-    const nivel  = $('#nivel').val();
-    const estatus = $('#estatus').val();
-    if (!nombre || !/^.{3,30}$/.test(nombre)) {
-      mostrarMensaje('info',2000,'Nombre inválido','Debe tener entre 3 y 30 Caracteres');
-      return;
-    }
-    if (nivel!=='2' && nivel!=='3') {
-      mostrarMensaje('info',2000,'Nivel inválido','Seleccione nivel 2 o 3');
-      return;
-    }
-    if (estatus!=='1' && estatus!=='2') {
-      mostrarMensaje('info',2000,'Estatus inválido','Seleccione estatus válido');
-      return;
-    }
-    const fd = new FormData($('#u')[0]);
-    fd.append('registrar','registrar');
-    enviaAjax(fd);
-  });
-
-  // —— 3) Mostrar Modal Editar (Bootstrap) ——  
-  $('#modificar').on('show.bs.modal', function(e){
-    const btn = e.relatedTarget;
-    const id  = parseInt(btn.getAttribute('data-id'),10);
-    if (id===3) {
-      e.preventDefault();
-      mostrarMensaje('info',3000,'Acción no permitida',
-        'El rol <strong>Administrador</strong><br>no puede modificarse.');
-      return;
-    }
-    $('#id_tipo_modificar').val(id);
-    $('#nombre_modificar').val(btn.getAttribute('data-nombre'));
-    $('#nivel_modificar').val(btn.getAttribute('data-nivel'));
-    $('#estatus_modificar').val(btn.getAttribute('data-estatus'));
-    // limpia validaciones previas
-    $('#formModificar .is-valid, #formModificar .is-invalid')
-      .removeClass('is-valid is-invalid');
-    $('#formModificar span.text-danger').text('');
-  });
-
-  // —— 4) Editar ——  
-  $('#btnModificar').on('click', function(){
-    const nombre = $('#nombre_modificar').val().trim();
-    const nivel  = $('#nivel_modificar').val();
-    const estatus = $('#estatus_modificar').val();
-    if (!nombre || !/^.{3,30}$/.test(nombre)) {
-      mostrarMensaje('info',2000,'Nombre inválido','Debe tener entre 3 y 30 letras');
-      return;
-    }
-    if (nivel!=='2' && nivel!=='3') {
-      mostrarMensaje('info',2000,'Nivel inválido','Seleccione nivel 2 o 3');
-      return;
-    }
-    if (estatus!=='1' && estatus!=='2') {
-      mostrarMensaje('info',2000,'Estatus inválido','Seleccione estatus válido');
-      return;
-    }
-    const fd = new FormData($('#formModificar')[0]);
-    fd.append('modificar','modificar');
-    enviaAjax(fd);
-  });
-
-  // —— 5) Eliminar ——  
-  $('.eliminar').on('click', function(e){
-    const id = parseInt($(this).val(),10);
-    if (id===3) {
-      e.preventDefault();
-      mostrarMensaje('info',3000,'Acción no permitida',
-        'El rol <strong>Administrador</strong><br>no puede eliminarse.');
-      return;
-    }
-    e.preventDefault();
-    Swal.fire({
-      title:'¿Eliminar rol?',
-      text:'Esta acción es irreversible.',
-      icon:'warning',
-      showCancelButton:true,
-      confirmButtonText:'Sí, eliminar',
-      cancelButtonText:'No'
-    }).then(res=>{
-      if (res.isConfirmed) {
-        const fd = new FormData();
-        fd.append('id_tipo',id);
-        fd.append('eliminar','eliminar');
-        enviaAjax(fd);
-      }
-    });
-  });
-
 // ——— AYUDA con Driver.js v1 ———
 $('#btnAyuda').on("click", function () {
   // instancia el driver (igual que en Proveedor)

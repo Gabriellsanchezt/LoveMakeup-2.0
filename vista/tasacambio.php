@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
           <h5 class="card-title">Tasa del Dolar (Guardada)</h5>
           <h4 class="card-subtitle mb-2 text-dark" id="tasaBD"> </h4>
           <p class="card-text">Actualmente estás es la tasa de cambio de USD a Bolívares (Bs) guardada en nuestra base de datos. puedes modificarla manualmente en cualquier momento según tu preferencia o la tasa vigente.</p>
-             <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
+             <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 3)): ?>
           <form action="?pagina=tasacambio" method="POST" autocomplete="off" id="for_modificar" style="display: none;">
             <input type="text" name="tasa" id="tasa">
             <input type="hidden" name="fuente" id="fuente_1" value="Manualmente">
@@ -183,7 +183,7 @@ document.addEventListener("DOMContentLoaded", obtenerTasaDolarApi);
           <h5 class="card-title">Tasa del Dolar (Actual - Via Internet) </h5>
          <h4 class="card-subtitle mb-2 text-dark" id="bcv"></h4>
           <p class="card-text">Estás utilizando la tasa de cambio USD a Bs obtenida automáticamente desde internet. Si lo prefieres, puedes sincronizar esta tasa y actualizar la que está guardada en la base de datos.</p>
-<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'editar')): ?>
+<?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 3)): ?>
           <form action="?pagina=tasacambio" method="POST" id="for_sincronizar" style="display: none;">
             <input type="hidden" name="fecha" id="fecha_2">
             <input type="hidden" name="tasa" id="tasabcv">

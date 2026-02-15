@@ -279,7 +279,7 @@
            
        <!-- Button que abre el Modal N1 Registro -->
        <div class="d-flex gap-2">
-          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 'registrar')): ?>
+          <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 2)): ?>
           <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registroModal">
             <span class="icon text-white">
             <i class="fas fa-file-medical"></i>
@@ -348,7 +348,7 @@
                       <td class="texto-secundario"><?php echo $fecha_formateada; ?></td>
                       <td class="texto-secundario"><?php echo $proveedor_nombre; ?></td>
                       <td class="text-center">
-                         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 'editar')): ?>
+                         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(2, 3)): ?>
                         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editarModal<?php echo $compra['id_compra']; ?>">
                           <i class="fas fa-pencil-alt" title="Editar"></i>
                         </button>

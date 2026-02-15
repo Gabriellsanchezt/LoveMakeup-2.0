@@ -206,7 +206,7 @@ else {
 
 // 5) Cargar vista
 if ($nivel >= 2) {
-    if($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 'ver')){
+    if($_SESSION["nivel_rol"] >= 2 && tieneAcceso(18, 1)){
         require_once __DIR__ . '/../vista/notificacion.php';
     } else{
         require_once 'vista/seguridad/privilegio.php';

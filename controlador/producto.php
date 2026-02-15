@@ -273,7 +273,7 @@ if (!empty($_POST['imagenesReemplazadas'])) {
 
         echo json_encode($resultado);
     }
-} else if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(3, 'ver')) {
+} else if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(6, 1)) {
         $bitacora = [
         'id_persona' => $_SESSION["id"],
         'accion' => 'Acceso a Módulo',

@@ -358,7 +358,7 @@ private function verificarExistenciaROL($datos) {
                         u.estatus
                     FROM usuario u
                     INNER JOIN persona per ON u.cedula = per.cedula
-                    INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                    INNER JOIN rol ru ON u.id_rol = ru.id_rol
                     WHERE ru.nivel IN (2, 3) 
                     AND u.estatus >= 1 AND u.id_usuario >=2
                     ORDER BY u.id_usuario DESC";
@@ -533,7 +533,7 @@ private function ejecutarEliminacionPermisos($cedula) {
 }
 
 /*||||||||||||||||||||||||||||||| CONSULTAR PERMISO DEL USUARIO SELECCIONADO  |||||||||||||||||||||||||| 12 ||||*/
-     public function buscar($cedula) {
+    public function buscar($cedula) {
         $conex = $this->getConex2();
         try { 
         $sql = "SELECT 

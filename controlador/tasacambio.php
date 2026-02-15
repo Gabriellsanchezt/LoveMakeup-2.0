@@ -220,7 +220,7 @@ if(isset($_POST['modificar'])){
     }
     exit;
     
-} else if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 'ver')) {
+} else if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(14, 1)) {
      $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tasacambio';
     require_once 'vista/tasacambio.php'; // Asegúrate de tener esta vista
 } else {

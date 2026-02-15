@@ -23,209 +23,183 @@ if ($_SESSION["nivel_rol"] == 1) {
     }/*  Validacion cliente  */
 
 require_once 'permiso.php';
-$obj = new TipoUsuario();
+$objRol = new TipoUsuario();
 
 /*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
 
-/**
- * Valida que el nivel sea válido
- */
-function validarNivel($nivel) {
-    if (empty($nivel) || !is_numeric($nivel)) {
-        return false;
-    }
-    $nivel = (int)$nivel;
-    $niveles_validos = [2, 3];
-    return in_array($nivel, $niveles_validos, true);
-}
 
-/**
- * Valida que el estatus sea válido
- */
-function validarEstatus($estatus) {
-    if (empty($estatus) || !is_numeric($estatus)) {
-        return false;
-    }
-    $estatus = (int)$estatus;
-    $estatus_validos = [1, 2];
-    return in_array($estatus, $estatus_validos, true);
-}
+if (isset($_POST['registrar'])) {
 
-/**
- * Valida que el id_tipo sea válido y exista en la base de datos
- */
-function validarIdTipo($id_tipo, $tipos) {
-    if (empty($id_tipo) || !is_numeric($id_tipo)) {
-        return false;
-    }
-    $id_tipo = (int)$id_tipo;
-    foreach ($tipos as $tipo) {
-        if ($tipo['id_rol'] == $id_tipo && $tipo['estatus'] >= 1 && $tipo['id_rol'] > 1) {
-            return true;
-        }
-    }
-    return false;
-}
+    if(!empty($_POST['nombreRol']) && !empty($_POST['nivelRol'])){
 
-// 0) Bitácora de acceso al módulo (GET)
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $bit = [
-        'id_persona' => $_SESSION['id'],
-        'accion'     => 'Acceso a módulo',
-        'descripcion'=> 'Ingreso al módulo Tipo Usuario'
+    $nombre = $_POST['nombreRol'];
+    $nivel = $_POST['nivelRol'];
+    
+    $datosRol = [
+        'operacion' => 'registrar',
+        'datos' => [
+            'nombre' =>  $nombre,
+            'nivel' =>  $nivel
+        ] 
     ];
-    $bitacoraObj = new Bitacora();
-    $bitacoraObj->registrarOperacion($bit['accion'], 'tipousuario', $bit);
-}
 
-// 1) CRUD JSON‐driven
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
+    $resultado = $objRol->procesarRol(json_encode($datosRol));
+    echo json_encode($resultado);
+    exit; 
 
-    // —— Registrar nuevo rol ——  
-    if (isset($_POST['registrar'])) {
-        $nombre = trim($_POST['nombre'] ?? '');
-        $nivel  = (int)($_POST['nivel'] ?? 0);
-        $estatus = (int)($_POST['estatus'] ?? 1);
-
-        // Validar nivel
-        if (!validarNivel($nivel)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El nivel seleccionado no es válido']);
-            exit;
-        }
-
-        // Validar estatus
-        if (!validarEstatus($estatus)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El estatus seleccionado no es válido']);
-            exit;
-        }
-
-        $payload = [
-            'operacion'=>'registrar',
-            'datos'    => ['nombre'=>$nombre,'nivel'=>$nivel,'estatus'=>$estatus]
-        ];
-        $res = $obj->procesarTipousuario(json_encode($payload));
-
-        if ($res['respuesta'] == 1) {
-            $estatusText = $estatus == 1 ? 'Activo' : 'Inactivo';
-            $bit = [
-                'id_persona' => $_SESSION['id'],
-                'accion'     => 'Registrar rol',
-                'descripcion'=> sprintf(
-                    'Registró rol "%s" con nivel %d, estatus %s',
-                    $nombre, $nivel, $estatusText
-                )
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bit['accion'], 'tipousuario', $bit);
-        }
-
-        echo json_encode($res);
+    } else {
+        echo json_encode(['respuesta' => 0, 'accion' => 'registrar', 'text' => "Vacios"]);
         exit;
     }
+    
 
-    // —— Modificar rol ——  
-    if (isset($_POST['modificar'])) {
-        $idTipo = (int)($_POST['id_tipo'] ?? 0);
-        $nombre = trim($_POST['nombre'] ?? '');
-        $nivel  = (int)($_POST['nivel'] ?? 0);
-        $estatus= (int)($_POST['estatus'] ?? 1);
+} else if(isset($_POST['modificar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| PARA BUSCAR Y VER LOS PERMISOS  */
 
-        // Validar nivel
-        if (!validarNivel($nivel)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El nivel seleccionado no es válido']);
-            exit;
-        }
+    if (!empty($_POST['modificar']) && !empty($_POST['RolNombre'])) {   /* VACIOS   | VER LOS PERMISOS  */
 
-        // Validar estatus
-        if (!validarEstatus($estatus)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El estatus seleccionado no es válido']);
-            exit;
-        }
-
-        // Validar id_tipo
-        $tipos = $obj->consultar();
-        if (!validarIdTipo($idTipo, $tipos)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El tipo de usuario seleccionado no es válido']);
-            exit;
-        }
-
-        $payload = [
-            'operacion'=>'actualizar',
-            'datos'=>[
-                'id_tipo'=>$idTipo,
-                'nombre' =>$nombre,
-                'nivel'  =>$nivel,
-                'estatus'=>$estatus
-            ]
-        ];
-        $res = $obj->procesarTipousuario(json_encode($payload));
-
-        if ($res['respuesta'] == 1) {
-            $estatusText = $estatus == 1 ? 'Activo' : 'Inactivo';
-            $bit = [
-                'id_persona' => $_SESSION['id'],
-                'accion'     => 'Modificar rol',
-                'descripcion'=> sprintf(
-                    'Modificó rol "%s": nivel %d, estatus %s',
-                    $nombre, $nivel, $estatusText
-                )
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bit['accion'], 'tipousuario', $bit);
-        }
-
-        echo json_encode($res);
-        exit;
-    }
-
-    // —— Eliminar (desactivar) rol ——  
-    if (isset($_POST['eliminar'])) {
-        $idTipo = (int)($_POST['id_tipo'] ?? 0);
-
-        // Validar id_tipo
-        $tipos = $obj->consultar();
-        if (!validarIdTipo($idTipo, $tipos)) {
-            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'El tipo de usuario seleccionado no es válido']);
-            exit;
-        }
-
-        // Obtiene nombre del rol
-        $todos   = $obj->consultar();
-        $rolNom  = 'ID '.$idTipo;
-        foreach ($todos as $r) {
-            if ((int)$r['id_rol'] === $idTipo) {
-                $rolNom = $r['nombre'];
-                break;
-            }
-        }
-
-        $payload = [
-            'operacion'=>'eliminar',
-            'datos'=>['id_tipo'=>$idTipo]
-        ];
-        $res = $obj->procesarTipousuario(json_encode($payload));
-
-        if ($res['respuesta'] == 1) {
-            $bit = [
-                'id_persona' => $_SESSION['id'],
-                'accion'     => 'Eliminar rol',
-                'descripcion'=> sprintf(
-                    'Eliminó rol "%s"',
-                    $rolNom
-                )
-            ];
-            $bitacoraObj = new Bitacora();
-            $bitacoraObj->registrarOperacion($bit['accion'], 'tipousuario', $bit);
-        }
-
-        echo json_encode($res);
-        exit;
-    }
-} if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 'ver')) {
+        $id_rol = $_POST['modificar'];
+        $usuario = $_SESSION['id_usuario'];
       
-        $registro = $obj->consultar();
+      
+/*
+            if ($id_usuario == $_SESSION['id_usuario']) {
+                header("location:?pagina=usuario");
+                exit;
+            }
+
+            if ($id_usuario == 2) {
+                header("location:?pagina=usuario");
+                exit;
+            }
+*/
+            $modificar = $objRol->buscar($id_rol);
+            $nivel_usuario = $objRol->obtenerNivelPorId($usuario);
+
+            $nombre_usuario = trim($_POST['RolNombre']);
+            require_once("vista/seguridad/permiso.php");
+
+     
+
+    } else{  /* DATOS VACIOS | VER LOS PERMISOS  */
+        header("location:?pagina=usuario");
+      exit;
+    }  
+       
+} else if (isset($_POST['actualizar_permisos'])) {
+
+    // Permisos enviados desde la vista
+    $permisosRecibidos = $_POST['permiso'] ?? [];      // switches activos
+    $permisosId = $_POST['permiso_id'] ?? [];          // id_permiso_rol existentes
+
+    
+
+    $listaPermisos = [];
+
+    /*
+        Estructura recibida:
+
+        permiso_id[modulo][id_permiso] = id_permiso_rol
+        permiso[modulo][id_permiso] = on (si está activo)
+
+        Ahora recorremos TODOS los permisos existentes
+        y determinamos si deben quedar en estado 1 o 0.
+    */
+
+    foreach ($permisosId as $modulo_id => $permisosModulo) {
+        foreach ($permisosModulo as $id_permiso => $id_permiso_rol) {
+
+            // Si el switch está marcado → estado = 1, si no → 0
+            $estado = isset($permisosRecibidos[$modulo_id][$id_permiso]) ? 1 : 0;
+
+            $listaPermisos[] = [
+                'id_permiso_rol' => (int)$id_permiso_rol,
+                'id_modulo'      => (int)$modulo_id,
+                'id_permiso'     => (int)$id_permiso, // 1..5
+                'estado'         => $estado
+            ];
+        }
+    }
+
+    // Datos para enviar al modelo
+    $datosPermiso = [
+        'operacion' => 'actualizar_permisos',
+        'datos' => $listaPermisos
+    ];
+
+    // Procesar actualización
+    $resultado = $objRol->procesarRol(json_encode($datosPermiso));
+
+    /* Registrar en bitácora si todo salió bien
+    if ($resultado['respuesta'] == 1) {
+        $bitacora = [
+            'id_persona' => $_SESSION["id"],
+            'accion' => 'Modificar Permiso',
+            'descripcion' => 'Se modificaron los permisos del usuario con ID: ' . $id_rol
+        ];
+        $bitacoraObj = new Bitacora();
+        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
+    }*/
+
+    echo json_encode($resultado);
+    exit;
+}else if(isset($_POST['actualizar'])){
+    
+    if(!empty($_POST['id_rol']) && !empty($_POST['nombre']) && !empty($_POST['nivel'])){
+
+        $id_rol = $_POST['id_rol'];  $nombre = $_POST['nombre'];  $nivel = $_POST['nivel'];
+        
+        $datosRol = [
+            'operacion' => 'actualizar',
+            'datos' => [
+                'id_rol' =>  $id_rol,
+                'nombre' =>  $nombre,
+                'nivel' =>  $nivel
+            ] 
+        ];
+
+        $resultado = $objRol->procesarRol(json_encode($datosRol));
+        echo json_encode($resultado);
+        exit; 
+
+    } else {
+        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "Vacios"]);
+        exit;
+    }
+
+} else if(isset($_POST['eliminar'])){
+
+ if(!empty($_POST['id_rol'])){
+
+    
+    $id_rol = $_POST['id_rol'];
+
+    if($id_rol == 1 || $id_rol == 2 || $id_rol == 3 || $id_rol == 4 ){
+        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => "no se puede"]);
+        exit;
+    }
+    
+    $datosRol = [
+        'operacion' => 'eliminar',
+        'datos' => [
+            'id_rol' =>  $id_rol
+        ] 
+    ];
+
+    $resultado = $objRol->procesarRol(json_encode($datosRol));
+    echo json_encode($resultado);
+    exit; 
+
+    } else {
+        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => "Vacios"]);
+        exit;
+    }
+
+
+} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 1)) {
+      
+        $registro = $objRol->consultar();
         $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tipousuario';
+
         require_once 'vista/tipousuario.php';
 } else {
         require_once 'vista/seguridad/privilegio.php';

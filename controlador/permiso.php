@@ -5,7 +5,7 @@ function tieneAcceso($moduloId, $accion) {
     foreach ($_SESSION['permisos'] as $permiso) {
         if (
             $permiso['id_modulo'] == $moduloId &&
-            $permiso['accion'] === $accion &&
+            $permiso['id_permiso'] === $accion &&
             $permiso['estado'] == 1
         ) {
             return true;
