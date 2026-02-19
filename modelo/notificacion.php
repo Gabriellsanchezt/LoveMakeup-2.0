@@ -105,7 +105,7 @@ public function getAll(): array
                id_pedido
           FROM notificaciones
          WHERE estado IN (1,2,3,4)   -- ADDED 4
-         ORDER BY fecha DESC, id_notificacion DESC
+         ORDER BY fecha ASC, id_notificacion ASC
     ";
     return $conex->query($sql)
                  ->fetchAll(\PDO::FETCH_ASSOC);
@@ -139,7 +139,7 @@ public function getNuevosPedidos(int $lastId): array
         FROM pedido
        WHERE tipo IN (2,3)
          AND id_pedido > :lastId
-       ORDER BY id_pedido DESC
+       ORDER BY id_pedido ASC
     ";
     $stmt = $this->getConex1()->prepare($sql);
     $stmt->execute(['lastId' => $lastId]);
