@@ -139,7 +139,7 @@ public function getNuevosPedidos(int $lastId): array
         FROM pedido
        WHERE tipo IN (2,3)
          AND id_pedido > :lastId
-       ORDER BY id_pedido ASC
+       ORDER BY id_pedido DESC
     ";
     $stmt = $this->getConex1()->prepare($sql);
     $stmt->execute(['lastId' => $lastId]);
