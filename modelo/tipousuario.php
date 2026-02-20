@@ -16,7 +16,17 @@ class TipoUsuario extends Conexion {
                 case 'registrar':
                     return $this->ejecutarRegistro($datosProcesar);
                     
-               case 'actualizar':      
+               case 'actualizar':
+                    $datosProcesar['insertar_permisos'] = false;
+                    
+                    if ($datosProcesar['nivel'] !== $datosProcesar['nivel_actual']) {
+                        $resultado = $this->ejecutarEliminacionPermisos($datosProcesar['id_rol']);
+                        if ($resultado['respuesta'] === 0) {
+                            return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No se pudo eliminar permisos'];
+                        }
+                        $datosProcesar['insertar_permisos'] = true;
+                    }
+
                     return $this->ejecutarActualizacion($datosProcesar);
                     
                 case 'eliminar':
@@ -121,6 +131,21 @@ class TipoUsuario extends Conexion {
             $stmtrol = $conex->prepare($sql);
             $stmtrol->execute($paramRol);
           
+            // 4. Insertar nuevos permisos si corresponde
+            if ($stmtrol && !empty($datos['insertar_permisos'])) {
+                
+                $nivel = $datos['nivel'];
+                $id_rol = $datos['id_rol'];
+                $datosPermisos = $this->generarPermisosPorNivel($id_rol,$nivel);
+
+                $sqlPermiso = "INSERT INTO permiso_rol (id_rol, id_modulo, id_permiso, estado)
+                        VALUES (:id_rol, :id_modulo, :id_permiso, :estado)";
+                $stmtPermiso = $conex->prepare($sqlPermiso);
+
+                foreach ($datosPermisos as $permiso) {
+                    $stmtPermiso->execute($permiso);
+                }
+            }
             
             $conex->commit();
             $conex = null;
@@ -302,4 +327,51 @@ private function generarPermisosPorNivel($id_rol, $nivel){
         throw $e;
     }
 }
+
+
+
+
+
+
+
+/*||||||||||||||||||||||||||||||| ELIMINAR PERMISOS (USUARIO CAMBIO DE ROL)  |||||||||||||||||||||||||| 11 ||||*/
+private function ejecutarEliminacionPermisos($id_rol) {
+    
+    $conex = $this->getConex2();
+    try {
+        $conex->beginTransaction();
+
+        $sql = "DELETE FROM permiso_rol WHERE id_rol = ?";
+        $stmt = $conex->prepare($sql);
+
+        $resultado = $stmt->execute([$id_rol]);
+
+        if ($resultado) {
+            $conex->commit();
+            $conex = null;
+            return ['respuesta' => 1, 'accion' => 'eliminar'];
+        }
+
+        $conex->rollBack();
+        $conex = null;
+        return ['respuesta' => 0, 'accion' => 'eliminar'];
+    } catch (\PDOException $e) {
+        if ($conex) {
+            $conex->rollBack();
+            $conex = null;
+        }
+        throw $e;
+    }
 }
+
+
+
+
+
+
+
+
+
+}
+
+

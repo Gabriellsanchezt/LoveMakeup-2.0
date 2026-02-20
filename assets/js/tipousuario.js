@@ -173,13 +173,14 @@ $(document).on('click', '.modificar', function () {
     let id     = $(this).data('id');
     let nombre = $(this).data('nombre');
     let nivel  = $(this).data('nivel');
-    let estatus = $(this).data('estatus');
+  
 
     // Asignar valores al formulario del modal
     $('#id_tipo_modificar').val(id);
     $('#nombre_modificar').val(nombre);
     $('#nivel_modificar').val(nivel);
-    $('#estatus_modificar').val(estatus);
+     $('#nivel_modificar_actual').val(nivel);
+ 
 
     // Abrir modal (por si no se abre automáticamente)
     $('#modificar').modal('show');

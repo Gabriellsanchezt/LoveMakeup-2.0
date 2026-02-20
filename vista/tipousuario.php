@@ -90,17 +90,25 @@
                                 <b><?= htmlspecialchars($dato['nombre']) ?></b>
                               </div>
                               <div style="font-size: 12px; color: #6c757d;" class="texto-tercero">
-                                # <?= $dato['id_rol'] ?>
+                                 <?php 
+                                  if($dato['id_rol'] <=4){
+                                    echo '<span class="badge bg-success text-dark"> <i class="fa-solid fa-user-shield me-1"></i> SISTEMA </span>';
+                                  } else{
+                                    echo '<span class="badge bg-primary"> <i class="fa-solid fa-shield-halved me-1"></i> PERSONALIZADO </span>';
+                                  }
+                                 ?>
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td class="text-center text-dark">
+
+                        <td class="align-middle text-center text-dark ">
                           <div>
                             <span class="badge bg-primary">Nivel <?= htmlspecialchars($dato['nivel']) ?></span>
                           </div>
                         </td>
-                        <td class="text-center text-dark">
+
+                        <td class="align-middle text-center text-dark">
                 
                             <form action="?pagina=tipousuario" method="POST">
                       
@@ -112,7 +120,7 @@
                             </form> 
                         </td>
                       
-                        <td class="text-center">
+                        <td class="align-middle text-center">
                           
                           <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 3)): ?>
                           <button type="button"
@@ -121,7 +129,6 @@
                                   data-id="<?= $dato['id_rol'] ?>"
                                   data-nombre="<?= htmlspecialchars($dato['nombre']) ?>"
                                   data-nivel="<?= $dato['nivel'] ?>"
-                                  data-estatus="<?= $dato['estatus'] ?>"
                                   data-bs-toggle="modal"
                                   data-bs-target="#modificar">
                             <i class="fas fa-pencil-alt"></i>
@@ -256,7 +263,7 @@
                   </div>
 
                   <!-- Nivel -->
-                  <div class="col-md-6">
+                  <div class="col-md-12">
                     <label for="nivel_modificar">NIVEL DE ACCESO</label>
                     <div class="input-group">
                       <span class="input-group-text"><i class="fa-solid fa-layer-group"></i></span>
@@ -269,17 +276,9 @@
                     <span id="snivel_modificar" class="error-message"></span>
                   </div>
 
+                  <input type="hidden" name="nivel_actual" id="nivel_modificar_actual">
                   <!-- Estatus -->
-                  <div class="col-md-6">
-                    <label for="estatus_modificar">ESTADO</label>
-                    <div class="input-group">
-                      <span class="input-group-text"><i class="fa-solid fa-toggle-on"></i></span>
-                      <select class="form-select" name="estatus" id="estatus_modificar" required>
-                        <option value="1">Activo</option>
-                        <option value="2">Inactivo</option>
-                      </select>
-                    </div>
-                  </div>
+              
                 </div>
               </div>
 

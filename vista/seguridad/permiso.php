@@ -127,7 +127,15 @@ $acciones_por_modulo = [
     15 => ['ver', 'eliminar'],
     16 => ['ver', 'registrar', 'editar', 'eliminar'],
     17 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
-    18 => ['ver', 'especial']
+    18 => ['ver', 'especial'],
+    19 => ['ver', 'registrar', 'editar', 'eliminar'],
+    20 => ['ver', 'editar', 'eliminar'],
+    21 => ['ver'],
+    22 => ['ver', 'registrar'],
+    23 => ['ver', 'registrar'],
+    24 => ['ver', 'registrar'],
+    25 => ['ver']
+
 ];
 ?>
 

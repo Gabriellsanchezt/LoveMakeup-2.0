@@ -135,7 +135,7 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
 
 if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| REGISTRAR USUARIO  */
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 'registrar')) { /* V2 */ 
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 2)) { /* V2 */ 
 
             if (!empty($_POST['nombre']) && !empty($_POST['apellido']) && !empty($_POST['cedula']) && !empty($_POST['telefono']) 
                 && !empty($_POST['correo']) && !empty($_POST['id_rol']) && !empty($_POST['clave'])) {  /* V3 */

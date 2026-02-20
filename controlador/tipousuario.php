@@ -144,16 +144,17 @@ if (isset($_POST['registrar'])) {
     exit;
 }else if(isset($_POST['actualizar'])){
     
-    if(!empty($_POST['id_rol']) && !empty($_POST['nombre']) && !empty($_POST['nivel'])){
+    if(!empty($_POST['id_rol']) && !empty($_POST['nombre']) && !empty($_POST['nivel']) && !empty($_POST['nivel_actual'])){
 
-        $id_rol = $_POST['id_rol'];  $nombre = $_POST['nombre'];  $nivel = $_POST['nivel'];
+        $id_rol = $_POST['id_rol'];  $nombre = $_POST['nombre'];  $nivel = $_POST['nivel']; $nivel_actual = $_POST['nivel_actual'];
         
         $datosRol = [
             'operacion' => 'actualizar',
             'datos' => [
                 'id_rol' =>  $id_rol,
                 'nombre' =>  $nombre,
-                'nivel' =>  $nivel
+                'nivel' =>  $nivel,
+                'nivel_actual' => $nivel_actual
             ] 
         ];
 

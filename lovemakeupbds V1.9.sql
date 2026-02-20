@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-02-2026 a las 16:27:42
+-- Tiempo de generación: 20-02-2026 a las 05:33:27
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -162,7 +162,7 @@ INSERT INTO `permiso_rol` (`id_permiso_rol`, `id_rol`, `id_modulo`, `id_permiso`
 (42, 1, 14, 1, 1),
 (43, 1, 14, 3, 1),
 (44, 1, 15, 1, 1),
-(45, 1, 15, 3, 1),
+(45, 1, 15, 4, 1),
 (46, 1, 16, 1, 1),
 (47, 1, 16, 2, 1),
 (48, 1, 16, 3, 1),
@@ -173,7 +173,93 @@ INSERT INTO `permiso_rol` (`id_permiso_rol`, `id_rol`, `id_modulo`, `id_permiso`
 (53, 1, 17, 4, 1),
 (54, 1, 17, 5, 1),
 (55, 1, 18, 1, 1),
-(56, 1, 18, 5, 1);
+(56, 1, 18, 5, 1),
+(57, 2, 19, 1, 1),
+(58, 2, 19, 2, 1),
+(59, 2, 19, 3, 1),
+(60, 2, 19, 4, 1),
+(61, 2, 20, 1, 1),
+(62, 2, 20, 3, 1),
+(63, 2, 20, 4, 1),
+(64, 2, 21, 1, 1),
+(65, 2, 22, 1, 1),
+(66, 2, 22, 2, 1),
+(67, 2, 23, 1, 1),
+(68, 2, 23, 2, 1),
+(69, 2, 24, 1, 1),
+(70, 2, 24, 2, 1),
+(71, 2, 25, 1, 1),
+(72, 3, 1, 1, 1),
+(73, 3, 3, 1, 1),
+(74, 3, 3, 2, 1),
+(75, 3, 4, 1, 1),
+(76, 3, 4, 5, 1),
+(77, 3, 5, 1, 1),
+(78, 3, 5, 5, 1),
+(79, 3, 6, 1, 1),
+(80, 3, 6, 5, 1),
+(81, 3, 10, 1, 1),
+(82, 3, 10, 3, 1),
+(83, 3, 14, 1, 1),
+(84, 3, 14, 3, 1),
+(85, 3, 18, 1, 1),
+(86, 3, 18, 5, 1),
+(87, 4, 1, 1, 1),
+(88, 4, 2, 1, 1),
+(89, 4, 2, 2, 1),
+(90, 4, 2, 3, 1),
+(91, 4, 3, 1, 1),
+(92, 4, 3, 2, 1),
+(93, 4, 4, 1, 1),
+(94, 4, 4, 5, 1),
+(95, 4, 5, 1, 1),
+(96, 4, 5, 5, 1),
+(97, 4, 6, 1, 1),
+(98, 4, 6, 2, 1),
+(99, 4, 6, 3, 1),
+(100, 4, 6, 4, 1),
+(101, 4, 6, 5, 1),
+(102, 4, 7, 1, 1),
+(103, 4, 7, 2, 1),
+(104, 4, 7, 3, 1),
+(105, 4, 7, 4, 1),
+(106, 4, 8, 1, 1),
+(107, 4, 8, 2, 1),
+(108, 4, 8, 3, 1),
+(109, 4, 8, 4, 1),
+(110, 4, 9, 1, 1),
+(111, 4, 9, 2, 1),
+(112, 4, 9, 3, 1),
+(113, 4, 9, 4, 1),
+(114, 4, 10, 1, 1),
+(115, 4, 10, 3, 1),
+(116, 4, 11, 1, 1),
+(117, 4, 11, 2, 1),
+(118, 4, 11, 3, 1),
+(119, 4, 11, 4, 1),
+(120, 4, 12, 1, 1),
+(121, 4, 12, 2, 1),
+(122, 4, 12, 3, 1),
+(123, 4, 12, 4, 1),
+(124, 4, 13, 1, 1),
+(125, 4, 13, 2, 1),
+(126, 4, 13, 3, 1),
+(127, 4, 13, 4, 1),
+(128, 4, 14, 1, 1),
+(129, 4, 14, 3, 1),
+(130, 4, 15, 1, 1),
+(131, 4, 15, 4, 1),
+(132, 4, 16, 1, 1),
+(133, 4, 16, 2, 1),
+(134, 4, 16, 3, 1),
+(135, 4, 16, 4, 1),
+(136, 4, 17, 1, 1),
+(137, 4, 17, 2, 1),
+(138, 4, 17, 3, 1),
+(139, 4, 17, 4, 1),
+(140, 4, 17, 5, 1),
+(141, 4, 18, 1, 1),
+(142, 4, 18, 5, 1);
 
 -- --------------------------------------------------------
 
@@ -195,7 +281,9 @@ CREATE TABLE `persona` (
 --
 
 INSERT INTO `persona` (`cedula`, `nombre`, `apellido`, `correo`, `telefono`, `tipo_documento`) VALUES
-(10090080, 'Soporte', 'Dev', 'corre@gmail.com', '0424-1243265', 'V');
+(10090080, 'Soporte', 'Dev', 'corre@gmail.com', '0424-1243265', 'V'),
+(10200300, 'Jefe', 'Lovemakeup', 'correo@gmail.com', '0424-0000000', 'V'),
+(15200300, 'Cajera', 'Makeup', 'cajera@gmail.com', '0414-0000000', 'V');
 
 -- --------------------------------------------------------
 
@@ -216,8 +304,8 @@ CREATE TABLE `rol` (
 
 INSERT INTO `rol` (`id_rol`, `nombre`, `nivel`, `estatus`) VALUES
 (1, 'Desarrollador', 3, 1),
-(2, 'Cliente', 2, 1),
-(3, 'Asesora de Venta', 3, 1),
+(2, 'Cliente', 1, 1),
+(3, 'Asesora de Venta', 2, 1),
 (4, 'Administrador', 3, 1);
 
 -- --------------------------------------------------------
@@ -239,7 +327,9 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`id_usuario`, `cedula`, `clave`, `estatus`, `id_rol`) VALUES
-(1, 10090080, 'c42t7J2RXdedsSUKKahzaE15eGhEcE1rbWs5ZWoxNU5vVEQrRUE9PQ==', 1, 1);
+(1, 10090080, 'c42t7J2RXdedsSUKKahzaE15eGhEcE1rbWs5ZWoxNU5vVEQrRUE9PQ==', 1, 1),
+(2, 10200300, 'GJ2LRyGX9XUpCmkwhg+ibVFaV0dZQkNnSldQcVRaY281dStrWHc9PQ==', 1, 4),
+(3, 15200300, 'UFx0aI+aFhDxgi0ZrYwEAXBtaHBwbFR2WHJvdUo4V3pIOGplbXc9PQ==', 1, 3);
 
 --
 -- Índices para tablas volcadas
@@ -319,7 +409,7 @@ ALTER TABLE `permiso`
 -- AUTO_INCREMENT de la tabla `permiso_rol`
 --
 ALTER TABLE `permiso_rol`
-  MODIFY `id_permiso_rol` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id_permiso_rol` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=143;
 
 --
 -- AUTO_INCREMENT de la tabla `rol`
@@ -331,7 +421,7 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Restricciones para tablas volcadas
