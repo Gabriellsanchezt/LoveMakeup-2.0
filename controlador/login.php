@@ -249,10 +249,10 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
     
                 $resultado = $objlogin->procesarLogin(json_encode($datosRegistro));
     
-                if ($resultado['respuesta'] == 1) {
+                /*if ($resultado['respuesta'] == 1) {
                     require_once 'modelo/CORREObienvenida.php';
                     $envio = enviarBienvenida($correoR);
-                }
+                }*/
     
                 echo json_encode($resultado);
                 exit;

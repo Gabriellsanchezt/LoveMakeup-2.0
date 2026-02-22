@@ -74,8 +74,7 @@ INSERT INTO `modulo` (`id_modulo`, `nombre`) VALUES
 (21, 'Ver Mis Pedidos'),
 (22, 'Ver Carrito'),
 (23, 'Pedido Entrega'),
-(24, 'Pedido Pago'),
-(25, 'Pedido Confirmar');
+(24, 'Pedido Pago');
 
 -- --------------------------------------------------------
 

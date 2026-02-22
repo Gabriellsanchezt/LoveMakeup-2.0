@@ -68,10 +68,12 @@ class Usuario extends Conexion
                     return $this->ejecutarActualizacion($datosProcesar);
                     
                 case 'eliminar':
+                    if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                        return ['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'el usuario no existe'];
+                    }
+
                     return $this->ejecutarEliminacion($datosProcesar);
                 
-                case 'actualizar_permisos':
-                    return $this->actualizarLotePermisos($datosProcesar);
 
                 case 'verificar':
                   if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
@@ -286,7 +288,7 @@ private function verificarExistenciaROL($datos) {
     try {
         $conex->beginTransaction();
 
-        $sql = "SELECT COUNT(*) FROM rol_usuario WHERE id_rol = :id_rol";
+        $sql = "SELECT COUNT(*) FROM rol WHERE id_rol = :id_rol";
 
          $paramUpdate = [
             'id_rol' => $datos['id_rol']

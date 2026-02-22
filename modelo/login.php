@@ -169,7 +169,7 @@ class Login extends Conexion {
 
             // 2. Insertar en usuario
             $sqlUsuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol)
-                             VALUES (:cedula, :clave, 1, 1)";
+                             VALUES (:cedula, :clave, 1, 2)";
 
             $paramUsuario = [
                 'cedula' => $datos['cedula'],

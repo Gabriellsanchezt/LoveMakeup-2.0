@@ -106,9 +106,6 @@
                   <th class="text-white text-center">Nombre y Cédula</th>
                  
                   <th class="text-white text-center">Rol</th>
-                    <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 4)): ?>
-                  <th class="text-white text-center">Permisos</th>
-                    <?php endif; ?>
                   <th class="text-white text-center">Estatus</th>
                   <th class="text-white text-center">Acción</th>
                 </tr>
@@ -166,25 +163,7 @@
                         <b> Nivel: <?php echo $dato['nivel']; ?> </b>
                       </div>
                   </td>
-                  
-                 <?php if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(16, 4)): ?>
-                    <td class="text-center">
-                        <form action="?pagina=usuario" method="POST">
-                            <?php
-                                $idActual = $_SESSION["id_usuario"];
-                                $idFila = $dato['id_usuario'];
-                                $deshabilitado = ($idActual == $idFila || $idFila == 2) ? 'disabled' : '';
-                            ?>
-                            <button type="submit" class="btn btn-warning btn-sm permisotur" name="modificar" title="Modificar Permiso del usuario" value="<?php echo $idFila ?>" <?php echo $deshabilitado ?>>
-                                <i class="fa-solid fa-users-gear" title="Modificar Permiso"></i>
-                            </button> 
-                            <input type="hidden" name="permisonombre" value=" <?php echo $dato['nombre']; ?>">
-                            <input type="hidden" name="permisoapellido" value=" <?php echo $dato['apellido']; ?>">  
-                            <input type="hidden" name="cedula" value=" <?php echo $dato['cedula']; ?>">  
-                        </form>      
-                    </td>
-                <?php endif; ?>
-
+                
                   <td class="text-center">
                       <span class="<?= $estatus_classes[$dato['estatus']] ?>">
                         <?php echo $estatus_texto[$dato['estatus']] ?>
@@ -228,7 +207,7 @@
 
                         <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(13, 4)): ?>
                           <button 
-                            name="eliminar" 
+                            name="eliminarbtn" 
                             id="eliminar" 
                             class="btn btn-danger btn-sm eliminar" 
                             value="<?php echo $dato['cedula']?>" 
@@ -330,11 +309,14 @@
           <span class="input-group-text"><i class="fa-solid fa-user-tag"></i></span>
           <select class="form-select" name="id_rol" id="rolSelect" required>
             <option value="">Seleccione un Rol:</option>
-            <?php foreach($rol as $item) {?>
-            <option value="<?php echo $item['id_rol'];?>" data-nivel="<?php echo $item['nivel'];?>">
-              <?php echo $item['nombre']." - Nivel ".$item['nivel'];?>
-            </option>
-            <?php } ?>
+            <?php foreach($rol as $item) {
+                // Validamos que el id_rol sea mayor o igual a 3
+                if ($item['id_rol'] >= 3) { ?>
+                    <option value="<?php echo $item['id_rol'];?>" data-nivel="<?php echo $item['nivel'];?>">
+                        <?php echo $item['nombre']." - Nivel ".$item['nivel'];?>
+                    </option>
+                <?php } 
+            } ?>
           </select>
         </div>
          <span id="textorol" class="error-message"></span>
@@ -470,9 +452,14 @@
                   <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user-tag"></i></span>
                     <select class="form-select" name="id_rol" id="rolSelectedit">
                       <option id="modalrol"> </option>
-                        <?php foreach($roll as $item) {?>
-                          <option value="<?php echo $item['id_rol'];?>" data-nivel="<?php echo $item['nivel'];?>"> <?php echo $item['nombre']." - Nivel ".$item['nivel'];?> </option>
-                        <?php } ?>
+                         <?php foreach($roll as $item) {
+                              // Validamos que el id_rol sea mayor o igual a 3
+                              if ($item['id_rol'] >= 3) { ?>
+                                  <option value="<?php echo $item['id_rol'];?>" data-nivel="<?php echo $item['nivel'];?>">
+                                      <?php echo $item['nombre']." - Nivel ".$item['nivel'];?>
+                                  </option>
+                              <?php } 
+                          } ?>
                     </select>
                           
                     <input type="hidden" name="rol_actual" id="rolactual">

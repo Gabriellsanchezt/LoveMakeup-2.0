@@ -40,7 +40,7 @@ $registro = $objtasa->consultar();
 
 if(isset($_POST['modificar'])){
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'editar')) { /* V2 */ 
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 3)) { /* V2 */ 
             
             if (!empty($_POST['fecha']) && !empty($_POST['tasa']) && !empty($_POST['fuente'])) {  /* V3 */
 
@@ -115,7 +115,7 @@ if(isset($_POST['modificar'])){
 
 } else if(isset($_POST['sincronizar'])){
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 'editar')) { /* V2 */ 
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(14, 3)) { /* V2 */ 
             
             if (!empty($_POST['fecha']) && !empty($_POST['tasa']) && !empty($_POST['fuente'])) {  /* V3 */
 

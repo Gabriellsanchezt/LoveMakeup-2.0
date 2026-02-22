@@ -59,6 +59,7 @@ function eliminarRol(id_rol) {
   });
 }
 
+
 //Función para validar por Keypress
 function validarkeypress(er,e){
   key = e.keyCode;
@@ -225,7 +226,7 @@ function enviaAjax(datos) {
                   muestraMensaje("error", 3000, "Error", lee.text);
                   desactivarLoaderBoton('#registrar'); 
                 }
-            }else  if (lee.accion == 'actualizar') {
+            }else if (lee.accion == 'actualizar') {
                 if (lee.respuesta == 1) {
                   muestraMensaje("success", 1500, "Se ha Actualizado con éxito", "");
                   desactivarLoaderBoton('#btnModificar'); 
@@ -233,7 +234,7 @@ function enviaAjax(datos) {
                      location = '?pagina=tipousuario';
                   }, 2000);
                 } else {
-                  muestraMensaje("error", 2000, "ERROR", lee.text);
+                  muestraMensaje("error", 3000, "Error", lee.text);
                   desactivarLoaderBoton('#btnModificar'); 
                 }
             }else if (lee.accion == 'eliminar') {
@@ -244,10 +245,17 @@ function enviaAjax(datos) {
                       location = '?pagina=tipousuario';
                     }, 2000);
                 } else {
-                    muestraMensaje("error", 2000, "Error", lee.text);
+                    muestraMensaje("error", 3000, "Error", lee.text);
                  
                 }
-            }    
+            } else if (lee.accion == 'permisos') {
+                if (lee.respuesta == 1) {
+
+                } else {
+                    muestraMensaje("error", 3000, "Error", lee.text);
+                 
+                }
+            }   
    
         } catch (e) {
           alert("Error en JSON " + e.name);

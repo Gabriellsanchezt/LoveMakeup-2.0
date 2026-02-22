@@ -76,7 +76,7 @@ if(isset($_POST['actualizar'])){ /*|||||||||||||||||||||||||||||||||||||||||||||
 
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */ 
 
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 'editar')) {/* V2 */ 
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(10, 3)) {/* V2 */ 
        
             if(!empty($_POST['cedula']) && !empty($_POST['correo']) && !empty($_POST['estatus']) && !empty($_POST['cedulaactual']) && !empty($_POST['tipo_documento']) && !empty($_POST['correoactual']) ){
              /* V3 */ 

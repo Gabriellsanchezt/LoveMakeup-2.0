@@ -128,18 +128,16 @@ $acciones_por_modulo = [
     16 => ['ver', 'registrar', 'editar', 'eliminar'],
     17 => ['ver', 'registrar', 'editar', 'eliminar', 'especial'],
     18 => ['ver', 'especial'],
-    19 => ['ver', 'registrar', 'editar', 'eliminar'],
+    19 => ['ver', 'registrar', 'eliminar'],
     20 => ['ver', 'editar', 'eliminar'],
     21 => ['ver'],
     22 => ['ver', 'registrar'],
     23 => ['ver', 'registrar'],
-    24 => ['ver', 'registrar'],
-    25 => ['ver']
-
+    24 => ['ver', 'registrar']
 ];
 ?>
 
-<table class="table table-bordered-m text-center align-middle table-hover">
+<table class="table table-bordered-m align-middle table-hover">
     <thead class="table-color">
         <tr>
             <th class="text-white">#</th>

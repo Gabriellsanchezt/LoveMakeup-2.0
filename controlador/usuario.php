@@ -40,20 +40,6 @@ use LoveMakeup\Proyecto\Modelo\Bitacora;
         return true; // Seguro
     }
 
-    function puedeEliminarCedula($cedula, $registro) {
-        foreach ($registro as $usuario) {
-            if ($usuario['cedula'] === $cedula) {
-
-                if ($usuario['id_usuario'] == 1 || $usuario['id_usuario'] == 2) {
-                    return false; 
-                } else {
-                    return true; 
-                }
-            }
-        }
-            return false; // No existe la cédula, no se puede eliminar
-    }
-
     function cedulaModificable($cedula, $registro) {
         foreach ($registro as $usuario) {
             if (trim((string)$usuario['cedula']) === trim((string)$cedula)) {
@@ -156,7 +142,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                      /// Sanitización de Entradas
                     foreach ($campos as $nombree => $valor) {  /* V4 */ 
                         if (!validarEntradaSQL($valor)) {
-                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "#0400 - Entrada inválida detectada en el campo: $nombree"]);
+                            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => "Entrada inválida detectada en el campo: $nombree"]);
                             exit;
                         }
                     } 
@@ -251,58 +237,21 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                             exit;
 
             } else{  /* V3 datos vacios */
-                echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => '#0300 - Datos Vacios']);
+                echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'Datos Vacios']);
                 exit; 
             }
         } else{  /* 2 */ 
-            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => '#0200 - No Tiene Permiso para realizar esta operacion']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'No Tiene Permiso para realizar esta operacion']);
             exit;
         }      
     } else{ /* V1 */ 
-        echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => '#0100 - Session no encontrada']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'text' => 'Session no encontrada']);
         exit;
     } 
-} else  if(isset($_POST['modificar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| PARA BUSCAR Y VER LOS PERMISOS  */
 
-    if (!empty($_POST['modificar']) && !empty($_POST['cedula'])) {   /* VACIOS   | VER LOS PERMISOS  */
-
-        $id_usuario = $_POST['modificar'];
-        $cedulaPermiso = trim($_POST['cedula']);
-      
-        if (cedulaModificable($cedulaPermiso, $registro)) {
-
-            if ($id_usuario == $_SESSION['id_usuario']) {
-                header("location:?pagina=usuario");
-                exit;
-            }
-
-            if ($id_usuario == 2) {
-                header("location:?pagina=usuario");
-                exit;
-            }
-
-            $modificar = $objusuario->buscar($cedulaPermiso);
-            $nivel_usuario = $objusuario->obtenerNivelPorId($cedulaPermiso);
-
-            $nombre_usuario = trim($_POST['permisonombre']);
-            $apellido_usuario = trim($_POST['permisoapellido']);
-
-      
-             require_once("vista/seguridad/permiso.php");
-
-        } else {
-            header("location:?pagina=usuario");
-            exit;
-        }
-
-    } else{  /* DATOS VACIOS | VER LOS PERMISOS  */
-        header("location:?pagina=usuario");
-      exit;
-    }  
-       
-} else if(isset($_POST['actualizar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||| ACTULIZAR DATOS USUARIOS  */
+}  else if(isset($_POST['actualizar'])){ /* |||||||||||||||||||||||||||||||||||||||||||||||||||||||| ACTULIZAR DATOS USUARIOS  */
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 'editar')) { /* V2 */ 
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 3)) { /* V2 */ 
 
             if (!empty($_POST['id_persona']) && !empty($_POST['cedula']) && !empty($_POST['correo']) && !empty($_POST['id_rol']) &&
             !empty($_POST['estatus']) && !empty($_POST['cedulaactual']) && !empty($_POST['correoactual']) && !empty($_POST['rol_actual']) &&
@@ -331,7 +280,7 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
 
                     //// Validar Datos  V5
                     if (!preg_match('/^[0-9]{1,8}$/', $id_persona)) {
-                        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - (E) inválida"]);
+                        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar-', 'text' => "#0510 - (E) inválida"]);
                         exit;
                     }
 
@@ -454,62 +403,16 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
         exit;
     } 
 
-} else if (isset($_POST['actualizar_permisos'])) { /*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  ACTUALIZAR PERMISOS */
-    $permisosRecibidos = $_POST['permiso'] ?? [];
-    $permisosId = $_POST['permiso_id'] ?? [];
-
-    // Validar que los permisos sean válidos y no manipulados
-    $validacion = validarPermisos($permisosId, $objusuario);
-    if (!$validacion['valido']) {
-        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar_permisos', 'text' => $validacion['mensaje']]);
-        exit;
-    }
-
-    $acciones = ['ver', 'registrar', 'editar', 'eliminar', 'especial'];
-    $listaPermisos = [];
-
-    foreach ($permisosId as $modulo_id => $accionesModulo) {
-        foreach ($accionesModulo as $accion => $id_permiso) {
-            $estado = isset($permisosRecibidos[$modulo_id][$accion]) ? 1 : 0;
-
-            $listaPermisos[] = [
-                'id_permiso' => (int)$id_permiso,
-                'id_modulo' => (int)$modulo_id,
-                'accion' => $accion,
-                'estado' => $estado
-            ];
-        }
-    }
-
-    $datosPermiso = [
-        'operacion' => 'actualizar_permisos',
-        'datos' => $listaPermisos
-    ];
-   
-    $resultado = $objusuario->procesarUsuario(json_encode($datosPermiso));
-
-    if ($resultado['respuesta'] == 1) {
-        $bitacora = [
-            'id_persona' => $_SESSION["id"],
-            'accion' => 'Modificar Permiso',
-            'descripcion' => 'Se Modifico los permisos del usuario con ID: '
-        ];
-        $bitacoraObj = new Bitacora();
-        $bitacoraObj->registrarOperacion($bitacora['accion'], 'usuario', $bitacora);
-    }
-
-    echo json_encode($resultado);
-    exit;
-
 } else if(isset($_POST['eliminar'])){ /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  METODO ELIMINAR  */
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 'eliminar')) { /* V2 */ 
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(16, 4)) { /* V2 */ 
 
-            if (!empty($_POST['eliminar']) ) { /* V3 VACIOS  */
-                $cedula = $_POST['eliminar']; 
+            if (!empty($_POST['eliminar'] && !empty($_POST['id_usuario'])) ) { /* V3 VACIOS  */
+                $cedula = $_POST['eliminar'];  $id_usuario = $_POST['id_usuario'];
                 
                 $campos = [
-                    'Cedula' => $cedula
+                    'Cedula' => $cedula,
+                    'id_usuario' => $id_usuario
                 ];
                 /// Sanitización de Entradas
                     foreach ($campos as $nombre => $valor) {  /* V4 */ 
@@ -528,10 +431,14 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                     if (ctype_digit($cedula)) {
                 
                         if ($cedula == $_SESSION['id']) { /* NO ELIMINARSE ASI MISMO | ELIMINAR  */
-                            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0600 - No puedes eliminarte a ti mismo']);
+                            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No puedes eliminarte a ti mismo']);
                             exit;
                         }
-                            if (puedeEliminarCedula($cedula, $registro)) { /* VERIFICAR SI EXISTE LA CEDULA Y NO QUE SEA ADMINISTRATIVA | ELIMINAR  */
+
+                        if($id_usuario == 2 || $id_usuario == 1){
+                            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'Usuario restringido, no se puede elimimar']);
+                            exit;
+                        }
                                 
                                 $datosUsuario = [
                                     'operacion' => 'eliminar',
@@ -555,27 +462,22 @@ if (isset($_POST['registrar'])) { /* |||||||||||||||||||||||||||||||||||||||||||
                                 echo json_encode($resultado); /* RESPUESTA | ELIMINAR  */
                                 exit;
         
-                            } else {  /* CEDULA PROTEGIDA ADMINISTRADOR O CEDULA NO EXISTE | ELIMINAR  */
-                                echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0610 - No se puede eliminar: cédula inexistente o protegida']);
-                                exit;
-                            }
-        
                     } else { /* CEDULA NO NUMERICA | ELIMINAR  */
                         echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'La cédula no es válida. Debe contener solo números']);
                         exit; 
                     }
 
             } else{  /* DATOS VACIOS | ELIMINAR  */
-                echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0300 - Datos Vacios']);
+                echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'Datos Vacios']);
                 exit; 
             }
 
         } else{  /* 2 */ 
-            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0200 - No Tiene Permiso para realizar esta operacion']);
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No Tiene Permiso para realizar esta operacion']);
             exit;
         }      
     } else{ /* V1 */ 
-        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0100 - Session no encontrada']);
+        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'Session no encontrada']);
         exit;
     } 
 } else if(isset($_POST['cedula'])){ /* ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  VERIFICAR CEDULA   */

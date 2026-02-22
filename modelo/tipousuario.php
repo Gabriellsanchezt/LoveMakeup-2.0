@@ -27,9 +27,17 @@ class TipoUsuario extends Conexion {
                         $datosProcesar['insertar_permisos'] = true;
                     }
 
+                    if (!$this->verificarExistencia(['campo' => 'id_rol', 'valor' => $datosProcesar['id_rol']])) {
+                        return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'No Existe el tipo usuario'];
+                    }
+
                     return $this->ejecutarActualizacion($datosProcesar);
                     
                 case 'eliminar':
+                    if (!$this->verificarExistencia(['campo' => 'id_rol', 'valor' => $datosProcesar['id_rol']])) {
+                        return ['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'No Existe el tipo usuario'];
+                    }
+
                     return $this->ejecutarEliminacion($datosProcesar);
 
                 case 'actualizar_permisos':
@@ -43,6 +51,26 @@ class TipoUsuario extends Conexion {
         }
     }
 
+    /*||||||||||||||||||||||||||||||| VERIFICAR CEDULA Y CORREO  ||||||||||||||||||||||||| 07 |||||*/    
+    private function verificarExistencia($datos) {
+        $conex = $this->getConex2();
+        try {
+            $conex->beginTransaction();
+            $sql = "SELECT COUNT(*) FROM rol 
+                    WHERE ({$datos['campo']} = :valor)";
+
+            $stmt = $conex->prepare($sql);
+            $stmt->execute(['valor' => $datos['valor']]);
+            $existe = $stmt->fetchColumn() > 0;
+
+            $conex->commit();
+            $conex = null;
+            return $existe;
+        } catch (\PDOException $e) {
+            if ($conex) $conex = null;
+            throw $e;
+        }
+    }
     private function ejecutarRegistro($datos) {
     $conex = $this->getConex2();
         try {

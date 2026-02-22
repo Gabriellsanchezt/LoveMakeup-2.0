@@ -112,7 +112,8 @@
                 
                             <form action="?pagina=tipousuario" method="POST">
                       
-                            <button type="submit" class="btn btn-warning btn-sm permisotur" name="modificar" title="Modificar Permiso del usuario" value="<?php echo $dato['id_rol']?>">
+                            <button type="submit" class="btn btn-warning btn-sm permisotur" name="modificar"
+                             title="Modificar Permiso del usuario" value="<?php echo $dato['id_rol']?>">
                                 <i class="fa-solid fa-users-gear me-2" title="Modificar Permiso"></i> Ver
                             </button> 
                              <input type="hidden" name="RolNombre" value=" <?php echo $dato['nombre']; ?>">

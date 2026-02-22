@@ -533,8 +533,9 @@ function enviaAjax(datos) {
               } else if (lee.accion == 'verifirol') {
                   if (lee.respuesta == 1) {
                   
-                      desactivarLoaderBoton('#registrar');
+                      
                       manejarAlerta('rolSelect', 'alertRol', false);
+                      desactivarLoaderBoton('#registrar');
                   } else {
                        muestraMensaje("error", 2000, lee.text,"" );
                        desactivarLoaderBoton('#registrar');

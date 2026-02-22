@@ -232,11 +232,13 @@
   </div>
 </div>
 
+<!-- Script para inicializar DataTable -->
+<script src="assets/js/demo/datatables-demo.js"></script>
+
 <!-- php barra de navegacion-->
 <?php include 'vista/complementos/footer.php' ?>
 
-<!-- Script para inicializar DataTable -->
-<script src="assets/js/demo/datatables-demo.js"></script>
+
 
 <!-- Script para el manejo de bitácora -->
 <script src="assets/js/bitacora.js"></script>
