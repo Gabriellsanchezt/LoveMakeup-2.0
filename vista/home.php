@@ -213,42 +213,102 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const modoOscuroActivo = document.body.classList.contains('modo-oscuro');
-  const colorTexto = modoOscuroActivo ? '#ffffff' : '#333333';
+  let myChart;
+  
+  function getColorConfiguration() {
+    const modoOscuroActivo = document.body.classList.contains('modo-oscuro');
+    const colorTexto = modoOscuroActivo ? '#FC91A3' : '#333333';
+    return {
+      colorTexto: colorTexto,
+      modoOscuroActivo: modoOscuroActivo
+    };
+  }
 
-  const ctx = document.getElementById('homePieChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: cfg.labels,
-      datasets: [{
-        data: cfg.data,
-        backgroundColor: [
-          '#FF6384','#36A2EB','#FFCE56',
-          '#4BC0C0','#9966FF'
-        ]
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Top 5 Productos más vendidos',
-          color: colorTexto
-        },
-        legend: {
-          position: 'bottom',
-          labels: {
+  function updateChartColors() {
+    const { colorTexto, modoOscuroActivo } = getColorConfiguration();
+    
+    if (myChart) {
+      myChart.options.plugins.title.color = colorTexto;
+      myChart.options.plugins.legend.labels.color = colorTexto;
+      myChart.options.plugins.tooltip.bodyColor = colorTexto;
+      myChart.options.plugins.tooltip.backgroundColor = modoOscuroActivo ? '#2d3436' : '#f5f5f5';
+      myChart.update();
+    }
+  }
+
+  // Función para inicializar la gráfica con manejo adecuado de dimensiones
+  function initializeChart() {
+    const { colorTexto, modoOscuroActivo } = getColorConfiguration();
+    
+    const ctx = document.getElementById('homePieChart').getContext('2d');
+    
+    // Destruir instancia anterior si existe
+    if (myChart) {
+      myChart.destroy();
+    }
+    
+    myChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: cfg.labels,
+        datasets: [{
+          data: cfg.data,
+          backgroundColor: [
+            '#FF6384','#36A2EB','#FFCE56',
+            '#4BC0C0','#9966FF'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // Evita problemas de proporción
+        plugins: {
+          title: {
+            display: true,
+            text: 'Top 5 Productos más vendidos',
             color: colorTexto
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: colorTexto
+            }
+          },
+          tooltip: {
+            bodyColor: colorTexto,
+            backgroundColor: modoOscuroActivo ? '#2d3436' : '#f5f5f5'
           }
-        },
-        tooltip: {
-          bodyColor: colorTexto,
-          backgroundColor: modoOscuroActivo ? '#2d3436' : '#f5f5f5'
         }
       }
+    });
+  }
+
+  // Inicializar la gráfica después de asegurar que el contenedor tiene dimensiones
+  setTimeout(() => {
+    const chartContainer = document.querySelector('.chart-container');
+    if (chartContainer) {
+      // Forzar un reflow para asegurar que el contenedor esté completamente renderizado
+      chartContainer.style.display = 'none';
+      chartContainer.offsetHeight; // fuerza reflow
+      chartContainer.style.display = '';
     }
+    
+    // Inicializar la gráfica después de un breve delay para asegurar dimensiones correctas
+    setTimeout(initializeChart, 10);
+  }, 10);
+
+  // Observar cambios en la clase 'modo-oscuro' para actualizar colores
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        updateChartColors();
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['class']
   });
 });
 
