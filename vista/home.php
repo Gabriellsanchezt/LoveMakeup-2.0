@@ -67,9 +67,9 @@
             <i class="fa-solid fa-comments-dollar"></i>
           </div>
         </div>
-        <h3 class="fw-bold mb-0 text-white">
-$ <?php echo number_format($totales['total_ventas'] ?? 4, 2, '.', ''); ?>    
-</h3>    
+       <h3 class="fw-bold mb-0 text-white">
+  $ <?php echo number_format($totales['total_ventas'] ?? 0, 2, '.', ','); ?>    
+</h3>
 <span class="text-white">Ventas Totales</span>
       </div>
     </div>
@@ -84,9 +84,9 @@ $ <?php echo number_format($totales['total_ventas'] ?? 4, 2, '.', ''); ?>
             <i class="fa-solid fa-circle-dollar-to-slot"></i>
           </div>
         </div>
-        <h3 class="fw-bold mb-0 text-white">
-          $ <?php echo number_format($totales['total_web']?? 4, 2, '.', ''); ?>
-        </h3>
+       <h3 class="fw-bold mb-0 text-white">
+      $ <?php echo number_format($totales['total_web'] ?? 0, 2, '.', ','); ?>
+      </h3>
         <span class="text-white">Venta por Web</span>
       </div>
     </div>
