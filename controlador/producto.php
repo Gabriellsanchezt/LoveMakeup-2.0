@@ -70,6 +70,13 @@ function sanitizarEntero($valor, $min = null, $max = null) {
     return $valor;
 }
 
+function sanitizarDecimal($valor, $min = null) {
+    if (!is_numeric($valor)) return null;
+    $valor = (float)$valor;
+    if ($min !== null && $valor < $min) return null;
+    return $valor;
+}
+
 function sanitizarString($valor, $maxLength = 255) {
     if (empty($valor)) return '';
     if (detectarInyeccionSQL($valor)) return '';
@@ -117,8 +124,8 @@ if (isset($_FILES['imagenarchivo'])) {
         'descripcion'    => sanitizarString($_POST['descripcion'], 500),
         'id_marca'       => sanitizarEntero($_POST['marca'], 1),
         'cantidad_mayor' => sanitizarEntero($_POST['cantidad_mayor'], 0),
-        'precio_mayor'   => sanitizarEntero($_POST['precio_mayor'], 0),
-        'precio_detal'   => sanitizarEntero($_POST['precio_detal'], 0),
+        'precio_mayor'   => sanitizarDecimal($_POST['precio_mayor'], 0),
+        'precio_detal'   => sanitizarDecimal($_POST['precio_detal'], 0),
         'stock_maximo'   => sanitizarEntero($_POST['stock_maximo'], 0),
         'stock_minimo'   => sanitizarEntero($_POST['stock_minimo'], 0),
         'id_categoria'   => sanitizarEntero($_POST['categoria'], 1),
@@ -204,8 +211,8 @@ if (!empty($_POST['imagenesReemplazadas'])) {
         'descripcion'    => sanitizarString($_POST['descripcion'], 500),
         'id_marca'       => sanitizarEntero($_POST['marca'], 1),
         'cantidad_mayor' => sanitizarEntero($_POST['cantidad_mayor'], 0),
-        'precio_mayor'   => sanitizarEntero($_POST['precio_mayor'], 0),
-        'precio_detal'   => sanitizarEntero($_POST['precio_detal'], 0),
+        'precio_mayor'   => sanitizarDecimal($_POST['precio_mayor'], 0),
+        'precio_detal'   => sanitizarDecimal($_POST['precio_detal'], 0),
         'stock_maximo'   => sanitizarEntero($_POST['stock_maximo'], 0),
         'stock_minimo'   => sanitizarEntero($_POST['stock_minimo'], 0),
         'id_categoria'   => sanitizarEntero($_POST['categoria'], 1),
