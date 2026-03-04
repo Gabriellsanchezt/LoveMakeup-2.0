@@ -6,17 +6,72 @@ use LoveMakeup\Proyecto\Config\Conexion;
 
 class Marca extends Conexion {
     private $bitacoraObj;
+
     function __construct() {
         parent::__construct();
         $this->bitacoraObj = new Bitacora();
     }
 
-        public function registrarBitacora(string $jsonDatos): bool {
+    // --- MÉTODOS DE VALIDACIÓN Y SANITIZACIÓN ---
+
+    private function detectarInyeccionSQL($valor) {
+        if (empty($valor)) return false;
+        $valor_lower = strtolower($valor);
+        $patrones_peligrosos = [
+            '/(\bunion\b.*\bselect\b)/i',
+            '/(\bselect\b.*\bfrom\b)/i',
+            '/(\binsert\b.*\binto\b)/i',
+            '/(\bupdate\b.*\bset\b)/i',
+            '/(\bdelete\b.*\bfrom\b)/i',
+            '/(\bdrop\b.*\btable\b)/i',
+            '/(\bcreate\b.*\btable\b)/i',
+            '/(\balter\b.*\btable\b)/i',
+            '/(\bexec\b|\bexecute\b)/i',
+            '/(\bsp_\w+)/i',
+            '/(\bxp_\w+)/i',
+            '/(--|\#|\/\*|\*\/)/',
+            '/(\bor\b.*\b1\s*=\s*1\b)/i',
+            '/(\band\b.*\b1\s*=\s*1\b)/i',
+            '/(\bor\b.*\b1\s*=\s*0\b)/i',
+            '/(\band\b.*\b1\s*=\s*0\b)/i',
+            '/(\bwaitfor\b.*\bdelay\b)/i'
+        ];
+
+        foreach ($patrones_peligrosos as $patron) {
+            if (preg_match($patron, $valor_lower)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function sanitizarString($valor, $maxLength = 255) {
+        if (empty($valor)) return '';
+        if ($this->detectarInyeccionSQL($valor)) return '';
+        $valor = trim($valor);
+        $caracteres_peligrosos = [';', '--', '/*', '*/', '<', '>', '"', "'", '`'];
+        foreach ($caracteres_peligrosos as $char) {
+            $valor = str_replace($char, '', $valor);
+        }
+        if (strlen($valor) > $maxLength) $valor = substr($valor, 0, $maxLength);
+        return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+    }
+
+    private function sanitizarEntero($valor, $min = null, $max = null) {
+        if (!is_numeric($valor)) return null;
+        $valor = (int)$valor;
+        if ($min !== null && $valor < $min) return null;
+        if ($max !== null && $valor > $max) return null;
+        return $valor;
+    }
+
+    
+    public function registrarBitacora(string $jsonDatos): bool {
         $datos = json_decode($jsonDatos, true);
         try {
             $this->bitacoraObj->registrarOperacion(
                 $datos['accion'],
-                'marca',  // nombre del módulo
+                'marca', 
                 $datos
             );
             return true;
@@ -64,17 +119,20 @@ class Marca extends Conexion {
     private function insertar(array $d): array {
         $conex = $this->getConex1();
         try {
-            // Validar que el nombre no esté vacío
+            
             if (empty($d['nombre'])) {
                 throw new \Exception("El nombre de la marca no puede estar vacío.");
             }
             
+          
+            $nombre = $this->sanitizarString($d['nombre'], 100);
+            
             // Verificar si ya existe una marca con el mismo nombre (ignorando mayúsculas/minúsculas)
             $sqlCheck = "SELECT COUNT(*) FROM marca WHERE LOWER(nombre) = LOWER(:nombre) AND estatus = 1";
             $stmtCheck = $conex->prepare($sqlCheck);
-            $stmtCheck->execute(['nombre' => $d['nombre']]);
+            $stmtCheck->execute(['nombre' => $nombre]);
             if ($stmtCheck->fetchColumn() > 0) {
-                throw new \Exception("Ya existe una marca con el nombre \"{$d['nombre']}\".");
+                throw new \Exception("Ya existe una marca con el nombre \"{$nombre}\".");
             }
             
             $conex->beginTransaction();
@@ -82,7 +140,7 @@ class Marca extends Conexion {
             $sql  = "INSERT INTO marca (nombre, estatus)
                      VALUES (:nombre, 1)";
             $stmt = $conex->prepare($sql);
-            $ok   = $stmt->execute(['nombre'=>$d['nombre']]);
+            $ok   = $stmt->execute(['nombre'=>$nombre]);
 
             if ($ok) {
                 $conex->commit();
@@ -106,27 +164,37 @@ class Marca extends Conexion {
     private function actualizar(array $d): array {
         $conex = $this->getConex1();
         try {
+            // Sanitizar ID
+            $id_marca = $this->sanitizarEntero($d['id_marca'] ?? 0, 1);
+            
+            if ($id_marca === null) {
+                throw new \Exception("ID de marca inválido.");
+            }
+
             $conex->beginTransaction();
 
-            // Verificar si la marca existe antes de actualizar
+           
             $sqlCheck  = "SELECT COUNT(*) FROM marca WHERE id_marca = :id";
             $stmtCheck = $conex->prepare($sqlCheck);
-            $stmtCheck->execute(['id' => $d['id_marca']]);
+            $stmtCheck->execute(['id' => $id_marca]);
             $existe = $stmtCheck->fetchColumn();
             
             if ($existe == 0) {
-                throw new \Exception("La marca con ID {$d['id_marca']} no existe.");
+                throw new \Exception("La marca con ID {$id_marca} no existe.");
             }
             
-            // Verificar si ya existe otra marca con el mismo nombre (ignorando mayúsculas/minúsculas)
+            
+            $nombre = $this->sanitizarString($d['nombre'] ?? '', 100);
+            
+          
             $sqlCheckName = "SELECT COUNT(*) FROM marca WHERE LOWER(nombre) = LOWER(:nombre) AND id_marca != :id AND estatus = 1";
             $stmtCheckName = $conex->prepare($sqlCheckName);
             $stmtCheckName->execute([
-                'nombre' => $d['nombre'],
-                'id' => $d['id_marca']
+                'nombre' => $nombre,
+                'id' => $id_marca
             ]);
             if ($stmtCheckName->fetchColumn() > 0) {
-                throw new \Exception("Ya existe otra marca con el nombre \"{$d['nombre']}\".");
+                throw new \Exception("Ya existe otra marca con el nombre \"{$nombre}\".");
             }
 
             $sql  = "UPDATE marca
@@ -134,8 +202,8 @@ class Marca extends Conexion {
                      WHERE id_marca = :id";
             $stmt= $conex->prepare($sql);
             $ok  = $stmt->execute([
-                'id'     => $d['id_marca'],
-                'nombre' => $d['nombre']
+                'id'     => $id_marca,
+                'nombre' => $nombre
             ]);
 
             if ($ok) {
@@ -160,23 +228,30 @@ class Marca extends Conexion {
     private function eliminarLogico(array $d): array {
         $conex = $this->getConex1();
         try {
+            // Sanitizar ID
+            $id_marca = $this->sanitizarEntero($d['id_marca'] ?? 0, 1);
+            
+            if ($id_marca === null) {
+                throw new \Exception("ID de marca inválido.");
+            }
+
             $conex->beginTransaction();
 
             // Verificar si la marca existe antes de eliminar
             $sqlCheck  = "SELECT COUNT(*) FROM marca WHERE id_marca = :id";
             $stmtCheck = $conex->prepare($sqlCheck);
-            $stmtCheck->execute(['id'=>$d['id_marca']]);
+            $stmtCheck->execute(['id'=>$id_marca]);
             $existe = $stmtCheck->fetchColumn();
             
             if ($existe == 0) {
-                throw new \Exception("La marca con ID {$d['id_marca']} no existe.");
+                throw new \Exception("La marca con ID {$id_marca} no existe.");
             }
 
             $sql  = "UPDATE marca
                      SET estatus = 0
                      WHERE id_marca = :id";
             $stmt= $conex->prepare($sql);
-            $ok  = $stmt->execute(['id'=>$d['id_marca']]);
+            $ok  = $stmt->execute(['id'=>$id_marca]);
 
             if ($ok) {
                 $conex->commit();
