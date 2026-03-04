@@ -40,7 +40,7 @@
 
             <div class="d-flex align-items-center gap-2"> 
                 <?php if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(9, 2)): ?>
-              <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar" title="(CONTROL + ALT + N) Registrar proveedor">
+              <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registro" id="btnAbrirRegistrar" title="Registrar proveedor">
                 <span class="icon text-white">
                   <i class="fas fa-file-medical me-2"></i>
                 </span>
@@ -48,7 +48,7 @@
               </button>
               <?php endif; ?>
               
-              <button type="button" class="btn btn-primary" id="btnAyuda" title="(CONTROL + ALT + A) click para ver la ayuda">
+              <button type="button" class="btn btn-primary" id="btnAyuda" title="Click para ver la ayuda">
                 <span class="icon text-white">
                   <i class="fas fa-info-circle me-2"></i>
                 </span>
@@ -133,7 +133,7 @@
           <i class="fa-solid fa-truck-moving"></i>
           <span id="modalTitleText">Registrar Proveedor</span>
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" title="(CONTROL + ALT + X) Cerrar" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Cerrar" aria-label="Close"></button>
       </div>
       <div class="modal-body bg-s">
         <form id="formProveedor" enctype="multipart/form-data" autocomplete="off">
@@ -264,7 +264,7 @@
           <h5 class="modal-title text-white">
             <i class="fa-solid fa-eye"></i> Detalles del Proveedor
           </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" title="(CONTROL + ALT + X) Cerrar"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" title="Cerrar"></button>
         </div>
         <div class="modal-body bg-s">
           <?php 
