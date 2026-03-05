@@ -64,6 +64,36 @@ class Delivery extends Conexion {
     private function ejecutarRegistro(array $d): array {
         $conex = $this->getConex1();
         try {
+            // ========================================
+            // VALIDACIÓN ESTRICTA DE DATOS
+            // ========================================
+            
+            // Validar que los datos existan y sean válidos
+            if (empty($d['nombre']) || empty($d['tipo']) || 
+                empty($d['contacto']) || empty($d['estatus'])) {
+                throw new \Exception("Datos incompletos para registrar delivery");
+            }
+            
+            // Validación estricta del nombre
+            if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/', $d['nombre'])) {
+                throw new \Exception("Nombre inválido");
+            }
+            
+            // Validación estricta del tipo
+            if (!in_array($d['tipo'], ['Carro', 'Moto', 'Bicicleta'], true)) {
+                throw new \Exception("Tipo de vehículo inválido");
+            }
+            
+            // Validación estricta del contacto (formato 0414-0000000: 4 dígitos, guion, 7 dígitos)
+            if (!preg_match('/^[0-9]{4}-[0-9]{7}$/', $d['contacto'])) {
+                throw new \Exception("Contacto inválido. El formato debe ser 0414-0000000");
+            }
+            
+            // Validación estricta del estatus
+            if (!in_array($d['estatus'], [1, 2], true)) {
+                throw new \Exception("Estatus inválido");
+            }
+            
             // Verificar si ya existe un delivery con el mismo nombre
             $sqlCheck = "SELECT COUNT(*) FROM delivery WHERE nombre = :nombre AND estatus != 0";
             $stmtCheck = $conex->prepare($sqlCheck);
@@ -102,6 +132,49 @@ class Delivery extends Conexion {
     private function ejecutarActualizacion(array $d): array {
         $conex = $this->getConex1();
         try {
+            // ========================================
+            // VALIDACIÓN ESTRICTA DE DATOS Y CLAVE FORÁNEA
+            // ========================================
+            
+            // Validar que el ID exista y sea válido
+            if (empty($d['id_delivery']) || !is_numeric($d['id_delivery'])) {
+                throw new \Exception("ID de delivery inválido");
+            }
+            
+            // Validar que el delivery existe en la base de datos
+            $sqlCheck = "SELECT COUNT(*) FROM delivery WHERE id_delivery = :id_delivery AND estatus != 0";
+            $stmtCheck = $conex->prepare($sqlCheck);
+            $stmtCheck->execute(['id_delivery' => $d['id_delivery']]);
+            if ($stmtCheck->fetchColumn() == 0) {
+                throw new \Exception("El delivery no existe");
+            }
+            
+            // Validar que los datos existan y sean válidos
+            if (empty($d['nombre']) || empty($d['tipo']) || 
+                empty($d['contacto']) || empty($d['estatus'])) {
+                throw new \Exception("Datos incompletos para actualizar delivery");
+            }
+            
+            // Validación estricta del nombre
+            if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/', $d['nombre'])) {
+                throw new \Exception("Nombre inválido");
+            }
+            
+            // Validación estricta del tipo
+            if (!in_array($d['tipo'], ['Carro', 'Moto', 'Bicicleta'], true)) {
+                throw new \Exception("Tipo de vehículo inválido");
+            }
+            
+            // Validación estricta del contacto (formato 0414-0000000: 4 dígitos, guion, 7 dígitos)
+            if (!preg_match('/^[0-9]{4}-[0-9]{7}$/', $d['contacto'])) {
+                throw new \Exception("Contacto inválido. El formato debe ser 0414-0000000");
+            }
+            
+            // Validación estricta del estatus
+            if (!in_array($d['estatus'], [1, 2], true)) {
+                throw new \Exception("Estatus inválido");
+            }
+            
             // Verificar si ya existe otro delivery con el mismo nombre
             $sqlCheck = "SELECT COUNT(*) FROM delivery WHERE nombre = :nombre AND id_delivery != :id_delivery AND estatus != 0";
             $stmtCheck = $conex->prepare($sqlCheck);
@@ -146,6 +219,23 @@ class Delivery extends Conexion {
     private function ejecutarEliminacion(array $d): array {
         $conex = $this->getConex1();
         try {
+            // ========================================
+            // VALIDACIÓN ESTRICTA DE CLAVE FORÁNEA
+            // ========================================
+            
+            // Validar que el ID exista y sea válido
+            if (empty($d['id_delivery']) || !is_numeric($d['id_delivery'])) {
+                throw new \Exception("ID de delivery inválido");
+            }
+            
+            // Validar que el delivery existe en la base de datos
+            $sqlCheck = "SELECT COUNT(*) FROM delivery WHERE id_delivery = :id_delivery AND estatus != 0";
+            $stmtCheck = $conex->prepare($sqlCheck);
+            $stmtCheck->execute(['id_delivery' => $d['id_delivery']]);
+            if ($stmtCheck->fetchColumn() == 0) {
+                throw new \Exception("El delivery no existe o ya está eliminado");
+            }
+            
             $conex->beginTransaction();
             $sql = "UPDATE delivery SET estatus = 0 WHERE id_delivery = :id_delivery";
             $stmt = $conex->prepare($sql);
@@ -167,6 +257,33 @@ class Delivery extends Conexion {
     private function cambiarEstatus(array $d): array {
         $conex = $this->getConex1();
         try {
+            // ========================================
+            // VALIDACIÓN ESTRICTA DE DATOS Y CLAVE FORÁNEA
+            // ========================================
+            
+            // Validar que el ID exista y sea válido
+            if (empty($d['id_delivery']) || !is_numeric($d['id_delivery'])) {
+                throw new \Exception("ID de delivery inválido");
+            }
+            
+            // Validar que el delivery existe en la base de datos
+            $sqlCheck = "SELECT COUNT(*) FROM delivery WHERE id_delivery = :id_delivery";
+            $stmtCheck = $conex->prepare($sqlCheck);
+            $stmtCheck->execute(['id_delivery' => $d['id_delivery']]);
+            if ($stmtCheck->fetchColumn() == 0) {
+                throw new \Exception("El delivery no existe");
+            }
+            
+            // Validar que el estatus sea válido
+            if (empty($d['estatus']) || !is_numeric($d['estatus'])) {
+                throw new \Exception("Estatus inválido");
+            }
+            
+            // Validación estricta del estatus
+            if (!in_array($d['estatus'], [1, 2], true)) {
+                throw new \Exception("Estatus inválido");
+            }
+            
             $conex->beginTransaction();
             $sql = "UPDATE delivery SET estatus = :estatus WHERE id_delivery = :id_delivery";
             $stmt = $conex->prepare($sql);
