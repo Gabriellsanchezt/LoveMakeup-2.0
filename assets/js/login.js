@@ -304,17 +304,9 @@ $(document).ready(function() {
       $("#textoapellido"), "El formato debe ser solo letras");
     });
 
-    $("#clave").on("keypress", function(e) {
-    validarkeyup(/^.{8,16}$/, e);
-    });
-    
     $("#clave").on("keyup", function() {
       validarCampo($(this),/^.{8,16}$/, 
       $("#textoclave"), "El formato debe ser entre 8 y 16 caracteres");
-    });
-
-    $("#recontrasena").on("keypress", function(e) {
-    validarkeyup(/^.{8,16}$/, e);
     });
     
     $("#recontrasena").on("keyup", function() {

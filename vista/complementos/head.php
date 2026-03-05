@@ -10,7 +10,7 @@
 <link id="pagestyle" href="assets/css/argon-dashboard.css?v=2.1.0" rel="stylesheet" />
 <link id="pagestyle" href="assets/css/sidebar.css" rel="stylesheet" />
 <link href="assets/css/datatables.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
+<link rel="stylesheet" href="assets/driver.js/dist/driver.css">
 
 <!-- Estilo para la bolita rosa en notificaciones -->
 <style>
@@ -34,7 +34,8 @@
 <script src="assets/js/libreria/sweetalert2.js"></script>
 <script src="assets/js/libreria/moment.js"></script>
 <script src="assets/js/libreria/datatables.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
+
+<script src="assets/driver.js/dist/driver.js.iife.js"></script>
 
 <script src="assets/js/loader.js"></script>
 
