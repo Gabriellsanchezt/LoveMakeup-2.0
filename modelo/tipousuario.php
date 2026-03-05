@@ -41,7 +41,14 @@ class TipoUsuario extends Conexion {
                     return $this->ejecutarEliminacion($datosProcesar);
 
                 case 'actualizar_permisos':
-                    return $this->actualizarLotePermisos($datosProcesar);    
+                    return $this->actualizarLotePermisos($datosProcesar);
+                
+                case 'verificarrol':
+                    if ($this->verificarExistencia(['campo' => 'id_rol', 'valor' => $datosProcesar['id_rol']])) {
+                        return ['respuesta' => 1,'accion' => 'verifirol'];
+                    } else {
+                        return [ 'respuesta' => 0,'accion' => 'verifirol','text' => 'Error, no se encuentra un rol registrado'];
+                    }      
                 
                 default:
                     return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
@@ -71,6 +78,7 @@ class TipoUsuario extends Conexion {
             throw $e;
         }
     }
+
     private function ejecutarRegistro($datos) {
     $conex = $this->getConex2();
         try {
@@ -190,13 +198,14 @@ class TipoUsuario extends Conexion {
     }
 
 
-    public function consultar() {
+    public function consultar($limite = 100) {
         $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
-            $sql = "SELECT * FROM rol WHERE estatus >= 1 AND id_rol > 1 ORDER BY id_rol DESC";
+            $sql = "SELECT * FROM rol WHERE estatus >= 1 AND id_rol > 1 ORDER BY id_rol DESC LIMIT :limite";
                     
             $stmt = $conex->prepare($sql);
+            $stmt->bindParam(':limite', $limite, \PDO::PARAM_INT);
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex->commit();
@@ -208,6 +217,15 @@ class TipoUsuario extends Conexion {
             }
             throw $e;
         }
+    }
+
+    public function contarTotal(){
+        $conex = $this->getConex2();
+        $sql = "SELECT COUNT(*) AS total FROM rol WHERE estatus >= 1";
+        $consulta = $conex->prepare($sql);
+        $consulta->execute();
+        $fila = $consulta->fetch(\PDO::FETCH_ASSOC);
+        return $fila['total'];
     }
 
     /*||||||||||||||||||||||||||||||| CONSULTAR PERMISO DEL USUARIO SELECCIONADO  |||||||||||||||||||||||||| 12 ||||*/

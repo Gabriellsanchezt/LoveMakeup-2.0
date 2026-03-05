@@ -115,32 +115,16 @@ class Datos extends Conexion{
             $stmtUsuario = $conex->prepare($sqlUsuario);
             $stmtUsuario->execute($paramUsuario);
 
-           
-            $sqlPermisoUpdate = "UPDATE permiso 
-                                SET cedula = :cedula_nueva 
-                                WHERE cedula = :cedula_actual";
 
-            $paramPermisoUpdate = [
-                'cedula_nueva' => $datos['cedula'],
-                'cedula_actual' => $datos['cedula_actual']
-            ];
-            
-            $stmtPermisoUpdate = $conex->prepare($sqlPermisoUpdate);
-            $stmtPermisoUpdate->execute($paramPermisoUpdate);
-
-            if ($stmtPermisoUpdate) {
-                $conex->commit();
-                $conex = null;
-                return ['respuesta' => 1, 'accion' => 'actualizar'];
-            }
-            
-            $conex->rollBack();
+            $conex->commit();
             $conex = null;
-            return ['respuesta' => 0, 'accion' => 'actualizar'];
+            return ['respuesta' => 1, 'accion' => 'actualizar'];
+        
             
         } catch (\PDOException $e) {
             if ($conex) {
                 $conex->rollBack();
+                return ['respuesta' => 0, 'accion' => 'actualizar', 'text' =>$e->getMessage()];
                 $conex = null;
             }
             throw $e;

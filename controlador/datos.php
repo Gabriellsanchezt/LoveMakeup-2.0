@@ -58,15 +58,17 @@ if (isset($_POST['actualizar'])) {
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
 
         if(!empty($_POST['nombre']) &&!empty($_POST['apellido']) && !empty($_POST['cedula']) && !empty($_POST['correo']) && 
-        !empty($_POST['telefono']) && !empty($_POST['tipo_documento'])){  /* V2 */
+        !empty($_POST['telefono']) && !empty($_POST['tipo_documento']) && !empty($_POST['cedula_actual']) && !empty($_POST['correo_actual'])){  /* V2 */
             
             $nombre =  ucfirst(strtolower($_POST['nombre'])); $apellido = ucfirst(strtolower($_POST['apellido'])); $cedula = $_POST['cedula']; 
             $correo = strtolower($_POST['correo']);  $telefono = $_POST['telefono']; $documento = $_POST['tipo_documento'];
-        
+            $cedula_actual = $_POST['cedula_actual']; $correo_actual = $_POST['correo_actual'];
+
             $campos = [
                 'Nombre' => $nombre,
                 'Apellido' => $apellido,      
                 'Cedula' => $cedula, 
+                'cedula_actual' => $cedula_actual, 
                 'Documento' => $documento, 
                 'Telefono' => $telefono
         
@@ -84,8 +86,16 @@ if (isset($_POST['actualizar'])) {
                     echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - Cedula inválida"]);
                     exit;
                 }
+                if (!preg_match('/^[0-9]{7,8}$/', $cedula_actual)) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - Cedula inválida"]);
+                    exit;
+                }
                
                 if (!filter_var($correo, FILTER_VALIDATE_EMAIL) || strlen($correo) < 5 || strlen($correo) > 200) {
+                    echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0410 - Correo inválido."]);
+                    exit;
+                }
+                if (!filter_var($correo_actual, FILTER_VALIDATE_EMAIL) || strlen($correo_actual) < 5 || strlen($correo_actual) > 200) {
                     echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0410 - Correo inválido."]);
                     exit;
                 }
@@ -123,8 +133,8 @@ if (isset($_POST['actualizar'])) {
                             'cedula' => $cedula,
                             'correo' => $correo,
                             'telefono' => $telefono,
-                            'cedula_actual' => $_SESSION["id"],
-                            'correo_actual' => $_SESSION["correo"],
+                            'cedula_actual' => $cedula_actual,
+                            'correo_actual' => $correo_actual,
                             'tipo_documento' => $documento
                         ]
                     ];

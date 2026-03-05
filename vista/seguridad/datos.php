@@ -122,6 +122,7 @@
           
                 </select>
                     <input type="text" class="form-control" name="cedula" id="cedula" value="<?php echo $_SESSION['id'] ?>">
+                    <input type="hidden" class="form-control" name="cedula_actual" value="<?php echo $_SESSION['id'] ?>">
               </div>
             <span id="textocedula" class="text-danger"></span>
           </div>
@@ -158,7 +159,8 @@
         <div class="row mb-3">
           <div class="col-12">
             <label for="correo" class="form-label text-g">Correo Electrónico</label>
-            <input type="text" class="form-control" id="correo" name="correo" value="<?php echo $_SESSION['correo'] ?>">
+            <input type="gmail" class="form-control" id="correo" name="correo" value="<?php echo $_SESSION['correo'] ?>">
+            <input type="hidden" class="form-control"  name="correo_actual" value="<?php echo $_SESSION['correo'] ?>">
             <span id="textocorreo" class="text-danger"></span>
           </div>
         </div>
