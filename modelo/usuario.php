@@ -315,7 +315,7 @@ private function verificarExistenciaROL($datos) {
         return $existe;
 
     } catch (\PDOException $e) {
-        if ($conex) $conex = null;
+        if ($conex) $conex = null; 
         throw $e;
     }
 }
@@ -325,7 +325,7 @@ private function verificarExistenciaROL($datos) {
         $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
-            $sql = "SELECT 
+            $sql = "SELECT  
                         per.*, 
                         ru.id_rol, 
                         ru.nombre AS nombre_tipo, 

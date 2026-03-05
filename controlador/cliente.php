@@ -10,11 +10,22 @@ if (session_status() === PHP_SESSION_NONE) {
 if (!empty($_SESSION['id'])) {
     require_once 'verificarsession.php';
 }
-//--
+//-----
+if (!isset($_SESSION['limite_cliente'])) {
+    $_SESSION['limite_cliente'] = 100;
+}
+//--------
+if (isset($_POST['ver_mas'])) {
+    $_SESSION['limite_cliente'] += 100;
+    header("location:?pagina=cliente");
+    exit;
+}
+//---
 require_once 'permiso.php';
 $objcliente = new Cliente();
 //---
-$registro = $objcliente->consultar();
+$registro = $objcliente->consultar($_SESSION['limite_cliente']);
+$total_registros = $objcliente->contarTotal();
 $pedidos = $objcliente->consultarPedidos();
 //----
     function validarCorreoActual(array $registro, string $correoActual): bool {

@@ -76,13 +76,7 @@
               </thead>
               <tbody>
               <?php
-              if (!isset($_SESSION['registro_limite'])) {
-                    $_SESSION['registro_limite'] = 100;
-                }
-
-                if (isset($_POST['cargar_mas'])) {
-                    $_SESSION['registro_limite'] += 100;
-                }
+          
 
                   $estatus_texto = array(
                     1 => "Activo",
@@ -94,13 +88,8 @@
                     2 =>  'badge bg-danger text-white'
                   );
 
-                    $total_registros = count($registro);
-                    $limite = $_SESSION['registro_limite'];
-                    $contador = 0;
-
                    foreach ($registro as $dato) {
-                        if ($contador >= $limite) break;
-                        $contador++;
+                    
                 ?>
                 <tr>
                   <td>
@@ -196,15 +185,15 @@
           </table> <!-- Fin tabla-->
           
 
-          <?php if ($total_registros > $limite): ?>
-  <div class="text-center mt-3">
-    <form method="POST">
-      <button type="submit" name="cargar_mas" class="btn btn-secondary">
-        Mostrar más Registro
-      </button>
-    </form>
-  </div>
-<?php endif; ?>
+        <?php if ($total_registros > $_SESSION['limite_cliente']): ?>
+            <form method="POST" action="?pagina=cliente">
+              <div class="text-center ">
+                <button type="submit" name="ver_mas" class="btn btn-primary w-50 mt-3">
+                    <i class="fas fa-plus-circle"></i> Ver más registros (+100)
+                </button>
+                </div>
+            </form>
+         <?php endif; ?>
 
       </div>  <!-- Fin div table-->
 
@@ -392,7 +381,7 @@ function cardPedido(icono, titulo, cantidad, total, color) {
 <script src="assets/js/demo/datatables-demo.js"></script>
 <script src="assets/js/cliente.js"></script>
 
-      <div class="modal fade" id="modalEstadisticas" tabindex="-1" aria-labelledby="modalEstadisticasLabel" aria-hidden="true">
+<div class="modal fade" id="modalEstadisticas" tabindex="-1" aria-labelledby="modalEstadisticasLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content modal-producto">
       <div class="modal-header">

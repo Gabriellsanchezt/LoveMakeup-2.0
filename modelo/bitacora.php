@@ -193,7 +193,7 @@ class Bitacora extends Conexion {
         }
     }
 
-    public function consultar(){
+    public function consultar($limite = 100){
         try {
             $registro = "SELECT b.*, p.nombre, p.apellido, ru.nombre AS nombre_usuario,
                                 DATE_FORMAT(b.fecha_hora, '%d/%m/%Y %H:%i:%s') as fecha_hora_formateada
@@ -201,10 +201,10 @@ class Bitacora extends Conexion {
                          INNER JOIN persona p ON b.cedula = p.cedula
                          INNER JOIN usuario u ON p.cedula = u.cedula
                          INNER JOIN rol ru ON u.id_rol = ru.id_rol
-                         ORDER BY b.fecha_hora DESC
+                         ORDER BY b.fecha_hora DESC LIMIT :limite
                         ";
             $consulta = $this->conex2->prepare($registro);
-           
+            $consulta->bindParam(':limite', $limite, \PDO::PARAM_INT);
             $consulta->execute();
 
             $datos = $consulta->fetchAll(\PDO::FETCH_ASSOC);
@@ -227,6 +227,14 @@ class Bitacora extends Conexion {
             ]);
             return [];
         }
+    }
+
+    public function contarTotal(){
+        $sql = "SELECT COUNT(*) AS total FROM bitacora";
+        $consulta = $this->conex2->prepare($sql);
+        $consulta->execute();
+        $fila = $consulta->fetch(\PDO::FETCH_ASSOC);
+        return $fila['total'];
     }
 
    

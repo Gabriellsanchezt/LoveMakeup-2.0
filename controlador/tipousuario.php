@@ -10,6 +10,16 @@ if (session_status() === PHP_SESSION_NONE) {
 if (!empty($_SESSION['id'])) {
         require_once 'verificarsession.php';
 }
+//-----
+if (!isset($_SESSION['limite_tipousuario'])) {
+    $_SESSION['limite_tipousuario'] = 100;
+}
+//--------
+if (isset($_POST['ver_mas'])) {
+    $_SESSION['limite_tipousuario'] += 100;
+    header("location:?pagina=tipousuario");
+    exit;
+}
 //------------------
 require_once 'permiso.php';
 $objRol = new TipoUsuario();
@@ -460,9 +470,10 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
             $bitacoraObj = new Bitacora();
             $bitacoraObj->registrarOperacion($bitacora['accion'], 'Tipo usuario', $bitacora);
 
-        $registro = $objRol->consultar();
-        $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tipousuario';
+        $registro = $objRol->consultar($_SESSION['limite_tipousuario']);
+        $total_registros = $objRol->contarTotal(); 
 
+        $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tipousuario';
         require_once 'vista/tipousuario.php';
 //-------        
 } else {

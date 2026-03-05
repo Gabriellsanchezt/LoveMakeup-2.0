@@ -151,6 +151,15 @@
                   </tbody>
                 </table>
               </div>
+                      <?php if ($total_registros > $_SESSION['limite_tipousuario']): ?>
+                    <form method="POST" action="?pagina=tipousuario">
+                      <div class="text-center ">
+                        <button type="submit" name="ver_mas" class="btn btn-primary w-50 mt-3">
+                            <i class="fas fa-plus-circle"></i> Ver más registros (+100)
+                        </button>
+                        </div>
+                    </form>
+                <?php endif; ?>
             </div>
           </div>
         </div>

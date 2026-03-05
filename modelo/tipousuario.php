@@ -198,13 +198,14 @@ class TipoUsuario extends Conexion {
     }
 
 
-    public function consultar() {
+    public function consultar($limite = 100) {
         $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
-            $sql = "SELECT * FROM rol WHERE estatus >= 1 AND id_rol > 1 ORDER BY id_rol DESC";
+            $sql = "SELECT * FROM rol WHERE estatus >= 1 AND id_rol > 1 ORDER BY id_rol DESC LIMIT :limite";
                     
             $stmt = $conex->prepare($sql);
+            $stmt->bindParam(':limite', $limite, \PDO::PARAM_INT);
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex->commit();
@@ -216,6 +217,15 @@ class TipoUsuario extends Conexion {
             }
             throw $e;
         }
+    }
+
+    public function contarTotal(){
+        $conex = $this->getConex2();
+        $sql = "SELECT COUNT(*) AS total FROM rol WHERE estatus >= 1";
+        $consulta = $conex->prepare($sql);
+        $consulta->execute();
+        $fila = $consulta->fetch(\PDO::FETCH_ASSOC);
+        return $fila['total'];
     }
 
     /*||||||||||||||||||||||||||||||| CONSULTAR PERMISO DEL USUARIO SELECCIONADO  |||||||||||||||||||||||||| 12 ||||*/
