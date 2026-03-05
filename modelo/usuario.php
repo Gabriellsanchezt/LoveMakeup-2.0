@@ -48,6 +48,9 @@ class Usuario extends Conexion
                     if ($this->verificarExistencia(['campo' => 'correo', 'valor' => $datosProcesar['correo']])) {
                         return ['respuesta' => 0, 'accion' => 'incluir', 'text' => 'El correo electrónico ya está registrado'];
                     }
+                    if (!$this->verificarExistenciaROL(['id_rol' => $datosProcesar['id_rol']])) {
+                        return ['respuesta' => 0,'accion' => 'incluir', 'text' => 'el rol no existe'];
+                    } 
                     $datosProcesar['clave'] = $this->encryptClave($datosProcesar['clave']);
                     return $this->ejecutarRegistro($datosProcesar);
                     
@@ -65,15 +68,23 @@ class Usuario extends Conexion
                         }
                     }
 
+                    if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                        return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'el usuario no existe'];
+                    }
+                    
+                    if (!$this->verificarExistenciaROL(['id_rol' => $datosProcesar['id_rol']])) {
+                        return ['respuesta' => 0,'accion' => 'actualizar', 'text' => 'el rol no existe'];
+                    } 
+                    
                     return $this->ejecutarActualizacion($datosProcesar);
                     
                 case 'eliminar':
+
                     if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
                         return ['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'el usuario no existe'];
                     }
 
                     return $this->ejecutarEliminacion($datosProcesar);
-                
 
                 case 'verificar':
                   if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
@@ -310,7 +321,7 @@ private function verificarExistenciaROL($datos) {
 }
 
 /*||||||||||||||||||||||||||||||| CONSULTAR LOS USUARIOS  |||||||||||||||||||||||||| 08 ||||*/    
-    public function consultar() {
+    public function consultar($limite = 100) {
         $conex = $this->getConex2();
         try {
             $conex->beginTransaction();
@@ -326,9 +337,11 @@ private function verificarExistenciaROL($datos) {
                     INNER JOIN rol ru ON u.id_rol = ru.id_rol
                     WHERE ru.nivel IN (2, 3) 
                     AND u.estatus >= 1 AND u.id_usuario >=2
-                    ORDER BY u.id_usuario DESC";
+                    ORDER BY u.id_usuario DESC LIMIT :limite";
                     
             $stmt = $conex->prepare($sql);
+           $stmt->bindParam(':limite', $limite, \PDO::PARAM_INT);
+
             $stmt->execute();
             $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $conex->commit();
@@ -347,5 +360,12 @@ private function verificarExistenciaROL($datos) {
         return $this->objtipousuario->consultar();
     }
 
-
+    public function contarTotal(){
+        $conex = $this->getConex2();
+        $sql = "SELECT COUNT(*) AS total FROM usuario WHERE estatus >= 1";
+        $consulta = $conex->prepare($sql);
+        $consulta->execute();
+        $fila = $consulta->fetch(\PDO::FETCH_ASSOC);
+        return $fila['total'];
+    }
 }

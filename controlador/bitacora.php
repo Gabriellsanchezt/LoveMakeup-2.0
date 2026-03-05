@@ -69,7 +69,7 @@ if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['elimi
     if(isset($_POST['limpiar'])) {
         try {
             // Verificar permisos para limpiar
-            if (!tieneAcceso(15, 'eliminar')) {
+            if (!tieneAcceso(15, 4)) {
                 echo json_encode(['success' => false, 'message' => 'No tiene permisos para esta acción']);
                 exit;
             }
@@ -109,7 +109,7 @@ if (isset($_POST['detalles']) || isset($_POST['limpiar']) || isset($_POST['elimi
     if(isset($_POST['eliminar_registro'])) {
         try {
             // Verificar permisos para eliminar
-            if (!tieneAcceso(15, 'eliminar')) {
+            if (!tieneAcceso(15, 4)) {
                 echo json_encode(['respuesta' => 0, 'mensaje' => 'No tiene permisos para esta acción']);
                 exit;
             }
@@ -157,7 +157,8 @@ require_once 'permiso.php';
 
 // Instanciar objeto Bitácora (independiente, solo para uso del módulo)
 $objBitacora = new Bitacora();
-
+ $registro = $objBitacora->consultar();
+  
 // Función global para registrar en bitácora desde cualquier módulo
 // Esta función es opcional y otros módulos pueden llamarla si desean
 // El módulo de bitácora no depende de que otros módulos la usen

@@ -15,7 +15,18 @@ require_once 'permiso.php';
 $objRol = new TipoUsuario();
 //---------------------------
 function validarEntradaSQL($input) {
-        // Lista negra de palabras y símbolos comunes en SQL Injection
+        // Si es array → validar cada elemento
+        if (is_array($input)) {
+            foreach ($input as $valor) {
+                if (!validarEntradaSQL($valor)) { 
+                    return false;
+                }
+            }
+            return true;
+        }
+        // Convertir a string por seguridad
+        $input = (string)$input;
+
         $blacklist = [
             'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
             'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
@@ -23,17 +34,15 @@ function validarEntradaSQL($input) {
             '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
             'EXEC', 'EXECUTE', 'xp_', 'sp_', 'OR', 'AND'
         ];
-    
-        // Normalizar a mayúsculas para comparar
-        $inputUpper = strtoupper($input);
-    
+      
         foreach ($blacklist as $prohibida) {
-            if (strpos($inputUpper, $prohibida) !== false) {
-                return false; // Contiene palabra prohibida
+            $pattern = '/\b' . preg_quote($prohibida, '/') . '\b/i'; 
+            if (preg_match($pattern, $input)) {
+                return false;
             }
         }
-        return true; // Seguro
-}
+        return true;
+    }
 //--------------------
 if (isset($_POST['registrar'])) { //-------------------------------------------------- [ REGISTRAR ROL ]
 //-------------------
@@ -171,7 +180,7 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
 } else if (isset($_POST['actualizar_permisos'])) { //-----------------------------------------------[ ACTUALIZAR PERMISOS ]
  //---------
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { // Validacion 1
-        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 3)) { // Validacion 2 - Permisos
+        if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 5)) { // Validacion 2 - Permisos
             if (!empty($_POST['permiso']) && !empty($_POST['permiso_id'])) {  // Validacion 3    
 
             // Permisos enviados desde la vista
@@ -194,6 +203,7 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
                    
                 }
             }
+            
             // VALIDAR $permisosId
             foreach ($permisosId as $modulo_id => $permisosModulo) {
 
@@ -239,6 +249,18 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
 
                 // Procesar actualización
                 $resultado = $objRol->procesarRol(json_encode($datosPermiso));
+
+                    if ($resultado['respuesta'] == 1) { // Validacion de Registro Bitacora
+                            $bitacora = [
+                                'id_persona' => $_SESSION["id"],
+                                'accion' => 'Actualizar Permisos de tipo usuario',
+                                'descripcion' => 'Se Actualizo el  Permisos el tipo usuario: '
+                            ];
+                            $bitacoraObj = new Bitacora();
+                            $bitacoraObj->registrarOperacion($bitacora['accion'], 'Actualizar', $bitacora);
+                    }
+
+
                 echo json_encode($resultado);
                 exit;
 
@@ -277,7 +299,7 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
                         }
                     } 
 
-                    if (!preg_match('/^[A-Za-z]{3,20}$/', $nombre)) { // Validacion 5
+                    if (!preg_match('/^[A-Za-z ]{3,30}$/', $nombre)) { // Validacion 5
                             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - Nombre inválido"]);
                             exit;
                     }
@@ -287,7 +309,7 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
                             exit;
                     }
 
-                    if (!preg_match('/^[2-3]{1}$/', $nivel_actual)) {
+                    if (!preg_match('/^[1-3]{1}$/', $nivel_actual)) {
                             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => "#0510 - nivel Actual inválido"]);
                             exit;
                     }
@@ -297,19 +319,49 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
                             exit;
                     }
 
-                    $datosRol = [
-                        'operacion' => 'actualizar',
-                        'datos' => [
-                            'id_rol' =>  $id_rol,
-                            'nombre' =>  $nombre,
-                            'nivel' =>  $nivel,
-                            'nivel_actual' => $nivel_actual
-                        ] 
-                    ];
+                    // ROL EXISTE
+                    $datosRol1 = ['operacion' => 'verificarrol','datos' => ['id_rol' => $id_rol]  ];
+        
+                    $resultadoVerificacion1 = $objRol->procesarRol(json_encode($datosRol1));
+                    if ($resultadoVerificacion1['respuesta'] == 0) {
+                        echo json_encode([ 'respuesta' => 0, 'accion' => 'actualizar', 'text' => '530 - ROL no existente' ]);
+                        exit; 
+                    } 
 
-                    $resultado = $objRol->procesarRol(json_encode($datosRol));
-                    echo json_encode($resultado);
-                    exit; 
+                    $rolesRestringidos = [1, 2, 3, 4];
+                    if (in_array($id_rol, $rolesRestringidos) && $nivel_actual != $nivel) {
+                        echo json_encode([
+                            'respuesta' => 0,
+                            'accion' => 'actualizar',
+                            'text' => '#0520 - Restringido modificar el nivel'
+                        ]);
+                        exit;
+                    }
+                    
+                        $datosRol = [
+                            'operacion' => 'actualizar',
+                            'datos' => [
+                                'id_rol' =>  $id_rol,
+                                'nombre' =>  $nombre,
+                                'nivel' =>  $nivel,
+                                'nivel_actual' => $nivel_actual
+                            ] 
+                        ];
+
+                        $resultado = $objRol->procesarRol(json_encode($datosRol));
+
+                        if ($resultado['respuesta'] == 1) { // Validacion de Registro Bitacora
+                                $bitacora = [
+                                    'id_persona' => $_SESSION["id"],
+                                    'accion' => 'Actualizar datos de tipo usuario',
+                                    'descripcion' => 'Se datos del tipo usuario: '
+                                ];
+                                $bitacoraObj = new Bitacora();
+                                $bitacoraObj->registrarOperacion($bitacora['accion'], 'Actualizar', $bitacora);
+                        }
+
+                        echo json_encode($resultado);
+                        exit; 
 
    
             } else { // Validacion 3 - Error 
@@ -353,6 +405,15 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
                         echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => "Tipo de usuario restringidos, no se pueden eliminar"]);
                         exit;
                     }
+
+                    // ROL EXISTE
+                    $datosRol1 = ['operacion' => 'verificarrol','datos' => ['id_rol' => $id_rol]  ];
+        
+                    $resultadoVerificacion1 = $objRol->procesarRol(json_encode($datosRol1));
+                    if ($resultadoVerificacion1['respuesta'] == 0) {
+                        echo json_encode([ 'respuesta' => 0, 'accion' => 'eliminar', 'text' => '530 - ROL no existente' ]);
+                        exit; 
+                    } 
     
                     $datosRol = [
                         'operacion' => 'eliminar',
@@ -362,6 +423,17 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
                     ];
 
                     $resultado = $objRol->procesarRol(json_encode($datosRol));
+
+                    if ($resultado['respuesta'] == 1) { // Validacion de Registro Bitacora
+                            $bitacora = [
+                                'id_persona' => $_SESSION["id"],
+                                'accion' => 'Eliminar tipo usuario',
+                                'descripcion' => 'Se elimino el tipo usuario: '
+                            ];
+                            $bitacoraObj = new Bitacora();
+                            $bitacoraObj->registrarOperacion($bitacora['accion'], 'Eliminar', $bitacora);
+                    }
+
                     echo json_encode($resultado);
                     exit; 
 
@@ -380,6 +452,14 @@ if (isset($_POST['registrar'])) { //--------------------------------------------
 //------
 } else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(17, 1)) { //----------------------------- [ VISTA ]
 //------      
+            $bitacora = [
+                'id_persona' => $_SESSION["id"],
+                'accion' => 'Acceso a Módulo',
+                'descripcion' => 'módulo de Tipo usuario'
+            ];
+            $bitacoraObj = new Bitacora();
+            $bitacoraObj->registrarOperacion($bitacora['accion'], 'Tipo usuario', $bitacora);
+
         $registro = $objRol->consultar();
         $pagina_actual = isset($_GET['pagina']) ? $_GET['pagina'] : 'tipousuario';
 

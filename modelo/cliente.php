@@ -38,7 +38,14 @@ class Cliente extends Conexion
                     }
 
                     return $this->ejecutarActualizacion($datosProcesar);
-                                        
+                
+                case 'verificar':
+                    if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                        return ['respuesta' => 1,'accion' => 'verificar','text' => 'La cédula ya está registrada' ];
+                    } else {
+                        return [ 'respuesta' => 0,'accion' => 'verificar','text' => 'La cédula no se encuentra registrada'];
+                    }
+                        
                 default:
                     return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'Operación no válida'];
             }
