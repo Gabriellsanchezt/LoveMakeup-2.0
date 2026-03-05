@@ -12,9 +12,9 @@ class VentaWeb extends Conexion
 
         try {
 
-            // =============================
+          
             //  INICIO DE TRANSACCIÓN
-            // =============================
+          
             $conex->beginTransaction();
 
             // Validar stock ANTES de iniciar inserts
@@ -74,9 +74,9 @@ class VentaWeb extends Conexion
 
         } catch (\Exception $e) {
 
-            // =============================
+           
             //  REVERTIR TRANSACCIÓN
-            // =============================
+         
             if ($conex->inTransaction()) {
                 $conex->rollBack();
             }
@@ -193,6 +193,36 @@ class VentaWeb extends Conexion
             if (!$p) throw new \Exception("Producto no encontrado");
             if ($item['cantidad'] > $p['stock_disponible'])
                 throw new \Exception("Stock insuficiente");
+        }
+    }
+
+    public function obtenerMetodosPago() {
+        $conex = $this->getConex1(); // Conexión a la base de datos
+        try {
+            $sql = "SELECT id_metodopago, nombre, estatus 
+                    FROM metodo_pago 
+                    WHERE estatus = 1"; // Solo métodos de pago activos
+            $stmt = $conex->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC); // Retorna un array con los métodos de pago
+        } catch (\PDOException $e) {
+            error_log("Error al obtener métodos de pago: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function obtenerMetodosEntrega() {
+        $conex = $this->getConex1(); // Conexión a la base de datos
+        try {
+            $sql = "SELECT id_entrega, nombre, estatus 
+                    FROM metodo_entrega 
+                    WHERE estatus = 1"; // Solo métodos de entrega activos
+            $stmt = $conex->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC); // Retorna un array con los métodos de entrega
+        } catch (\PDOException $e) {
+            error_log("Error al obtener métodos de entrega: " . $e->getMessage());
+            return [];
         }
     }
 }

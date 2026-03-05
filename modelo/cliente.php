@@ -38,7 +38,14 @@ class Cliente extends Conexion
                     }
 
                     return $this->ejecutarActualizacion($datosProcesar);
-                                        
+                
+                case 'verificar':
+                    if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                        return ['respuesta' => 1,'accion' => 'verificar','text' => 'La cédula ya está registrada' ];
+                    } else {
+                        return [ 'respuesta' => 0,'accion' => 'verificar','text' => 'La cédula no se encuentra registrada'];
+                    }
+                        
                 default:
                     return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'Operación no válida'];
             }
@@ -48,7 +55,7 @@ class Cliente extends Conexion
     }
 
 /*||||||||||||||||||||||||||||||| CONSULTAR DATOS  |||||||||||||||||||||||||  02  |||||*/        
-        public function consultar() {
+        public function consultar($limite = 100) {
             $conex = $this->getConex2();
             try {
                 $sql = "SELECT 
@@ -63,9 +70,10 @@ class Cliente extends Conexion
                     INNER JOIN rol ru ON u.id_rol = ru.id_rol
                     WHERE ru.nivel IN (1) 
                     AND u.estatus >= 1
-                    ORDER BY u.id_usuario DESC";
+                    ORDER BY u.id_usuario DESC LIMIT :limite";
                         
                 $stmt = $conex->prepare($sql);
+                $stmt->bindParam(':limite', $limite, \PDO::PARAM_INT);
                 $stmt->execute();
                 $resultado = $stmt->fetchAll(\PDO::FETCH_ASSOC);
                 $conex = null;
@@ -78,6 +86,14 @@ class Cliente extends Conexion
             }
         }
 
+        public function contarTotal(){
+            $conex = $this->getConex2();
+            $sql = "SELECT COUNT(*) AS total FROM usuario WHERE estatus >= 1 AND id_rol = 1";
+            $consulta = $conex->prepare($sql);
+            $consulta->execute();
+            $fila = $consulta->fetch(\PDO::FETCH_ASSOC);
+            return $fila['total'];
+        }
 
          public function consultarPedidos() {
             $conex = $this->getConex1();

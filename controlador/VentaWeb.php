@@ -222,29 +222,37 @@ function validarCarrito($carrito) {
     if (!is_array($carrito)) {
         return [];
     }
-    
+
     $carrito_validado = [];
     foreach ($carrito as $item) {
         if (!is_array($item)) {
             continue;
         }
-        
+
         // Validar y sanitizar cada campo del item
-        $item_validado = [
-            'id' => sanitizarEntero($item['id'] ?? null, 1),
-            'cantidad' => sanitizarEntero($item['cantidad'] ?? null, 1),
-            'cantidad_mayor' => sanitizarEntero($item['cantidad_mayor'] ?? null, 1),
-            'precio_detal' => sanitizarDecimal($item['precio_detal'] ?? null, 0),
-            'precio_mayor' => sanitizarDecimal($item['precio_mayor'] ?? null, 0)
-        ];
-        
+        $id_producto = sanitizarEntero($item['id'] ?? null, 1);
+        $cantidad = sanitizarEntero($item['cantidad'] ?? null, 1);
+        $cantidad_mayor = sanitizarEntero($item['cantidad_mayor'] ?? null, 1);
+        $precio_detal = sanitizarDecimal($item['precio_detal'] ?? null, 0);
+        $precio_mayor = sanitizarDecimal($item['precio_mayor'] ?? null, 0);
+
+        // Validar que el producto exista y esté activo
+        if (!$id_producto || !validarProductoActivo($id_producto)) {
+            continue; // Saltar este producto si no es válido
+        }
+
         // Solo agregar si todos los campos son válidos
-        if ($item_validado['id'] && $item_validado['cantidad'] && 
-            $item_validado['precio_detal'] !== null && $item_validado['precio_mayor'] !== null) {
-            $carrito_validado[] = $item_validado;
+        if ($id_producto && $cantidad && $precio_detal !== null && $precio_mayor !== null) {
+            $carrito_validado[] = [
+                'id' => $id_producto,
+                'cantidad' => $cantidad,
+                'cantidad_mayor' => $cantidad_mayor,
+                'precio_detal' => $precio_detal,
+                'precio_mayor' => $precio_mayor
+            ];
         }
     }
-    
+
     return $carrito_validado;
 }
 
@@ -319,6 +327,25 @@ function validarBanco($banco) {
         '0169-R4 Banco Microfinanciero C.A.'
     ];
     return in_array($banco, $bancos_validos, true);
+}
+
+
+/* Valida que un producto exista y esté activo
+*/
+function validarProductoActivo($id_producto) {
+   $venta = new VentaWeb();
+   $conex = $venta->getConex1(); // Conexión a la base de datos
+   try {
+       $sql = "SELECT COUNT(*) AS total FROM producto WHERE id_producto = :id_producto AND estatus = 1";
+       $stmt = $conex->prepare($sql);
+       $stmt->execute(['id_producto' => $id_producto]);
+       $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+       return $resultado['total'] > 0; 
+   } catch (\PDOException $e) {
+       error_log("Error al validar producto: " . $e->getMessage());
+       return false;
+   }
 }
 
 /**

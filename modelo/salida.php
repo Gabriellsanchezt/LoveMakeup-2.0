@@ -476,7 +476,7 @@ class Salida extends Conexion {
             
             // 2. Insertar en usuario con rol de cliente (id_rol = 1)
             $sql_usuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol) 
-                           VALUES (:cedula, '', 1, 1)";
+                           VALUES (:cedula, '', 1, 2)";
             $stmt_usuario = $conex->prepare($sql_usuario);
             $stmt_usuario->execute(['cedula' => $datos['cedula']]);
             
@@ -1177,7 +1177,7 @@ class Salida extends Conexion {
             $persona_existe = $stmt_verificar_persona->fetch(\PDO::FETCH_ASSOC);
             
             // Verificar si ya tiene usuario con rol de cliente (id_rol = 1)
-            $sql_verificar_cliente = "SELECT id_usuario FROM usuario WHERE cedula = ? AND id_rol = 1 AND estatus = 1";
+            $sql_verificar_cliente = "SELECT id_usuario FROM usuario WHERE cedula = ? AND id_rol = 2 AND estatus = 1";
             $stmt_verificar_cliente = $conex->prepare($sql_verificar_cliente);
             $stmt_verificar_cliente->execute([$datos['cedula']]);
             $cliente_existe = $stmt_verificar_cliente->fetch();
@@ -1226,7 +1226,7 @@ class Salida extends Conexion {
             }
             
             // 2. Insertar en usuario con rol de cliente (id_rol = 1)
-            $sql_usuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol) VALUES (?, '', 1, 1)";
+            $sql_usuario = "INSERT INTO usuario (cedula, clave, estatus, id_rol) VALUES (?, '', 1, 2)";
             $stmt_usuario = $conex->prepare($sql_usuario);
             $stmt_usuario->execute([$datos['cedula']]);
             $id_cliente = $conex->lastInsertId();

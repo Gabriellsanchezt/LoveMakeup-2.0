@@ -458,38 +458,38 @@ function enviaAjax(datos) {
   
            if (lee.accion == 'incluir') {
                 if (lee.respuesta == 1) {  
-                  muestraMensaje("success", 1500, "Se ha registrado con éxito", "Su registro se ha completado exitosamente");
+                  muestraMensaje("success", 1500, "Se ha registrado con éxito", "Se agrego un usuario nuevo");
                      desactivarLoaderBoton('#registrar');
                   setTimeout(function () {
                     location = '?pagina=usuario';
-                  }, 1000);
+                  }, 2000);
                 } else {
-                  muestraMensaje("error", 1000, lee.text, "");
+                      muestraMensaje("error", 3000, "Error",lee.text);
                      desactivarLoaderBoton('#registrar');
                 }
               } else if (lee.accion == 'actualizar') {
                 if (lee.respuesta == 1) {
-                  muestraMensaje("success", 2000, "Se ha Modificado con éxito", "Su registro se ha Actualizado exitosamente");
+                  muestraMensaje("success", 2000, "Se ha Modificado con éxito", "datos del usuario actualizados");
                     desactivarLoaderBoton('#actualizar');  
                   setTimeout(function () {
                     location = '?pagina=usuario';
-                  }, 1000);
+                  }, 2000);
                 } else {
-                  muestraMensaje("error", 2000, lee.text,"");
+                  muestraMensaje("error", 3000, "Error",lee.text);
                   desactivarLoaderBoton('#actualizar'); 
                 }
               } else if (lee.accion == 'eliminar') {
                 if (lee.respuesta == 1) {
-                  muestraMensaje("success", 1000, "Se ha eliminado con éxito", "Los datos se han borrado correctamente ");
+                  muestraMensaje("success", 1500, "Se ha eliminado con éxito", "Usuario Borrado");
                   if (botonActivo) {
                         desactivarLoaderBotonElemento(botonActivo);
                         botonActivo = null; 
                     }
                   setTimeout(function () {
                      location = '?pagina=usuario';
-                  }, 1000);
+                  }, 2000);
                 } else {
-                  muestraMensaje("error", 2000, lee.text,"" );
+                   muestraMensaje("error", 3000, "Error", lee.text);
                     if (botonActivo) {
                         desactivarLoaderBotonElemento(botonActivo);
                         botonActivo = null;
@@ -576,7 +576,7 @@ $('#ayuda').on("click", function () {
       { element: '.table-color', popover: { title: 'Tabla de usuario', description: 'Aquí es donde se guardarán los registros de usuario', side: "left" }},
       { element: '.registrar', popover: { title: 'Botón de registrar', description: 'Te lleva a un modal para registrar', side: "bottom", align: 'start' }},
       { element: '.informacion', popover: { title: 'Más información del Usuario', description: 'Ver más información del usuario registrado.', side: "left", align: 'start' }},
-      { element: '.permisotur', popover: { title: 'Ver Permiso del Usuario', description: 'Ver y modificar permisos del usuario.', side: "left", align: 'start' }},
+      
       { element: '.modificar', popover: { title: 'Modificar Usuario', description: 'Editar información del usuario.', side: "left", align: 'start' }},
       { element: '.eliminar', popover: { title: 'Eliminar Usuario', description: 'Eliminar usuario de la lista.', side: "left", align: 'start' }},
       { element: '.dt-search', popover: { title: 'Buscar', description: 'Buscar usuario en la tabla.', side: "right", align: 'start' }},

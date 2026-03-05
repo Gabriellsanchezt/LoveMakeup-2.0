@@ -126,13 +126,8 @@
                     3 =>  'badge bg-primary'
                   );
 
-                    $total_registros = count($registro);
-                    $limite = $_SESSION['registro_limite'];
-                    $contador = 0;
-
                     foreach ($registro as $dato) {
-                        if ($contador >= $limite) break;
-                        $contador++;
+                
                     ?>
                 <tr class="">
                  <td>
@@ -229,15 +224,17 @@
               </tbody>
                                
           </table> <!-- Fin tabla--> 
-          <?php if ($total_registros > $limite): ?>
-  <div class="text-center mt-3">
-    <form method="POST">
-      <button type="submit" name="cargar_mas" class="btn btn-secondary">
-        Mostrar más Registro
-      </button>
-    </form>
-  </div>
-<?php endif; ?>
+
+           <?php if ($total_registros > $_SESSION['limite_usuario']): ?>
+            <form method="POST" action="?pagina=usuario">
+              <div class="text-center ">
+                <button type="submit" name="ver_mas" class="btn btn-primary w-50 mt-3">
+                    <i class="fas fa-plus-circle"></i> Ver más registros (+100)
+                </button>
+                </div>
+            </form>
+         <?php endif; ?>
+
       </div>  <!-- Fin div table-->
 
       </div><!-- FIN CARD N-1 -->  
