@@ -56,9 +56,8 @@ class PedidoWeb extends Conexion {
     
         try {
     
-            // ======================================================
-            // 1) CONSULTA PRINCIPAL (BD1) - INCLUYE REFERENCIA Y COMPROBANTE
-            // ======================================================
+            // 1) CONSULTA PRINCIPAL 
+        
             $sql = "SELECT 
                         p.id_pedido,
                         p.tipo,
@@ -67,7 +66,7 @@ class PedidoWeb extends Conexion {
                         p.precio_total_bs,
                         p.precio_total_usd,
                         p.tracking,
-                        p.cedula,                  -- viene del cliente (persona)
+                        p.cedula,                 
                         p.id_direccion,
                         p.id_pago,
     
@@ -115,9 +114,8 @@ class PedidoWeb extends Conexion {
                 return [];
             }
     
-            // ======================================================
-            // 2) CONSULTA CLIENTE EN BD2 - CORREGIDA
-            // ======================================================
+            // 2) CONSULTA CLIENTE 
+        
             $conex2 = $this->getConex2();
     
             $sqlCliente = "SELECT 
@@ -133,9 +131,9 @@ class PedidoWeb extends Conexion {
     
             $stmtCliente = $conex2->prepare($sqlCliente);
     
-            // ======================================================
-            // 3) ASOCIAR CLIENTE Y LIMPIEZA DE CAMPOS
-            // ======================================================
+      
+            // 3) ASOCIAR CLIENTE 
+
             foreach ($pedidos as &$p) {
     
                 // Mapear campos de pago/referencia/comprobante (si vienen)
@@ -151,7 +149,7 @@ class PedidoWeb extends Conexion {
                 $p['telefono_emisor'] = $p['telefono_emisor'] ?? null;
                 $p['comprobante_imagen'] = $p['comprobante_imagen'] ?? null;
     
-                // Cliente: si existe cédula en pedido, buscamos en BD2
+              
                 if (!empty($p['cedula'])) {
                     try {
                         $stmtCliente->execute([
@@ -167,7 +165,7 @@ class PedidoWeb extends Conexion {
                             $p['correo_cliente']   = $cliente2['correo'];
                             $p['estatus_usuario']  = $cliente2['estatus'];
                         } else {
-                            // No existe en BD2 — dejar la info mínima que haya en BD1
+                        
                             $p['nombre_cliente']   = $p['nombre_cliente'] ?? 'No registrado';
                             $p['apellido_cliente'] = $p['apellido_cliente'] ?? '';
                             $p['telefono']         = $p['telefono'] ?? null;
@@ -175,7 +173,7 @@ class PedidoWeb extends Conexion {
                             $p['estatus_usuario']  = null;
                         }
                     } catch (\PDOException $e) {
-                        // Error consultando BD2 → valores por defecto
+                       
                         $p['nombre_cliente']   = $p['nombre_cliente'] ?? 'No registrado';
                         $p['apellido_cliente'] = $p['apellido_cliente'] ?? '';
                         $p['telefono']         = $p['telefono'] ?? null;
@@ -277,7 +275,7 @@ public function consultarDetallesPedido($id_pedido) {
             }
     
             // Decidir el nuevo estatus según método de entrega
-            $nuevoestatus = 2;  // Default
+            $nuevoestatus = 2; 
             if (strtolower($metodo['nombre']) === 'delivery' || $metodo['id_entrega'] == 2) {
                 $nuevoestatus = 3;
             }
@@ -309,7 +307,7 @@ public function consultarDetallesPedido($id_pedido) {
             $sql = "UPDATE pedido SET estatus = 4 WHERE id_pedido = ?";
             $stmt = $conex->prepare($sql);
             if ($stmt->execute([$id_pedido])) {
-                $conex->commit();  // <-- Aquí debes confirmar la transacción
+                $conex->commit(); 
                 $conex = null;
                 return ['respuesta' => 1, 'msg' => 'Pedido confirmado'];
             } else {
@@ -333,7 +331,7 @@ public function consultarDetallesPedido($id_pedido) {
             $sql = "UPDATE pedido SET estatus = 5 WHERE id_pedido = ?";
             $stmt = $conex->prepare($sql);
             if ($stmt->execute([$id_pedido])) {
-                $conex->commit();  // <-- Aquí debes confirmar la transacción
+                $conex->commit(); 
                 $conex = null;
                 return ['respuesta' => 1, 'msg' => 'Pedido confirmado'];
             } else {
@@ -447,7 +445,7 @@ public function consultarDetallesPedido($id_pedido) {
             $mail->send();
         } catch (\Exception $e) {
             error_log("Error al enviar correo tracking: " . $e->getMessage());
-            // Nunca interrumpas el flujo por esto
+           
         }
     }
 

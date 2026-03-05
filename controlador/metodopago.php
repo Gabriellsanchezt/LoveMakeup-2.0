@@ -26,51 +26,62 @@ $objMetodoPago = new MetodoPago();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['registrar'])) {
-        if (!empty($_POST['nombre']) && !empty($_POST['descripcion'])) {
+        $nombre = $objMetodoPago->sanitizarStringP($_POST['nombre'] ?? '');
+        $descripcion = $objMetodoPago->sanitizarStringP($_POST['descripcion'] ?? '');
+
+        if (!empty($nombre) && !empty($descripcion)) {
             $datosPeticion = [
                 'operacion' => 'incluir',
                 'datos' => [
-                    'nombre' => ucfirst(strtolower($_POST['nombre'])),
-                    'descripcion' => $_POST['descripcion']
+                    'nombre' => $nombre,
+                    'descripcion' => $descripcion
                 ]
             ];
 
             $respuesta = $objMetodoPago->procesarMetodoPago(json_encode($datosPeticion));
             echo json_encode($respuesta);
         } else {
-            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para registrar']);
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para registrar o son inválidos']);
         }
 
-    } else if (isset($_POST['modificar'])) {
-        if (!empty($_POST['id_metodopago']) && !empty($_POST['nombre']) && !empty($_POST['descripcion'])) {
+    }else if (isset($_POST['modificar'])) {
+        $id_metodopago = $objMetodoPago->sanitizarEnteroP($_POST['id_metodopago'] ?? 0, 1);
+        $nombre = $objMetodoPago->sanitizarStringP($_POST['nombre'] ?? '');
+        $descripcion = $objMetodoPago->sanitizarStringP($_POST['descripcion'] ?? '');
+
+        if ($id_metodopago && !empty($nombre) && !empty($descripcion)) {
             $datosPeticion = [
                 'operacion' => 'modificar',
                 'datos' => [
-                    'id_metodopago' => $_POST['id_metodopago'],
-                    'nombre' => ucfirst(strtolower($_POST['nombre'])),
-                    'descripcion' => $_POST['descripcion']
+                    'id_metodopago' => $id_metodopago,
+                    'nombre' => $nombre,
+                    'descripcion' => $descripcion
                 ]
             ];
 
             $respuesta = $objMetodoPago->procesarMetodoPago(json_encode($datosPeticion));
             echo json_encode($respuesta);
         } else {
-            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para actualizar']);
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para actualizar o son inválidos']);
         }
+    }
 
-    } else if (isset($_POST['eliminar'])) {
-        if (!empty($_POST['id_metodopago'])) {
+    // --- ELIMINAR MÉTODO DE PAGO ---
+    else if (isset($_POST['eliminar'])) {
+        $id_metodopago = $objMetodoPago->sanitizarEnteroP($_POST['id_metodopago'] ?? 0, 1);
+
+        if ($id_metodopago) {
             $datosPeticion = [
                 'operacion' => 'eliminar',
                 'datos' => [
-                    'id_metodopago' => $_POST['id_metodopago']
+                    'id_metodopago' => $id_metodopago
                 ]
             ];
 
             $respuesta = $objMetodoPago->procesarMetodoPago(json_encode($datosPeticion));
             echo json_encode($respuesta);
         } else {
-            echo json_encode(['respuesta' => 0, 'mensaje' => 'Falta ID para eliminar']);
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'Falta ID válido para eliminar']);
         }
     }
 

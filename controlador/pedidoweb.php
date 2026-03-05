@@ -182,9 +182,9 @@ function validarEstadoDelivery($estado_delivery) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    /* ===========================
+    /* 
        CONFIRMAR PEDIDO
-       =========================== */
+       */
     if (isset($_POST['confirmar'])) {
 
         if (!empty($_POST['id_pedido'])) {
@@ -204,9 +204,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
 
-    /* ===========================
+    /*
        ELIMINAR PEDIDO
-       =========================== */
+       */
     } else if (isset($_POST['eliminar'])) {
 
         if (!empty($_POST['id_pedido'])) {
@@ -226,9 +226,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
 
-    /* ===========================
+    /* 
        DELIVERY
-       =========================== */
+        */
     } else if (!empty($_POST['id_pedido']) && isset($_POST['estado_delivery']) && isset($_POST['direccion'])) {
 
         // Sanitizar y validar id_pedido
@@ -260,9 +260,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($objPedidoWeb->procesarPedidoweb(json_encode($datosPeticion)));
 
 
-    /* ===========================
+    /*
        ENVIAR PEDIDO
-       =========================== */
+       */
     } else if (isset($_POST['enviar'])) {
 
         if (!empty($_POST['id_pedido'])) {
@@ -282,9 +282,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
 
-    /* ===========================
+    /* 
        ENTREGAR PEDIDO
-       =========================== */
+      */
     } else if (isset($_POST['entregar'])) {
 
         if (!empty($_POST['id_pedido'])) {
@@ -304,9 +304,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
 
-    /* ===========================
-       TRACKING (UNIFICADO) quitar en dado caso 
-       =========================== */
+    /*
+       TRACKING  
+      */
     } else if (isset($_POST['tracking'])) {
 
         if (
@@ -368,9 +368,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 
-/* ===========================
-   GET: CARGAR VISTA
-   =========================== */
+/* 
+   VISTA
+ */
 $pedidos = $objPedidoWeb->consultarPedidosCompletos();
 foreach ($pedidos as &$p) {
     $p['detalles'] = $objPedidoWeb->consultarDetallesPedido($p['id_pedido']);
