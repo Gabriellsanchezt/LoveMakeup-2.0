@@ -9,6 +9,72 @@ class MetodoEntrega extends Conexion {
         parent::__construct(); 
     }
 
+      // --- VALIDACION ---
+      private function detectarInyeccionSQL($valor) {
+        if (empty($valor)) return false;
+    
+     
+        $valor_original = $valor;
+        $valor_lower = strtolower($valor);
+    
+  
+        $patrones_peligrosos = [
+            '/(\bunion\b.*\bselect\b)/i',
+            '/(\bselect\b.*\bfrom\b)/i',
+            '/(\binsert\b.*\binto\b)/i',
+            '/(\bupdate\b.*\bset\b)/i',
+            '/(\bdelete\b.*\bfrom\b)/i',
+            '/(--|\#|\/\*|\*\/)/',
+            '/(\bor\b.*\b1\s*=\s*1\b)/i',
+            '/(\bdrop\b|\btruncate\b|\balter\b)\s+\btable\b/i' 
+        ];
+    
+       
+        foreach ($patrones_peligrosos as $patron) {
+            if (preg_match($patron, $valor_lower)) return true;
+        }
+    
+        // key especificas 
+        $keywords = [
+            'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
+            'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
+            'FROM', 'TABLE', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE',
+            '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
+            'EXEC', 'EXECUTE', 'xp_', 'sp_'
+        ];
+    
+        // Verificar Key
+        foreach ($keywords as $word) {
+            $pattern = '/\b' . preg_quote($word, '/') . '\b/i';
+            if (preg_match($pattern, $valor_lower)) {
+                return true;
+            }
+        }
+    
+        return false;
+    }
+    public function sanitizarString($valor, $maxLength = 255) {
+        if (empty($valor)) return '';
+        if ($this->detectarInyeccionSQL($valor)) return '';
+        $valor = trim($valor);
+        $caracteres_peligrosos = [';', '--', '/*', '*/', '<', '>', '"', "'", '`'];
+        foreach ($caracteres_peligrosos as $char) {
+            $valor = str_replace($char, '', $valor);
+        }
+        if (strlen($valor) > $maxLength) $valor = substr($valor, 0, $maxLength);
+        return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+    }
+
+    public function sanitizarEntero($valor, $min = null, $max = null) {
+        if (!is_numeric($valor)) return null;
+        $valor = (int)$valor;
+        if ($min !== null && $valor < $min) return null;
+        if ($max !== null && $valor > $max) return null;
+        return $valor;
+    }
+
+
+
     public function procesarMetodoEntrega($jsonDatos){
         $datos = json_decode($jsonDatos, true);
         $operacion = $datos['operacion'] ?? '';

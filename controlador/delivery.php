@@ -70,6 +70,51 @@ function validarIdDelivery($id_delivery, $deliveries) {
     return false;
 }
 
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN Y SANITIZACIÓN |||||||||||||||||||||||||||||*/
+
+/**
+ * Detecta intentos de inyección SQL en un string
+ * Para nombres y direcciones, solo verificamos símbolos peligrosos
+ */
+function validarEntradaSQL($input, $tipoCampo = 'nombre') {
+    // Para nombres propios y direcciones, solo verificamos símbolos peligrosos
+    if ($tipoCampo === 'nombre' || $tipoCampo === 'direccion') {
+        $simbolosPeligrosos = ['--', ';', '#', '/*', '*/', '@@', "'", '"', '\\'];
+        foreach ($simbolosPeligrosos as $simbolo) {
+            if (strpos($input, $simbolo) !== false) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Para campos técnicos, usamos lista negra completa
+    $blacklist = [
+        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
+        'CREATE', 'EXEC', 'EXECUTE', 'UNION', 'WHERE', 'FROM', 'INTO', 'VALUES',
+        'OR ', 'AND ', 'NOT ', 'NULL', 'LIKE', 'BETWEEN', 'HAVING', 'GROUP BY',
+        'ORDER BY', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'OUTER JOIN',
+        'DATABASE', 'TABLE', 'VIEW', 'INDEX', 'PROCEDURE', 'FUNCTION', 'TRIGGER',
+        'CURSOR', 'FETCH', 'OPEN', 'CLOSE', 'DEALLOCATE', 'SET', 'RETURN',
+        'RAISE', 'ERROR', 'EXCEPTION', 'TRY', 'CATCH', 'THROW', 'WHILE', 'LOOP',
+        'BEGIN', 'END', 'COMMIT', 'ROLLBACK', 'TRANSACTION', 'GRANT', 'REVOKE',
+        'DENY', 'WAITFOR', 'DELAY', 'BENCHMARK', 'SLEEP', 'LOAD_FILE', 'INTO OUTFILE',
+        'INTO DUMPFILE', 'INFORMATION_SCHEMA', 'SYS.', 'SYSTEM_USER', 'CURRENT_USER',
+        'SESSION_USER', 'DBMS_', 'UTL_', 'JAVA', 'XML', 'HTTP', 'FTP', 'SMTP',
+        'XP_', 'SP_', 'XPCMD', 'CMDEXEC', 'OLE', 'AUTOMATION', 'OBJECT', 'ACTIVE',
+        'SCRIPT', 'SHELL', 'COMMAND', 'EXECUTE IMMEDIATE', 'DYNAMIC', 'SQL', 'INJECT',
+        '--', '/*', '*/', '#', ';', ':', '@', '=', '!', '+', '|', '&', '^', '~', '<', '>', '/', '%'
+    ];
+    
+    $input_upper = strtoupper($input);
+    foreach ($blacklist as $palabra) {
+        if (strpos($input_upper, $palabra) !== false) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // 0) Registrar acceso al módulo (GET sin AJAX ni operaciones)
 if ($_SERVER['REQUEST_METHOD'] === 'GET'
     && !isset($_POST['consultar_delivery'])
@@ -97,15 +142,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // b) Registrar nuevo delivery
     if (isset($_POST['registrar'])) {
-        $tipo = ucfirst(strtolower($_POST['tipo'] ?? ''));
-        $estatus = (int)($_POST['estatus'] ?? 0);
-
-        // Validar tipo
+        // ========================================
+        // CAPA 1: Sesión activa (ya validada arriba)
+        // ========================================
+        
+        // ========================================
+        // CAPA 2: Validación explícita de permisos
+        // ========================================
+        if (!tieneAcceso(11, 2)) {  // 11 = módulo delivery, 2 = registrar
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
+        
+        // ========================================
+        // CAPA 3: Claves foráneas (NO APLICA - no hay FKs)
+        // ========================================
+        
+        // ========================================
+        // CAPA 4: Validación de campos vacíos
+        // ========================================
+        // Aplicar trim() a todos los campos antes de validar
+        $nombre_raw = trim($_POST['nombre']);
+        $tipo_raw = trim($_POST['tipo']);
+        $contacto_raw = trim($_POST['contacto']);
+        $estatus_raw = trim($_POST['estatus']);
+        
+        if (empty($nombre_raw) || empty($tipo_raw) || 
+            empty($contacto_raw) || empty($estatus_raw)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'Todos los campos son obligatorios']);
+            exit;
+        }
+        
+        // ========================================
+        // CAPA 5: Sanitización y Expresiones Regulares
+        // ========================================
+        
+        // Sanitización contra SQL Injection (selectiva por tipo de campo)
+        if (!validarEntradaSQL($nombre_raw, 'nombre')) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'Entrada inválida detectada en el campo: Nombre']);
+            exit;
+        }
+        if (!validarEntradaSQL($contacto_raw, 'nombre')) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'Entrada inválida detectada en el campo: Contacto']);
+            exit;
+        }
+        
+        // Validación con expresiones regulares
+        $nombre = ucfirst(strtolower($nombre_raw));
+        $tipo = ucfirst(strtolower($tipo_raw));
+        $contacto = $contacto_raw;
+        $estatus = (int)($estatus_raw ?? 0);
+        
+        // Validar nombre (letras y espacios, 3-50 caracteres)
+        if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/', $nombre)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'Nombre inválido. Solo letras y espacios, 3-50 caracteres']);
+            exit;
+        }
+        
+        // Validar tipo (Carro, Moto, Bicicleta)
         if (!validarTipo($tipo)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El tipo de vehículo seleccionado no es válido']);
             exit;
         }
-
+        
+        // Validar contacto (formato 0414-0000000: 4 dígitos, guion, 7 dígitos)
+        if (!preg_match('/^[0-9]{4}-[0-9]{7}$/', $contacto)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'Contacto inválido. El formato debe ser 0414-0000000']);
+            exit;
+        }
+        
         // Validar estatus
         if (!validarEstatus($estatus)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'El estatus seleccionado no es válido']);
@@ -113,9 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         }
 
         $d = [
-            'nombre' => ucfirst(strtolower($_POST['nombre'])),
+            'nombre' => $nombre,
             'tipo' => $tipo,
-            'contacto' => $_POST['contacto'],
+            'contacto' => $contacto,
             'estatus' => $estatus
         ];
         $res = $obj->procesarDelivery(
@@ -134,22 +239,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // c) Actualizar delivery existente
     if (isset($_POST['actualizar'])) {
+        // ========================================
+        // CAPA 1: Sesión activa (ya validada arriba)
+        // ========================================
+        
+        // ========================================
+        // CAPA 2: Validación explícita de permisos
+        // ========================================
+        if (!tieneAcceso(11, 3)) {  // 11 = módulo delivery, 3 = actualizar
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
+        
         $id_delivery = (int)($_POST['id_delivery'] ?? 0);
-        $tipo = ucfirst(strtolower($_POST['tipo'] ?? ''));
-        $estatus = (int)($_POST['estatus'] ?? 0);
-
+        
+        // ========================================
+        // CAPA 3: Validación de clave foránea (ID de delivery)
+        // ========================================
         // Validar id_delivery primero (debe existir en la base de datos)
         if (!validarIdDelivery($id_delivery, $deliveries)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El delivery seleccionado no es válido']);
             exit;
         }
-
-        // Validar tipo
+        
+        // ========================================
+        // CAPA 4: Validación de campos vacíos
+        // ========================================
+        // Aplicar trim() a todos los campos antes de validar
+        $nombre_raw = trim($_POST['nombre']);
+        $tipo_raw = trim($_POST['tipo']);
+        $contacto_raw = trim($_POST['contacto']);
+        $estatus_raw = trim($_POST['estatus']);
+        
+        if (empty($nombre_raw) || empty($tipo_raw) || 
+            empty($contacto_raw) || empty($estatus_raw)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Todos los campos son obligatorios']);
+            exit;
+        }
+        
+        // ========================================
+        // CAPA 5: Sanitización y Expresiones Regulares
+        // ========================================
+        
+        // Sanitización contra SQL Injection (selectiva por tipo de campo)
+        if (!validarEntradaSQL($nombre_raw, 'nombre')) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Entrada inválida detectada en el campo: Nombre']);
+            exit;
+        }
+        if (!validarEntradaSQL($contacto_raw, 'nombre')) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Entrada inválida detectada en el campo: Contacto']);
+            exit;
+        }
+        
+        // Validación con expresiones regulares
+        $tipo = ucfirst(strtolower($tipo_raw));
+        $estatus = (int)($estatus_raw ?? 0);
+        
+        // Validar nombre (letras y espacios, 3-50 caracteres)
+        $nombre = ucfirst(strtolower($nombre_raw));
+        if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/', $nombre)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Nombre inválido. Solo letras y espacios, 3-50 caracteres']);
+            exit;
+        }
+        
+        // Validar tipo (Carro, Moto, Bicicleta)
         if (!validarTipo($tipo)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El tipo de vehículo seleccionado no es válido']);
             exit;
         }
-
+        
+        // Validar contacto (formato 0414-0000000: 4 dígitos, guion, 7 dígitos)
+        $contacto = $contacto_raw;
+        if (!preg_match('/^[0-9]{4}-[0-9]{7}$/', $contacto)) {
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'Contacto inválido. El formato debe ser 0414-0000000']);
+            exit;
+        }
+        
         // Validar estatus
         if (!validarEstatus($estatus)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El estatus seleccionado no es válido']);
@@ -158,9 +323,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
         $d = [
             'id_delivery' => $id_delivery,
-            'nombre' => ucfirst(strtolower($_POST['nombre'])),
+            'nombre' => $nombre,
             'tipo' => $tipo,
-            'contacto' => $_POST['contacto'],
+            'contacto' => $contacto,
             'estatus' => $estatus
         ];
         // Obtener nombre actual para bitácora
@@ -181,13 +346,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // d) Eliminar (desactivar) delivery
     if (isset($_POST['eliminar'])) {
+        // ========================================
+        // CAPA 1: Sesión activa (ya validada arriba)
+        // ========================================
+        
+        // ========================================
+        // CAPA 2: Validación explícita de permisos
+        // ========================================
+        if (!tieneAcceso(11, 4)) {  // 11 = módulo delivery, 4 = eliminar
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
+        
         $id = (int)($_POST['id_delivery'] ?? 0);
-
+        
+        // ========================================
+        // CAPA 3: Validación de clave foránea (ID de delivery)
+        // ========================================
         // Validar id_delivery (debe existir en la base de datos)
         if (!validarIdDelivery($id, $deliveries)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'El delivery seleccionado no es válido']);
             exit;
         }
+        
+        // ========================================
+        // CAPA 4: Campos vacíos (YA VALIDADO EN CAPA 3 - ID es requerido)
+        // ========================================
+        
+        // ========================================
+        // CAPA 5: Sanitización (ID ya validado como entero)
+        // ========================================
 
         $delivery = $obj->consultarPorId($id);
         $nombre = $delivery['nombre'] ?? "ID $id";
@@ -208,15 +396,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     
     // e) Cambiar estatus delivery
     if (isset($_POST['cambiarEstatus'])) {
+        // ========================================
+        // CAPA 1: Sesión activa (ya validada arriba)
+        // ========================================
+        
+        // ========================================
+        // CAPA 2: Validación explícita de permisos
+        // ========================================
+        if (!tieneAcceso(11, 5)) {  // 11 = módulo delivery, 5 = cambiar estatus
+            echo json_encode(['respuesta' => 0, 'accion' => 'cambiarEstatus', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
+        
         $id = (int)($_POST['id_delivery'] ?? 0);
         $estatus = (int)($_POST['estatus'] ?? 0);
-
+        
+        // ========================================
+        // CAPA 3: Validación de clave foránea (ID de delivery)
+        // ========================================
         // Validar id_delivery (debe existir en la base de datos)
         if (!validarIdDelivery($id, $deliveries)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'cambiarEstatus', 'mensaje' => 'El delivery seleccionado no es válido']);
             exit;
         }
-
+        
+        // ========================================
+        // CAPA 4: Campos vacíos (YA VALIDADO - ID y estatus son requeridos)
+        // ========================================
+        
+        // ========================================
+        // CAPA 5: Sanitización y Validación
+        // ========================================
         // Validar estatus
         if (!validarEstatus($estatus)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'cambiarEstatus', 'mensaje' => 'El estatus seleccionado no es válido']);

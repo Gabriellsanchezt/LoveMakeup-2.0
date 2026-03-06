@@ -135,7 +135,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if (isset($_POST['registrar'])) {
         // CAPA 1: Sesión activa (ya validada arriba)
         
-        // CAPA 2: Permisos (se asume en el contexto)
+        // CAPA 2: Validación explícita de permisos
+        if (!tieneAcceso(9, 2)) {  // 9 = módulo proveedor, 2 = registrar
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         
         // CAPA 3: Claves foráneas (no aplica en registro)
         
@@ -251,11 +255,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
 
     // c) Actualizar proveedor existente
     if (isset($_POST['actualizar'])) {
+        // ========================================
         // CAPA 1: Sesión activa (ya validada arriba)
+        // ========================================
         
-        // CAPA 2: Permisos (implícitos en el contexto)
+        // ========================================
+        // CAPA 2: Validación explícita de permisos
+        // ========================================
+        if (!tieneAcceso(9, 3)) {  // 9 = módulo proveedor, 3 = actualizar
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
 
+        // ========================================
         // CAPA 3: Validación de clave foránea (id_proveedor)
+        // ========================================
         $proveedores = $obj->consultar();
         if (!validarIdProveedor($_POST['id_proveedor'], $proveedores)) {
             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'El proveedor seleccionado no es válido']);
@@ -390,7 +404,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if (isset($_POST['eliminar'])) {
         // CAPA 1: Sesión activa (ya validada arriba)
         
-        // CAPA 2: Permisos (implícitos en el contexto)
+        // CAPA 2: Validación explícita de permisos
+        if (!tieneAcceso(9, 4)) {  // 9 = módulo proveedor, 4 = eliminar
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         
         // CAPA 3: Validación de clave foránea (id_proveedor)
         $proveedores = $obj->consultar();

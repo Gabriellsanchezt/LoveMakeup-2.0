@@ -15,30 +15,39 @@ function validarTipoDocumento($tipo_documento) {
         return in_array($tipo_documento, $tipos_validos, true);
 }
 
-function validarEntradaSQL($input) {
-    // Lista negra de palabras y símbolos comunes en SQL Injection
-    $blacklist = [
-        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
-        'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
-        'FROM', 'TABLE', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE',
-        '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
-        'EXEC', 'EXECUTE', 'xp_', 'sp_', 'OR', 'AND'
-    ];
-
-    // Normalizar a mayúsculas para comparar
-    $inputUpper = strtoupper($input);
-
-    foreach ($blacklist as $prohibida) {
-        if (strpos($inputUpper, $prohibida) !== false) {
-            return false; // Contiene palabra prohibida
+ function validarEntradaSQL($input) {
+        // Si es array → validar cada elemento
+        if (is_array($input)) {
+            foreach ($input as $valor) {
+                if (!validarEntradaSQL($valor)) { 
+                    return false;
+                }
+            }
+            return true;
         }
+        // Convertir a string por seguridad
+        $input = (string)$input;
+
+        $blacklist = [
+            'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
+            'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
+            'FROM', 'TABLE', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE',
+            '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
+            'EXEC', 'EXECUTE', 'xp_', 'sp_', 'OR', 'AND'
+        ];
+      
+        foreach ($blacklist as $prohibida) {
+            $pattern = '/\b' . preg_quote($prohibida, '/') . '\b/i'; 
+            if (preg_match($pattern, $input)) {
+                return false;
+            }
+        }
+        return true;
     }
-    return true; // Seguro
-}
 
 if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  INGRESAR AL SISTEMA */
-    
-    if ( !empty($_POST['fecha']) && !empty($_POST['usuario']) && !empty($_POST['clave'])&& !empty($_POST['tipo_documento'])) {
+    if (empty($_SESSION['id'])) { /* V1 */
+        if ( !empty($_POST['fecha']) && !empty($_POST['usuario']) && !empty($_POST['clave'])&& !empty($_POST['tipo_documento'])) {
 
         $fecha = $_POST['fecha'];  $dolar = $_POST['tasa'];  
         $usuario = $_POST['usuario']; $clave = $_POST['clave'];  $documento = $_POST['tipo_documento'];
@@ -163,11 +172,14 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                     echo json_encode(['respuesta' => 0,'accion' => 'ingresar','text' => 'Cédula y/o Clave inválida.']);
                     exit;
                 }
-    } else{
-        echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => '#0100 - DATOS VACIOS']);
-        exit; 
-    }
-        
+        } else{
+            echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => '#0100 - DATOS VACIOS']);
+            exit; 
+        }
+    } else{ /* V1 */ 
+        echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => 'Session Activa']);
+        exit;
+    }   
 // ------------------
 } else if (isset($_POST['registrar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| REGISTRO CLIENTE */
     if ( !empty($_POST['nombre']) && !empty($_POST['apellido']) && !empty($_POST['cedula']) && !empty($_POST['telefono']) && !empty($_POST['correo']) && !empty($_POST['tipo_documento']) && !empty($_POST['clave'])) {

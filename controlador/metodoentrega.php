@@ -25,54 +25,61 @@ $objEntrega = new MetodoEntrega();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['registrar'])) {
-        if (!empty($_POST['nombre']) && !empty($_POST['descripcion'])) {
+        $nombre = $objEntrega->sanitizarString($_POST['nombre'] ?? '');
+        $descripcion = $objEntrega->sanitizarString($_POST['descripcion'] ?? '');
+
+        if (!empty($nombre) && !empty($descripcion)) {
             $datosPeticion = [
                 'operacion' => 'incluir',
                 'datos' => [
-                    'nombre' => ucfirst(strtolower($_POST['nombre'])),
-                    'descripcion' => $_POST['descripcion']
+                    'nombre' => $nombre,
+                    'descripcion' => $descripcion
                 ]
             ];
 
             $respuesta = $objEntrega->procesarMetodoEntrega(json_encode($datosPeticion));
-
             echo json_encode($respuesta);
         } else {
-            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para registrar']);
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para registrar o son inválidos']);
         }
+    
 
     } else if (isset($_POST['actualizar'])) {
-        if (!empty($_POST['id_entrega']) && !empty($_POST['nombre']) && !empty($_POST['descripcion'])) {
+        $id_entrega = $objEntrega->sanitizarEntero($_POST['id_entrega'] ?? 0, 1);
+        $nombre = $objEntrega->sanitizarString($_POST['nombre'] ?? '');
+        $descripcion = $objEntrega->sanitizarString($_POST['descripcion'] ?? '');
+
+        if ($id_entrega && !empty($nombre) && !empty($descripcion)) {
             $datosPeticion = [
                 'operacion' => 'modificar',
                 'datos' => [
-                    'id_entrega' => $_POST['id_entrega'],
-                    'nombre' => ucfirst(strtolower($_POST['nombre'])),
-                    'descripcion' => $_POST['descripcion']
+                    'id_entrega' => $id_entrega,
+                    'nombre' => $nombre,
+                    'descripcion' => $descripcion
                 ]
             ];
 
             $respuesta = $objEntrega->procesarMetodoEntrega(json_encode($datosPeticion));
-
             echo json_encode($respuesta);
         } else {
-            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para actualizar']);
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'Faltan datos para actualizar o son inválidos']);
         }
 
     } else if (isset($_POST['eliminar'])) {
-        if (!empty($_POST['id_entrega'])) {
+        $id_entrega = $objEntrega->sanitizarEntero($_POST['id_entrega'] ?? 0, 1);
+
+        if ($id_entrega) {
             $datosPeticion = [
                 'operacion' => 'eliminar',
                 'datos' => [
-                    'id_entrega' => $_POST['id_entrega']
+                    'id_entrega' => $id_entrega
                 ]
             ];
 
             $respuesta = $objEntrega->procesarMetodoEntrega(json_encode($datosPeticion));
-
             echo json_encode($respuesta);
         } else {
-            echo json_encode(['respuesta' => 0, 'mensaje' => 'Falta ID para eliminar']);
+            echo json_encode(['respuesta' => 0, 'mensaje' => 'Falta ID válido para eliminar']);
         }
     }
 

@@ -187,14 +187,14 @@ function enviaAjax(datos) {
   
            if (lee.accion == 'actualizar') {
                 if (lee.respuesta == 1) {
-                  muestraMensaje("success", 2000, "Se ha Modificado con éxito", "Su registro se ha Actualizado exitosamente");
-                  desactivarLoaderBoton('#actualizar'); 
-                  setTimeout(function () {
-                     location = '?pagina=cliente';
-                  }, 1000);
+                  muestraMensaje("success", 1500, "Se ha Modificado con éxito", "Datos actualizados");
+                    desactivarLoaderBoton('#actualizar'); 
+                      setTimeout(function () {
+                        location = '?pagina=cliente';
+                      }, 2000);
                 } else {
-                  muestraMensaje("error", 2000, "ERROR", lee.text);
-                  desactivarLoaderBoton('#actualizar'); 
+                  muestraMensaje("error", 3000, "Error", lee.text);
+                    desactivarLoaderBoton('#actualizar'); 
                 }
               }
   

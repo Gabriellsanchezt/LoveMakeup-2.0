@@ -18,25 +18,35 @@ if (!empty($_SESSION['id'])) {
 $objdatos = new Catalogo_datos();
 
 function validarEntradaSQL($input) {
-    // Lista negra de palabras y símbolos comunes en SQL Injection
-    $blacklist = [
-        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
-        'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
-        'FROM', 'TABLE', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE',
-        '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
-        'EXEC', 'EXECUTE', 'xp_', 'sp_', 'OR', 'AND'
-    ];
-
-    // Normalizar a mayúsculas para comparar
-    $inputUpper = strtoupper($input);
-
-    foreach ($blacklist as $prohibida) {
-        if (strpos($inputUpper, $prohibida) !== false) {
-            return false; // Contiene palabra prohibida
+        // Si es array → validar cada elemento
+        if (is_array($input)) {
+            foreach ($input as $valor) {
+                if (!validarEntradaSQL($valor)) { 
+                    return false;
+                }
+            }
+            return true;
         }
-    }
-    return true; // Seguro
+        // Convertir a string por seguridad
+        $input = (string)$input;
+
+        $blacklist = [
+            'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE', 'ALTER',
+            'CREATE', 'RENAME', 'REPLACE', 'UNION', 'JOIN', 'WHERE', 'HAVING',
+            'FROM', 'TABLE', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE',
+            '--', ';', '#', '/*', '*/', '@@', '@', 'CHAR', 'CAST', 'CONVERT',
+            'EXEC', 'EXECUTE', 'xp_', 'sp_', 'OR', 'AND'
+        ];
+      
+        foreach ($blacklist as $prohibida) {
+            $pattern = '/\b' . preg_quote($prohibida, '/') . '\b/i'; 
+            if (preg_match($pattern, $input)) {
+                return false;
+            }
+        }
+        return true;
 }
+
 
 //Valida que el tipo_documento sea válido
 function validarTipoDocumento($tipo_documento) {

@@ -31,7 +31,7 @@ $(function() {
   }
 
   // ————————————————————————————
-  // Bloquear números y mostrar "Solo se ermiten letras"
+  // Bloquear números y mostrar "Solo se permiten letras"
   // ————————————————————————————
   $('#nombre')
     .on('keypress', function(e) {
@@ -53,9 +53,9 @@ $(function() {
       const $inp = $(this);
       if ($inp.data('numError')) return;       // persiste el mensaje
       validarkeyup(
-        /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{3,30}$/,
+        /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/,
         $inp, $('#snombre'),
-        'Solo letras, de 3 a 30 caracteres'
+        'Solo letras, de 3 a 50 caracteres'
       );
     });
 
@@ -79,7 +79,7 @@ $(function() {
     // usa this en lugar de event.currentTarget
     const $tr   = $(this).closest('tr');
     const id    = $tr.data('id');
-    const nombre= $tr.find('td').eq(0).find('.text-dark b').text().trim();
+    const nombre= $tr.find('.text-dark b').text().trim();
 
     $('#id_categoria').val(id);
     $('#nombre')
@@ -122,9 +122,9 @@ $(function() {
   $('#btnEnviar').click(()=>{
     const $inp = $('#nombre'), $span = $('#snombre');
     if (!validarkeyup(
-      /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{3,30}$/,
+      /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/,
       $inp, $span,
-      'Solo letras, de 3 a 30 caracteres'
+      'Solo letras, de 3 a 50 caracteres'
     )) {
       muestraMensaje('error',2000,'Error','Datos inválidos');
       return;

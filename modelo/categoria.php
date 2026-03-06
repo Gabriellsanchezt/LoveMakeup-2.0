@@ -64,9 +64,18 @@ class Categoria extends Conexion {
     private function insertar(array $d): array {
         $conex = $this->getConex1();
         try {
+            // ========================================
+            // VALIDACIÓN ESTRICTA DE DATOS
+            // ========================================
+            
             // Validar que el nombre no esté vacío
             if (empty($d['nombre'])) {
                 throw new \Exception("El nombre de la categoría no puede estar vacío.");
+            }
+            
+            // Validación estricta del nombre (letras y espacios, 3-50 caracteres)
+            if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/', $d['nombre'])) {
+                throw new \Exception("Nombre inválido. Solo letras y espacios, 3-50 caracteres");
             }
             
             // Verificar si ya existe una categoría con el mismo nombre (ignorando mayúsculas/minúsculas)
@@ -106,16 +115,18 @@ class Categoria extends Conexion {
     private function actualizar(array $d): array {
         $conex = $this->getConex1();
         try {
-            $conex->beginTransaction();
-
-            // Verificar si la categoría existe antes de actualizar
-            $sqlCheck  = "SELECT COUNT(*) FROM categoria WHERE id_categoria = :id";
-            $stmtCheck = $conex->prepare($sqlCheck);
-            $stmtCheck->execute(['id' => $d['id_categoria']]);
-            $existe = $stmtCheck->fetchColumn();
+            // ========================================
+            // VALIDACIÓN ESTRICTA DE DATOS
+            // ========================================
             
-            if ($existe == 0) {
-                throw new \Exception("La categoría con ID {$d['id_categoria']} no existe.");
+            // Validar que el nombre no esté vacío
+            if (empty($d['nombre'])) {
+                throw new \Exception("El nombre de la categoría no puede estar vacío.");
+            }
+            
+            // Validación estricta del nombre (letras y espacios, 3-50 caracteres)
+            if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/', $d['nombre'])) {
+                throw new \Exception("Nombre inválido. Solo letras y espacios, 3-50 caracteres");
             }
             
             // Verificar si ya existe otra categoría con el mismo nombre (ignorando mayúsculas/minúsculas)
@@ -128,6 +139,8 @@ class Categoria extends Conexion {
             if ($stmtCheckName->fetchColumn() > 0) {
                 throw new \Exception("Ya existe otra categoría con el nombre \"{$d['nombre']}\".");
             }
+
+            $conex->beginTransaction();
 
             $sql  = "UPDATE categoria
                      SET nombre = :nombre
@@ -161,16 +174,6 @@ class Categoria extends Conexion {
         $conex = $this->getConex1();
         try {
             $conex->beginTransaction();
-
-            // Verificar si la categoría existe antes de eliminar
-            $sqlCheck  = "SELECT COUNT(*) FROM categoria WHERE id_categoria = :id";
-            $stmtCheck = $conex->prepare($sqlCheck);
-            $stmtCheck->execute(['id'=>$d['id_categoria']]);
-            $existe = $stmtCheck->fetchColumn();
-            
-            if ($existe == 0) {
-                throw new \Exception("La categoría con ID {$d['id_categoria']} no existe.");
-            }
 
             $sql  = "UPDATE categoria
                      SET estatus = 0

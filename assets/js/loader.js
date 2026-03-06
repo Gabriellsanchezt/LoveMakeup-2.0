@@ -5,7 +5,7 @@
   $('body').addClass('preloader-site');
 
   function hidePreloader() {
-    console.log("Preloader eliminado");
+   // console.log("Preloader eliminado");
     $('.preloader-wrapper').fadeOut('slow', function() {
       $('body').removeClass('preloader-site');
     });

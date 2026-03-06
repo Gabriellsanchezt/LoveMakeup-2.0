@@ -79,13 +79,11 @@
                   <tbody id="bitacora-tbody">
                   <?php 
                     // Cargar solo los primeros 100 registros inicialmente
-                    $limite_inicial = 100;
-                    $offset_inicial = 0;
-                    $registro = $objBitacora->consultar($limite_inicial, $offset_inicial);
-                    $total_registros = $objBitacora->contarTotal();
-                    $tiene_mas_registros = $total_registros > $limite_inicial;
+                   
+                   
+                  
                     
-                    if ($registro && is_array($registro) && count($registro) > 0) {
+            
                       foreach ($registro as $dato) { 
                         // Validar que los datos requeridos existan
                         $id_bitacora = isset($dato['id_bitacora']) ? (int)$dato['id_bitacora'] : 0;
@@ -95,7 +93,7 @@
                         $apellido = isset($dato['apellido']) ? htmlspecialchars($dato['apellido'], ENT_QUOTES, 'UTF-8') : '';
                         $nombre_usuario = isset($dato['nombre_usuario']) ? htmlspecialchars($dato['nombre_usuario'], ENT_QUOTES, 'UTF-8') : 'N/A';
                         
-                        if ($id_bitacora > 0) {
+                        if ($id_bitacora > 1) {
                       ?>
                         <tr>
                           <td class="fecha-bitacora texto-secundario" data-fecha="<?php echo $fecha_hora ?>">
@@ -125,40 +123,37 @@
                           <td class="texto-secundario"><?php echo trim($nombre . ' ' . $apellido) ?: 'N/A' ?></td>
                           <td class="texto-secundario"><?php echo $nombre_usuario ?></td>
                           <td class="text-center">
-                            <button class="btn btn-info btn-sm" 
+                            <button class="btn btn-primary btn-sm" 
                                     onclick="verDetalles(<?php echo $id_bitacora ?>)"
                                     title="Ver detalles">
-                              <i class="fas fa-info-circle"></i>
+                              <i class="fas fa-info-circle me-2"></i> Ver
                             </button>
                           </td>
                         </tr>
                       <?php 
                         }
                       }
-                    } else { ?>
-                      <tr>
-                        <td colspan="5" class="text-center text-muted">
-                          <i class="fas fa-inbox me-2"></i>No hay registros en la bitácora
-                        </td>
-                      </tr>
-                    <?php } ?>
+                   ?>
+                    
                   </tbody>
                 </table>
               </div>
+              <?php if ($total_registros > $_SESSION['limite_bitacora']): ?>
+                    <form method="POST" action="?pagina=bitacora">
+                      <div class="text-center ">
+                        <button type="submit" name="ver_mas" class="btn btn-primary w-50 mt-3">
+                            <i class="fas fa-plus-circle"></i> Ver más registros (+100)
+                        </button>
+                        </div>
+                    </form>
+                <?php endif; ?>
             </div>
           </div>
         </div>  
     </div>
     
     <!-- Variable JavaScript con información de paginación -->
-    <script>
-      var bitacoraPaginacion = {
-        offset: <?php echo is_array($registro) ? count($registro) : 0; ?>,
-        limite: 100,
-        total: <?php echo $total_registros; ?>,
-        tieneMas: <?php echo $tiene_mas_registros ? 'true' : 'false'; ?>
-      };
-    </script>
+  
 
 <!-- Modal de Detalles -->
 <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" aria-hidden="true">
