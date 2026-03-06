@@ -25,95 +25,158 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       throw new \Exception('El carrito está vacío.');
     }
 
-    // Validaciones
-    $referencia = trim($_POST['referencia_bancaria'] ?? '');
-    $telefono   = trim($_POST['telefono_emisor'] ?? '');
-    $banco      = trim($_POST['banco'] ?? '');
-    $banco_destino = trim($_POST['banco_destino'] ?? '');
-    $precio_bs  = floatval($_POST['precio_total_bs'] ?? 0);
-    $precio_usd = floatval($_POST['precio_total_usd'] ?? 0);
-    $id_metodopago = $_POST['id_metodopago'] ?? '1';
+    /* =========================
+           SANITIZAR DATOS
+        ========================= */
 
-    if (!preg_match('/^[0-9]{4,6}$/', $referencia)) {
-      throw new \Exception('Referencia bancaria inválida.');
+        $referencia = $reserva->sanitizarString($_POST['referencia_bancaria'] ?? '',50);
+        $telefono   = $reserva->sanitizarString($_POST['telefono_emisor'] ?? '',20);
+        $banco      = $reserva->sanitizarString($_POST['banco'] ?? '',60);
+        $banco_destino = $reserva->sanitizarString($_POST['banco_destino'] ?? '',60);
+
+        $precio_bs  = $reserva->sanitizarDecimal($_POST['precio_total_bs'] ?? 0,0);
+        $precio_usd = $reserva->sanitizarDecimal($_POST['precio_total_usd'] ?? 0,0);
+
+        $id_metodopago = $reserva->sanitizarEntero($_POST['id_metodopago'] ?? 1,1);
+
+
+        /* =========================
+           DETECTAR INYECCION
+        ========================= */
+
+        if (
+            $reserva->detectarInyeccionSQL($referencia) ||
+            $reserva->detectarInyeccionSQL($telefono) ||
+            $reserva->detectarInyeccionSQL($banco) ||
+            $reserva->detectarInyeccionSQL($banco_destino)
+        ) {
+            throw new \Exception('Datos inválidos detectados.');
+        }
+
+
+        /* =========================
+           VALIDACIONES
+        ========================= */
+
+        if (!$reserva->validarReferenciaBancaria($referencia)) {
+            throw new \Exception('Referencia bancaria inválida.');
+        }
+
+        if (!$reserva->validarTelefono($telefono)) {
+            throw new \Exception('Teléfono del emisor inválido.');
+        }
+
+        if (!$reserva->validarBanco($banco)) {
+            throw new \Exception('Banco emisor inválido.');
+        }
+
+        if (!$reserva->validarBancoDestino($banco_destino)) {
+            throw new \Exception('Banco destino inválido.');
+        }
+
+        if ($precio_bs <= 0 || $precio_usd <= 0) {
+            throw new \Exception('Monto inválido.');
+        }
+
+
+        /* =========================
+           VALIDAR STOCK
+        ========================= */
+
+        $reserva->validarStockCarrito($_SESSION['carrito']);
+
+
+        /* =========================
+           VALIDAR IMAGEN
+        ========================= */
+
+        if (empty($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
+            throw new \Exception('Debe adjuntar un comprobante de pago.');
+        }
+
+        $ext = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
+
+        $permitidas = ['jpg','jpeg','png','webp'];
+
+        if (!in_array($ext, $permitidas)) {
+            throw new \Exception('Formato de imagen no permitido.');
+        }
+
+
+        /* =========================
+           GUARDAR IMAGEN
+        ========================= */
+
+        $carpeta = __DIR__ . '/../assets/img/captures/';
+
+        if (!is_dir($carpeta)) {
+            mkdir($carpeta, 0775, true);
+        }
+
+        $nombreArchivo = uniqid('img_').'.'.$ext;
+
+        $rutaRelativa = 'assets/img/captures/'.$nombreArchivo;
+
+        $rutaAbsoluta = $carpeta.$nombreArchivo;
+
+        if (!move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaAbsoluta)) {
+            throw new \Exception('No se pudo guardar el comprobante.');
+        }
+
+
+        /* =========================
+           ENVIAR DATOS AL MODELO
+        ========================= */
+
+        $datos = [
+            'operacion' => 'registrar_reserva',
+            'datos' => [
+                'id_persona'          => $_SESSION['id'],
+                'precio_total_usd'    => $precio_usd,
+                'precio_total_bs'     => $precio_bs,
+                'id_metodopago'       => $id_metodopago,
+                'referencia_bancaria' => $referencia,
+                'telefono_emisor'     => $telefono,
+                'banco'               => $banco,
+                'banco_destino'       => $banco_destino,
+                'monto'               => $precio_bs,
+                'monto_usd'           => $precio_usd,
+                'imagen'              => $rutaRelativa,
+                'carrito'             => $_SESSION['carrito']
+            ]
+        ];
+
+
+        $res = $reserva->procesarReserva(json_encode($datos));
+
+
+        if (!empty($res['success']) && isset($res['id_pedido'])) {
+
+            unset($_SESSION['carrito']);
+
+            echo json_encode([
+                'success'  => true,
+                'message'  => 'Reserva realizada correctamente.',
+                'redirect' => '?pagina=confirmacion&id=' . $res['id_pedido']
+            ]);
+
+            exit;
+        }
+
+        throw new \Exception($res['message'] ?? 'Error al procesar la reserva.');
+
+    } catch (Throwable $e) {
+
+        error_log('[RESERVA_ERROR] '.$e->getMessage().' en '.$e->getFile().':'.$e->getLine());
+
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+
+        exit;
     }
 
-    if (!preg_match('/^(0412|0414|0416|0424|0426)[0-9]{7}$/', $telefono)) {
-      throw new \Exception('Teléfono del emisor inválido.');
-    }
-
-    if (!$banco) throw new \Exception('Seleccione un banco de origen.');
-    if (!$banco_destino) throw new \Exception('Seleccione un banco de destino.');
-
-    // Procesar imagen
-    if (empty($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
-      throw new \Exception('Debe adjuntar un comprobante de pago.');
-    }
-
-    $ext = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
-    $permitidas = ['jpg','jpeg','png','webp'];
-
-    if (!in_array($ext, $permitidas)) {
-      throw new \Exception('Formato de imagen no permitido.');
-    }
-
-    $carpeta = __DIR__ . '/../assets/img/captures/';
-    if (!is_dir($carpeta)) {
-      mkdir($carpeta, 0775, true);
-    }
-
-    $nombreArchivo = uniqid('img_').'.'.$ext;
-    $rutaRelativa = 'assets/img/captures/'.$nombreArchivo;
-    $rutaAbsoluta = $carpeta.$nombreArchivo;
-
-    if (!move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaAbsoluta)) {
-      throw new \Exception('No se pudo guardar el comprobante.');
-    }
-
-    // Construir datos para el modelo
-    $datos = [
-      'operacion' => 'registrar_reserva',
-      'datos' => [
-        'id_persona'          => $_SESSION['id'],
-        'precio_total_usd'    => $precio_usd,
-        'precio_total_bs'     => $precio_bs,
-        'id_metodopago'       => $id_metodopago,
-        'referencia_bancaria' => $referencia,
-        'telefono_emisor'     => $telefono,
-        'banco'               => $banco,
-        'banco_destino'       => $banco_destino,
-        'monto'               => $precio_bs,
-        'monto_usd'           => $precio_usd,
-        'imagen'              => $rutaRelativa,
-        'carrito'             => $_SESSION['carrito'],
-      ]
-    ];
-
-    $res = $reserva->procesarReserva(json_encode($datos));
-
-    if (!empty($res['success']) && isset($res['id_pedido'])) {
-      unset($_SESSION['carrito']);
-
-      echo json_encode([
-        'success'  => true,
-        'message'  => 'Reserva realizada correctamente.',
-        'redirect' => '?pagina=confirmacion&id=' . $res['id_pedido']
-      ]);
-      exit;
-    }
-
-    throw new \Exception($res['message'] ?? 'Error al procesar la reserva.');
-
-  } catch (Throwable $e) {
-
-    error_log('[RESERVA_ERROR] '.$e->getMessage().' en '.$e->getFile().':'.$e->getLine());
-
-    echo json_encode([
-      'success' => false,
-      'message' => $e->getMessage()
-    ]);
-    exit;
-  }
 }
 
 require_once __DIR__ . '/../vista/tienda/reserva_cliente.php';

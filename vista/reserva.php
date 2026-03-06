@@ -145,7 +145,7 @@
                         <div class="card-body">
                           <p><strong>Nombre:</strong> <?= htmlspecialchars($r['nombre'] . ' ' . $r['apellido']); ?></p>
                           <p><strong>Estado:</strong>
-                            <span class="badge <?= $estadoClass[$r['estado']] ?? 'bg-dark'; ?>">
+                            <span class="badge  <?= $estadoClass[$r['estado']] ?? 'bg-dark'; ?>">
                               <?= $estadoTexto[$r['estado']] ?? 'Desconocido'; ?>
                             </span>
                           </p>
@@ -161,15 +161,18 @@
                       <div class="collapse" id="collapsePago<?= $r['id_pedido']; ?>">
                         <div class="card-body">
                           <p><strong>Método de Pago:</strong> <?= htmlspecialchars($r['metodo_pago'] ?? 'N/A'); ?></p>
-                          <p><strong>Banco Emisor:</strong> <?= htmlspecialchars($r['banco'] ?? 'N/A'); ?></p>
-                          <p><strong>Banco Receptor:</strong> <?= htmlspecialchars($r['banco_destino'] ?? 'N/A'); ?></p>
+                          <p><strong>Banco Emisor:</strong> <?= htmlspecialchars($r['banco_emisor'] ?? 'N/A'); ?></p>
+                          <p><strong>Banco Receptor:</strong> <?= htmlspecialchars($r['banco_receptor'] ?? 'N/A'); ?></p>
                           <p><strong>Referencia Bancaria:</strong> <?= htmlspecialchars($r['referencia_bancaria'] ?? 'N/A'); ?></p>
                           <p><strong>Teléfono Emisor:</strong> <?= htmlspecialchars($r['telefono_emisor'] ?? 'N/A'); ?></p>
+                        
 
-                          <?php if (!empty($r['imagen'])): ?>
-                            <p><strong>Comprobante:</strong></p>
-                            <img src="assets/img/captures/<?= htmlspecialchars($r['imagen']); ?>" class="img-fluid rounded border" style="max-width:300px;">
-                          <?php endif; ?>
+                          <?php if (!empty($r['comprobante_imagen'])): ?>
+    <p><strong>Comprobante:</strong></p>
+    <img src="<?= htmlspecialchars($r['comprobante_imagen']); ?>" 
+         class="img-fluid rounded border" 
+         style="max-width:300px;">
+<?php endif; ?>
 
                           <p><strong>Método de Entrega:</strong> <?= htmlspecialchars($r['metodo_entrega'] ?? 'N/A'); ?></p>
 

@@ -367,9 +367,9 @@ if (
                         <p><strong>Referencia Bancaria:</strong> <?php echo htmlspecialchars($pedido['referencia_bancaria']); ?></p>
                       <?php endif; ?>
 
-                      <?php if (!empty($pedido['imagen'])): ?>
+                      <?php if (!empty($pedido['comprobante_imagen'])): ?>
   <p><strong>Comprobante de Pago:</strong></p>
-  <img src="<?php echo htmlspecialchars($pedido['imagen']); ?>" alt="Comprobante de Pago" class="img-fluid rounded border" style="max-width: 300px;">
+  <img src="<?php echo htmlspecialchars($pedido['comprobante_imagen']); ?>" alt="Comprobante de Pago" class="img-fluid rounded border" style="max-width: 300px;">
 <?php endif; ?>
 <p><strong>Numero Destinatario:</strong> <?php echo htmlspecialchars($pedido['telefono_emisor'] ?? 'N/A'); ?></p>
 

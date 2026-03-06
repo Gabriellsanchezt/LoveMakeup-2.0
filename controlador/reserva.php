@@ -26,42 +26,98 @@ $objReservas = new Reservas();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Confirmar / cambiar estado
-    if (isset($_POST['confirmar']) && !empty($_POST['id_pedido'])) {
-        $datosPeticion = [
-            'operacion' => 'cambiar_estado',
-            'datos' => [
-                'id_pedido' => $_POST['id_pedido'],
-                'estado' => 2 // 2 = Confirmado
-            ]
-        ];
-
-        $respuesta = $objReservas->procesarReserva(json_encode($datosPeticion));
-        echo json_encode($respuesta);
-    
-    // Eliminar reserva
-    } elseif (isset($_POST['eliminar']) && !empty($_POST['id_pedido'])) {
-        $datosPeticion = [
-            'operacion' => 'eliminar',
-            'datos' => $_POST['id_pedido']
-        ];
-
-        $respuesta = $objReservas->procesarReserva(json_encode($datosPeticion));
-        echo json_encode($respuesta);
-
-    } else {
-        echo json_encode(['respuesta' => 0, 'mensaje' => 'Datos incompletos para procesar solicitud']);
+    if (!isset($_POST['id_pedido'])) {
+        echo json_encode([
+            'respuesta' => 0,
+            'mensaje' => 'ID de pedido no recibido'
+        ]);
+        exit;
     }
+  /* ========= SANITIZAR ========= */
 
-    exit;
+  $id_pedido = $objReservas->sanitizarEntero($_POST['id_pedido'],1);
+
+  if ($id_pedido === null) {
+      echo json_encode([
+          'respuesta' => 0,
+          'mensaje' => 'ID de pedido inválido'
+      ]);
+      exit;
+  }
+
+  /* ========= DETECTAR INYECCION ========= */
+
+  if ($objReservas->detectarInyeccionSQL($_POST['id_pedido'])) {
+      echo json_encode([
+          'respuesta' => 0,
+          'mensaje' => 'Intento de inyección detectado'
+      ]);
+      exit;
+  }
+
+
+  /* ========= CONFIRMAR RESERVA ========= */
+
+  if (isset($_POST['confirmar'])) {
+
+      $datosPeticion = [
+          'operacion' => 'cambiar_estado',
+          'datos' => [
+              'id_pedido' => $id_pedido,
+              'estado' => 2
+          ]
+      ];
+
+      $respuesta = $objReservas->procesarReserva(json_encode($datosPeticion));
+      echo json_encode($respuesta);
+      exit;
+  }
+
+
+  /* ========= ELIMINAR RESERVA ========= */
+
+  if (isset($_POST['eliminar'])) {
+
+      $datosPeticion = [
+          'operacion' => 'eliminar',
+          'datos' => $id_pedido
+      ];
+
+      $respuesta = $objReservas->procesarReserva(json_encode($datosPeticion));
+      echo json_encode($respuesta);
+      exit;
+  }
+
+
+  /* ========= ERROR ========= */
+
+  echo json_encode([
+      'respuesta' => 0,
+      'mensaje' => 'Operación no válida'
+  ]);
+  exit;
 }
 
 
-// GET: Consultar reservas con detalles
+
+/* =============================
+ CONSULTAR RESERVAS
+============================= */
+
 $reservas = $objReservas->consultarReservasCompletas();
 
 foreach ($reservas as &$reserva) {
-    $reserva['detalles'] = $objReservas->consultarDetallesReserva($reserva['id_pedido']);
+
+  $id = $objReservas->sanitizarEntero($reserva['id_pedido'],1);
+
+  if ($id !== null) {
+      $reserva['detalles'] = $objReservas->consultarDetallesReserva($id);
+  } else {
+      $reserva['detalles'] = [];
+  }
 }
+
+
 
 // Verificación de privilegios
 if ($_SESSION["nivel_rol"] >= 2 && tieneAcceso(4, 1)) {

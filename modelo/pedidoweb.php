@@ -449,6 +449,165 @@ public function consultarDetallesPedido($id_pedido) {
         }
     }
 
+
+    /*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN Y SANITIZACIÓN CONTRA INYECCIÓN SQL |||||||||||||||||||||||||||||*/
+
+/**
+ * Detecta intentos de inyección SQL en un string
+ */
+function detectarInyeccionSQL($valor) {
+    if (empty($valor)) {
+        return false;
+    }
+    
+    $valor_lower = strtolower($valor);
+    
+    // Patrones comunes de inyección SQL
+    $patrones_peligrosos = [
+        '/(\bunion\b.*\bselect\b)/i',
+        '/(\bselect\b.*\bfrom\b)/i',
+        '/(\binsert\b.*\binto\b)/i',
+        '/(\bupdate\b.*\bset\b)/i',
+        '/(\bdelete\b.*\bfrom\b)/i',
+        '/(\bdrop\b.*\btable\b)/i',
+        '/(\bcreate\b.*\btable\b)/i',
+        '/(\balter\b.*\btable\b)/i',
+        '/(\bexec\b|\bexecute\b)/i',
+        '/(\bsp_\w+)/i',
+        '/(\bxp_\w+)/i',
+        '/(--|\#|\/\*|\*\/)/',
+        '/(\bor\b.*\b1\s*=\s*1\b)/i',
+        '/(\band\b.*\b1\s*=\s*1\b)/i',
+        '/(\bor\b.*\b1\s*=\s*0\b)/i',
+        '/(\band\b.*\b1\s*=\s*0\b)/i',
+        '/(\bwaitfor\b.*\bdelay\b)/i'
+    ];
+    
+    foreach ($patrones_peligrosos as $patron) {
+        if (preg_match($patron, $valor_lower)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Sanitiza un número entero
+ */
+function sanitizarEnteropw($valor, $min = null, $max = null) {
+    if (!is_numeric($valor)) {
+        return null;
+    }
+    $valor = (int)$valor;
+    if ($min !== null && $valor < $min) {
+        return null;
+    }
+    if ($max !== null && $valor > $max) {
+        return null;
+    }
+    return $valor;
+}
+
+/**
+ * Sanitiza un string eliminando caracteres peligrosos
+ */
+function sanitizarStringpw($valor, $maxLength = 255) {
+    if (empty($valor)) {
+        return '';
+    }
+    
+    // Detectar inyección SQL
+    if ($this->detectarInyeccionSQL($valor)) {
+        return '';
+    }
+    
+    $valor = trim($valor);
+    
+    // Eliminar caracteres peligrosos
+    $caracteres_peligrosos = [';', '--', '/*', '*/', '<', '>', '"', "'", '`'];
+    foreach ($caracteres_peligrosos as $char) {
+        $valor = str_replace($char, '', $valor);
+    }
+    
+    // Limitar longitud
+    if (strlen($valor) > $maxLength) {
+        $valor = substr($valor, 0, $maxLength);
+    }
+    
+    return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Valida y sanitiza dirección
+ */
+function sanitizarDireccionpw($direccion) {
+    if (empty($direccion)) {
+        return '';
+    }
+    $direccion = trim($direccion);
+    // Detectar inyección SQL
+    if ($this->detectarInyeccionSQL($direccion)) {
+        return '';
+    }
+    // Eliminar caracteres peligrosos pero permitir caracteres comunes en direcciones
+    $direccion = preg_replace('/[<>"\']/', '', $direccion);
+    // Longitud máxima
+    if (strlen($direccion) > 500) {
+        $direccion = substr($direccion, 0, 500);
+    }
+    return htmlspecialchars($direccion, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Valida formato de email
+ */
+function validarEmailpw($email) {
+    if (empty($email)) {
+        return false;
+    }
+    // Detectar inyección SQL
+    if ($this->detectarInyeccionSQL($email)) {
+        return false;
+    }
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+/*||||||||||||||||||||||||||||||| FUNCIONES DE VALIDACIÓN DE SELECT |||||||||||||||||||||||||||||*/
+
+/**
+ * Valida que el id_pedido sea válido y exista en la base de datos
+ */
+function validarIdPedidopw($id_pedido, $objPedidoWeb) {
+    if (empty($id_pedido) || !is_numeric($id_pedido)) {
+        return false;
+    }
+    $id_pedido = (int)$id_pedido;
+    $conex = $objPedidoWeb->getConex1();
+    try {
+        $sql = "SELECT id_pedido FROM pedido WHERE id_pedido = :id_pedido LIMIT 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_pedido' => $id_pedido]);
+        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $conex = null;
+        return !empty($resultado);
+    } catch (\PDOException $e) {
+        if ($conex) $conex = null;
+        return false;
+    }
+}
+
+/**
+ * Valida que el estado_delivery sea válido
+ */
+function validarEstadoDeliverypw($estado_delivery) {
+    if (empty($estado_delivery)) {
+        return false;
+    }
+    $estados_validos = ['pendiente', 'en_camino', 'entregado', 'cancelado'];
+    return in_array($estado_delivery, $estados_validos, true);
+}
+
    
 }
 

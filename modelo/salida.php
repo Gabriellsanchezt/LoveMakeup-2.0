@@ -256,30 +256,36 @@ class Salida extends Conexion {
             // pedido -> detalle_pago (FK: id_pago) -> metodo_pago (FK: id_metodopago) - Métodos de pago
             // NOTA: Datos de usuario y persona se obtienen por separado ya que están en otra base de datos
             // NO incluye: direccion, metodo_entrega, delivery, tracking (solo para pedidos web)
-            $sql = "SELECT v.id_venta,
-                    v.id_pedido,
-                    v.fecha_confirmacion,
-                    p.tipo,
-                    p.fecha,
-                    p.estatus as estado,
-                    p.precio_total_usd,
-                    p.precio_total_bs,
-                    p.cedula,
-                    p.id_pago,
-                    dp.id_pago as id_detalle_pago,
-                    dp.monto,
-                    dp.monto_usd,
-                    mp.id_metodopago,
-                    mp.nombre as metodo_pago_nombre,
-                    mp.descripcion as metodo_pago_descripcion,
-                    mp.requiere_banco
-                    FROM venta v
-                    INNER JOIN pedido p ON v.id_pedido = p.id_pedido
-                    LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
-                    LEFT JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
-                    WHERE CAST(p.tipo AS CHAR) = '1' 
-                    AND (CAST(p.estatus AS CHAR) = '1' OR CAST(p.estatus AS CHAR) = '2')
-                    ORDER BY p.id_pedido DESC";
+            $sql = "SELECT 
+    p.id_pedido,
+    v.id_venta,
+    v.fecha_confirmacion,
+    p.tipo,
+    p.fecha,
+    p.estatus AS estado,
+    p.precio_total_usd,
+    p.precio_total_bs,
+    p.cedula,
+    p.id_pago,
+
+    dp.id_pago AS id_detalle_pago,
+    dp.monto,
+    dp.monto_usd,
+
+    mp.id_metodopago,
+    mp.nombre AS metodo_pago_nombre,
+    mp.descripcion AS metodo_pago_descripcion,
+    mp.requiere_banco
+
+FROM pedido p
+LEFT JOIN venta v ON v.id_pedido = p.id_pedido
+LEFT JOIN detalle_pago dp ON p.id_pago = dp.id_pago
+LEFT JOIN metodo_pago mp ON dp.id_metodopago = mp.id_metodopago
+
+WHERE p.tipo = 1
+AND p.estatus IN (1,2)
+
+ORDER BY p.id_pedido DESC;";
             
             error_log("SQL consultarVentas: " . $sql);
             $stmt = $conex->prepare($sql);

@@ -174,7 +174,7 @@ class ReservaCliente extends Conexion {
         $stmt->execute(['cantidad' => $cantidad, 'id' => $id]);
     }
 
-    private function validarStockCarrito($carrito) {
+    public function validarStockCarrito($carrito) {
         $conex = $this->getConex1();
         foreach ($carrito as $item) {
             $stmt = $conex->prepare("SELECT stock_disponible, nombre FROM producto WHERE id_producto = :id");
@@ -192,4 +192,162 @@ class ReservaCliente extends Conexion {
         $stmt = $conex->prepare("INSERT INTO reserva(id_pedido) VALUES (:id_pedido)");
         $stmt->execute(['id_pedido' => $idPedido]);
     }
+
+    public function detectarInyeccionSQL($valor) {
+        if (empty($valor)) {
+            return false;
+        }
+        $valor_lower = strtolower($valor);
+        $patrones_peligrosos = [
+            '/(\bunion\b.*\bselect\b)/i',
+            '/(\bselect\b.*\bfrom\b)/i',
+            '/(\binsert\b.*\binto\b)/i',
+            '/(\bupdate\b.*\bset\b)/i',
+            '/(\bdelete\b.*\bfrom\b)/i',
+            '/(\bdrop\b.*\btable\b)/i',
+            '/(--|\#|\/\*|\*\/)/',
+            '/(\bor\b.*\b1\s*=\s*1\b)/i',
+            '/(\bdrop\b|\btruncate\b|\balter\b)\s+\btable\b/i'
+        ];
+        foreach ($patrones_peligrosos as $patron) {
+            if (preg_match($patron, $valor_lower)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public function sanitizarString($valor, $max = 100){
+    
+        if($this->detectarInyeccionSQL($valor)){
+            return '';
+        }
+    
+        $valor = trim($valor);
+        $valor = strip_tags($valor);
+        $valor = preg_replace('/[\'";<>]/', '', $valor);
+    
+        return substr($valor,0,$max);
+    }
+    
+    public function sanitizarEntero($valor, $min = null, $max = null) {
+        if (!is_numeric($valor)) {
+            return null;
+        }
+        $valor = (int)$valor;
+        if ($min !== null && $valor < $min) {
+            return null;
+        }
+        if ($max !== null && $valor > $max) {
+            return null;
+        }
+        return $valor;
+    }
+    
+    public function sanitizarDecimal($valor, $min = null, $max = null) {
+        if (!is_numeric($valor)) {
+            return null;
+        }
+        $valor = (float)$valor;
+        if ($min !== null && $valor < $min) {
+            return null;
+        }
+        if ($max !== null && $valor > $max) {
+            return null;
+        }
+        return $valor;
+    }
+    
+    public function validarReferenciaBancaria($referencia) {
+        if (empty($referencia)) {
+            return false;
+        }
+        if (!preg_match('/^[0-9\-\s]+$/', $referencia)) {
+            return false;
+        }
+        if (strlen($referencia) > 50) {
+            return false;
+        }
+        return true;
+    }
+    
+    public function validarTelefono($telefono) {
+        if (empty($telefono)) {
+            return false;
+        }
+        if (!preg_match('/^[0-9\-\s\(\)]+$/', $telefono)) {
+            return false;
+        }
+        $longitud = strlen(preg_replace('/[^0-9]/', '', $telefono));
+        if ($longitud < 7 || $longitud > 15) {
+            return false;
+        }
+        return true;
+    }
+    
+    
+    
+    /**
+     * Valida que el banco sea válido (lista de bancos permitidos)
+     */
+    public function validarBanco($banco) {
+        if (empty($banco)) {
+            return false;
+        }
+        $bancos_validos = [
+            '0102-Banco De Venezuela',
+            '0156-100% Banco ',
+            '0172-Bancamiga Banco Universal,C.A',
+            '0114-Bancaribe',
+            '0171-Banco Activo',
+            '0166-Banco Agricola De Venezuela',
+            '0128-Bancon Caroni',
+            '0163-Banco Del Tesoro',
+            '0175-Banco Digital De Los Trabajadores, Banco Universal',
+            '0115-Banco Exterior',
+            '0151-Banco Fondo Comun',
+            '0173-Banco Internacional De Desarrollo',
+            '0105-Banco Mercantil',
+            '0191-Banco Nacional De Credito',
+            '0138-Banco Plaza',
+            '0137-Banco Sofitasa',
+            '0104-Banco Venezolano De Credito',
+            '0168-Bancrecer',
+            '0134-Banesco',
+            '0177-Banfanb',
+            '0146-Bangente',
+            '0174-Banplus',
+            '0108-BBVA Provincial',
+            '0157-Delsur Banco Universal',
+            '0601-Instituto Municipal De Credito Popular',
+            '0178-N58 Banco Digital Banco Microfinanciero S.A',
+            '0169-R4 Banco Microfinanciero C.A.'
+        ];
+        return in_array($banco, $bancos_validos, true);
+    }
+    
+    
+    /* Valida que un producto exista y esté activo
+    */
+    public function validarProductoActivo($id_producto) {
+        $conex = $this->getConex1();
+        $stmt = $conex->prepare("SELECT id_producto FROM producto WHERE id_producto = :id AND estatus = 1");
+        $stmt->execute(['id' => $id_producto]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) !== false;
+    }
+    
+    /**
+     * Valida que el banco_destino sea válido (solo 2 opciones permitidas)
+     */
+    public function validarBancoDestino($banco_destino) {
+        if (empty($banco_destino)) {
+            return false;
+        }
+        $bancos_destino_validos = [
+            '0102-Banco De Venezuela',
+            '0105-Banco Mercantil'
+        ];
+        return in_array($banco_destino, $bancos_destino_validos, true);
+    }
+    
 }

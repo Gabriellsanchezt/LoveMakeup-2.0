@@ -223,6 +223,7 @@ $(document).ready(function() {
         if (!result.isConfirmed) return;
   
         const fd = new FormData($('#formEntrega')[0]);
+      
         $.ajax({
           async: true,
            url: '',

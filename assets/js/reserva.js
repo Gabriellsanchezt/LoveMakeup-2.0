@@ -1,7 +1,12 @@
-$(document).ready(function() {
-  // Confirmar reserva
-  $(document).on('click', '.btn-validar', function() {
+$(document).ready(function () {
+
+  // ===============================
+  // CONFIRMAR RESERVA
+  // ===============================
+  $(document).on('click', '.btn-validar', function () {
+
     const idPedido = $(this).data('id');
+
     Swal.fire({
       title: '¿Confirmar reserva?',
       text: 'Una vez confirmada, no podrás modificarla',
@@ -9,23 +14,74 @@ $(document).ready(function() {
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar',
       cancelButtonText: 'Cancelar'
-    }).then(result => {
+    }).then((result) => {
+
       if (result.isConfirmed) {
-        $.post('controlador/reserva.php', { confirmar: 'confirmar', id_pedido: idPedido }, function(res) {
-          if (res.respuesta == 1) {
-            Swal.fire({ icon: 'success', title: 'Confirmado', text: res.mensaje || 'Reserva confirmada correctamente', timer: 1200, showConfirmButton: false })
-              .then(() => location.reload());
-          } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: res.mensaje || 'No se pudo confirmar la reserva' });
+
+        $.ajax({
+          async: true,
+          url: '',
+          type: 'POST',
+          data: {
+            confirmar: 'confirmar',
+            id_pedido: idPedido
+          },
+          dataType: 'json',
+
+          success: function (res) {
+
+            if (res.respuesta == 1) {
+
+              Swal.fire({
+                title: 'Confirmado',
+                text: res.mensaje || 'Reserva confirmada correctamente',
+                icon: 'success',
+                timer: 1200,
+                showConfirmButton: false
+              }).then(() => location.reload());
+
+            } else {
+
+              Swal.fire({
+                title: 'Error',
+                text: res.mensaje || 'No se pudo confirmar la reserva',
+                icon: 'error',
+                timer: 1500,
+                showConfirmButton: false
+              });
+
+            }
+
+          },
+
+          error: function () {
+
+            Swal.fire({
+              title: 'Error',
+              text: 'Error en la comunicación con el servidor',
+              icon: 'error',
+              timer: 1500,
+              showConfirmButton: false
+            });
+
           }
-        }, 'json');
+
+        });
+
       }
+
     });
+
   });
 
-  // Eliminar reserva
-  $(document).on('click', '.btn-eliminar', function() {
+
+  // ===============================
+  // ELIMINAR RESERVA
+  // ===============================
+  $(document).on('click', '.btn-eliminar', function () {
+
     const idPedido = $(this).data('id');
+
     Swal.fire({
       title: '¿Eliminar reserva?',
       text: 'Esta acción no se puede deshacer',
@@ -33,20 +89,65 @@ $(document).ready(function() {
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        $.post('controlador/reserva.php', { eliminar: 'eliminar', id_pedido: idPedido }, function(res) {
-          if (res.respuesta == 1) {
-            Swal.fire({ icon: 'success', title: 'Eliminado', text: res.mensaje || 'Reserva eliminada correctamente', timer: 1200, showConfirmButton: false })
-              .then(() => location.reload());
-          } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: res.mensaje || 'No se pudo eliminar la reserva' });
-          }
-        }, 'json');
-      }
-    });
-  });
+    }).then((result) => {
 
+      if (result.isConfirmed) {
+
+        $.ajax({
+          async: true,
+          url: '',
+          type: 'POST',
+          data: {
+            eliminar: 'eliminar',
+            id_pedido: idPedido
+          },
+          dataType: 'json',
+
+          success: function (res) {
+
+            if (res.respuesta == 1) {
+
+              Swal.fire({
+                title: 'Eliminado',
+                text: res.mensaje || 'Reserva eliminada correctamente',
+                icon: 'success',
+                timer: 1200,
+                showConfirmButton: false
+              }).then(() => location.reload());
+
+            } else {
+
+              Swal.fire({
+                title: 'Error',
+                text: res.mensaje || 'No se pudo eliminar la reserva',
+                icon: 'error',
+                timer: 1500,
+                showConfirmButton: false
+              });
+
+            }
+
+          },
+
+          error: function () {
+
+            Swal.fire({
+              title: 'Error',
+              text: 'Error en la comunicación con el servidor',
+              icon: 'error',
+              timer: 1500,
+              showConfirmButton: false
+            });
+
+          }
+
+        });
+
+      }
+
+    });
+
+  });
   // Tour
   $('#btnAyuda').on('click', function() {
     const driver = window.driver.js.driver;
