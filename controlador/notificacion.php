@@ -7,9 +7,64 @@ use LoveMakeup\Proyecto\Modelo\TipoUsuario;
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// ============================================
+// CAPA 4: SANITIZACIÓN DE DATOS
+// ============================================
+// Sanitizar acción recibida
+$accionRaw = isset($_GET['accion']) ? trim($_GET['accion']) : '';
+$accionRaw = htmlspecialchars($accionRaw, ENT_QUOTES, 'UTF-8');
+
+// Sanitizar otros parámetros
+$lastIdRaw = isset($_GET['lastId']) ? trim($_GET['lastId']) : '';
+$idPostRaw = isset($_POST['id']) ? trim($_POST['id']) : '';
+
 // Detectar si es una petición AJAX (tiene parámetro `accion`)
-$esAjax = ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['accion']))
-       || ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion']));
+$esAjax = ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($accionRaw))
+       || ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($accionRaw));
+
+// ============================================
+// CAPA 5: VALIDACIÓN CON EXPRESIONES REGULARES
+// ============================================
+// Validar formato de acción (solo letras y guiones bajos)
+if (!empty($accionRaw) && !preg_match('/^[a-zA-Z_]+$/', $accionRaw)) {
+    if ($esAjax) {
+        header('Content-Type: application/json');
+        http_response_code(400);
+        echo json_encode(['error' => true, 'message' => 'Acción inválida']);
+        exit;
+    }
+    header('Location:?pagina=login');
+    exit;
+}
+
+// Validar que lastId sea un número entero no negativo si viene proporcionado
+if (!empty($lastIdRaw)) {
+    if (!preg_match('/^\d+$/', $lastIdRaw)) {
+        if ($esAjax) {
+            header('Content-Type: application/json');
+            http_response_code(400);
+            echo json_encode(['error' => true, 'message' => 'ID inválido']);
+            exit;
+        }
+        header('Location:?pagina=notificacion');
+        exit;
+    }
+}
+
+// Validar que id de POST sea un número entero positivo si viene proporcionado
+if (!empty($idPostRaw)) {
+    if (!preg_match('/^\d+$/', $idPostRaw)) {
+        if ($esAjax) {
+            header('Content-Type: application/json');
+            http_response_code(400);
+            echo json_encode(['error' => true, 'message' => 'ID de notificación inválido']);
+            exit;
+        }
+        header('Location:?pagina=notificacion');
+        exit;
+    }
+}
 
 // Si no hay sesión y es AJAX, responder 401 JSON en vez de redirigir a login HTML
 if (empty($_SESSION['id'])) {
@@ -80,9 +135,20 @@ $Bit = new TipoUsuario();
 
 // 1) AJAX GET → sólo devuelvo el conteo (badge)
 if ($_SERVER['REQUEST_METHOD'] === 'GET'
-    && ($_GET['accion'] ?? '') === 'count')
+    && ($accionRaw ?? '') === 'count')
 {
     header('Content-Type: application/json');
+    
+    // ============================================
+    // CAPA 3: VALIDACIÓN DE PERMISOS ESPECÍFICA
+    // ============================================
+    // Validar que el usuario tenga un rol válido para ver notificaciones
+    if ($nivel < 2) {
+        http_response_code(403);
+        echo json_encode(['error' => true, 'message' => 'No tiene permisos para esta acción']);
+        exit;
+    }
+    
     $N->generarDePedidos();
 
     if ($nivel === 3) {
@@ -102,13 +168,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
 
 // 2) AJAX GET → nuevos pedidos/reservas
 if ($_SERVER['REQUEST_METHOD'] === 'GET'
-    && ($_GET['accion'] ?? '') === 'nuevos')
+    && ($accionRaw ?? '') === 'nuevos')
 {
     header('Content-Type: application/json');
+    
+    // ============================================
+    // CAPA 3: VALIDACIÓN DE PERMISOS ESPECÍFICA
+    // ============================================
+    // Validar que el usuario tenga un rol válido para ver notificaciones
+    if ($nivel < 2) {
+        http_response_code(403);
+        echo json_encode(['error' => true, 'message' => 'No tiene permisos para esta acción']);
+        exit;
+    }
+    
     // Asegura notificaciones antes de listar
     $N->generarDePedidos();
 
-    $lastId = (int)($_GET['lastId'] ?? 0);
+    // ============================================
+    // CAPA 3: VALIDACIÓN DE CAMPOS VACÍOS Y LÓGICA
+    // ============================================
+    // Convertir a entero después de validación regex previa
+    $lastId = !empty($lastIdRaw) ? (int)$lastIdRaw : 0;
+    
+    // Validar que lastId sea >= 0
+    if ($lastId < 0) {
+        http_response_code(400);
+        echo json_encode(['error' => true, 'message' => 'ID inválido']);
+        exit;
+    }
+    
     $nuevos = $N->getNuevosPedidos($lastId);
 
         if (ob_get_level()) { ob_end_clean(); }
@@ -119,17 +208,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
     exit;
 }
 
-// 3) POST → solo ‘leer’ y siempre respondo JSON
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion'])) {
+// 3) POST → solo 'leer' y siempre respondo JSON
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($accionRaw)) {
     header('Content-Type: application/json');
 
-    $accion = $_GET['accion'];
-    $id     = (int)($_POST['id'] ?? 0);
+    $accion = $accionRaw;
+    
+    // ============================================
+    // CAPA 3: VALIDACIÓN DE CAMPOS VACÍOS Y LÓGICA
+    // ============================================
+    // Convertir a entero después de validación regex previa
+    $id = !empty($idPostRaw) ? (int)$idPostRaw : 0;
+    
+    // Validar que id sea > 0 para operaciones que lo requieren
     $success = false;
     $mensaje = '';
 
+    // ============================================
+    // CAPA 3: VALIDACIÓN DE PERMISOS ESPECÍFICA
+    // ============================================
     // Admin
     if ($accion === 'marcarLeida' && $nivel === 3 && $id > 0) {
+        // Validación adicional: verificar que el ID sea válido
+        if (!is_numeric($id) || $id <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'mensaje' => 'ID de notificación inválido']);
+            exit;
+        }
         $success = $N->marcarLeida($id);
         $mensaje = $success
             ? 'Notificación marcada como leída.'
@@ -137,6 +242,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['accion'])) {
     }
     // Asesora
     elseif ($accion === 'marcarLeidaAsesora' && $nivel === 2 && $id > 0) {
+        // Validación adicional: verificar que el ID sea válido
+        if (!is_numeric($id) || $id <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'mensaje' => 'ID de notificación inválido']);
+            exit;
+        }
         $success = $N->marcarLeidaAsesora($id);
         $mensaje = $success
             ? 'Notificación marcada como leída para ti.'

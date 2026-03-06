@@ -145,7 +145,7 @@
                              id="nombre"
                              name="nombre"
                              class="form-control"
-                             maxlength="30"
+                             maxlength="50"
                              placeholder="Ejemplo: Polvo, Base, Sombras, etc."
                              required>
                     </div>

@@ -51,104 +51,6 @@ function sanitizar($dato) {
     return htmlspecialchars(trim($dato), ENT_QUOTES, 'UTF-8');
 }
 
-/* Valida que un ID de proveedor existe y está activo en la base de datos*/
-function validarIdProveedor($id_proveedor) {
-    if (empty($id_proveedor) || !is_numeric($id_proveedor)) {
-        return false;
-    }
-    
-    $id_proveedor = intval($id_proveedor);
-    if ($id_proveedor <= 0) {
-        return false;
-    }
-    
-    try {
-        require_once 'modelo/entrada.php';
-        $entrada = new Entrada();
-        $resultado = $entrada->procesarCompra(json_encode([
-            'operacion' => 'consultarProveedores',
-            'datos' => null
-        ]));
-        
-        if ($resultado['respuesta'] == 1 && isset($resultado['datos'])) {
-            $proveedores_validos = array_column($resultado['datos'], 'id_proveedor');
-            return in_array($id_proveedor, $proveedores_validos);
-        }
-        
-        return false;
-    } catch (\Exception $e) {
-        return false;
-    }
-}
-
-/* Valida que un ID de producto existe y está activo en la base de datos*/
-function validarIdProducto($id_producto) {
-    if (empty($id_producto) || !is_numeric($id_producto)) {
-        return false;
-    }
-    
-    $id_producto = intval($id_producto);
-    if ($id_producto <= 0) {
-        return false;
-    }
-    
-    try {
-        require_once 'modelo/entrada.php';
-        $entrada = new Entrada();
-        $resultado = $entrada->procesarCompra(json_encode([
-            'operacion' => 'consultarProductos',
-            'datos' => null
-        ]));
-        
-        if ($resultado['respuesta'] == 1 && isset($resultado['datos'])) {
-            $productos_validos = array_column($resultado['datos'], 'id_producto');
-            return in_array($id_producto, $productos_validos);
-        }
-        
-        return false;
-    } catch (\Exception $e) {
-        return false;
-    }
-}
-
-/* Valida un array de IDs de productos. Verifica que todos los IDs del array existan y están activos*/
-function validarIdsProductos($ids_productos) {
-    if (!is_array($ids_productos) || empty($ids_productos)) {
-        return false;
-    }
-    
-    // Obtener lista de productos válidos una sola vez
-    try {
-        require_once 'modelo/entrada.php';
-        $entrada = new Entrada();
-        $resultado = $entrada->procesarCompra(json_encode([
-            'operacion' => 'consultarProductos',
-            'datos' => null
-        ]));
-        
-        if ($resultado['respuesta'] != 1 || !isset($resultado['datos'])) {
-            return false;
-        }
-        
-        $productos_validos = array_column($resultado['datos'], 'id_producto');
-        
-        // Validar cada ID del array
-        foreach ($ids_productos as $id_producto) {
-            if (empty($id_producto)) {
-                continue; // Permitir valores vacíos (se filtran después)
-            }
-            
-            $id_producto = intval($id_producto);
-            if ($id_producto <= 0 || !in_array($id_producto, $productos_validos)) {
-                return false;
-            }
-        }
-        
-        return true;
-    } catch (\Exception $e) {
-        return false;
-    }
-}
 
 /* ============================================
    OPERACIÓN: REGISTRAR NUEVA COMPRA
@@ -269,7 +171,7 @@ if (isset($_POST['registrar_compra'])) {
     }
     
     // ===== VALIDACIÓN DE CLAVE FORÁNEA - PROVEEDOR =====
-    if (!validarIdProveedor($id_proveedor)) {
+    if (!$entrada->validarIdProveedor($id_proveedor)) {
         $mensaje_error = 'Proveedor inválido o no autorizado.';
         if (esAjax()) {
             header('Content-Type: application/json');
@@ -301,7 +203,7 @@ if (isset($_POST['registrar_compra'])) {
     }
     
     // Validar que los IDs de productos sean válidos (no manipulados)
-    if (!validarIdsProductos($_POST['id_producto'])) {
+    if (!$entrada->validarIdsProductos($_POST['id_producto'])) {
         $mensaje_error = 'Uno o más productos seleccionados no son válidos o no están disponibles.';
         if (esAjax()) {
             header('Content-Type: application/json');
@@ -396,7 +298,7 @@ if (isset($_POST['registrar_compra'])) {
         }
         
         // ===== VALIDACIÓN DE CLAVE FORÁNEA - PRODUCTO =====
-        if (!validarIdProducto($id_producto)) {
+        if (!$entrada->validarIdProducto($id_producto)) {
             $mensaje_error = 'El producto en la posición ' . ($i + 1) . ' no es válido o no está disponible.';
             if (esAjax()) {
                 header('Content-Type: application/json');
@@ -716,7 +618,7 @@ if (isset($_POST['modificar_compra'])) {
     }
     
     // ===== VALIDACIÓN DE CLAVE FORÁNEA - PROVEEDOR =====
-    if (!validarIdProveedor($id_proveedor)) {
+    if (!$entrada->validarIdProveedor($id_proveedor)) {
         $mensaje_error = 'Proveedor inválido o no autorizado.';
         if (esAjax()) {
             header('Content-Type: application/json');
@@ -730,7 +632,7 @@ if (isset($_POST['modificar_compra'])) {
     }
     
     // Validar que los IDs de productos sean válidos (no manipulados)
-    if (!validarIdsProductos($_POST['id_producto'])) {
+    if (!$entrada->validarIdsProductos($_POST['id_producto'])) {
         $mensaje_error = 'Uno o más productos seleccionados no son válidos o no están disponibles.';
         if (esAjax()) {
             header('Content-Type: application/json');
@@ -842,7 +744,7 @@ if (isset($_POST['modificar_compra'])) {
         }
         
         // ===== VALIDACIÓN DE CLAVE FORÁNEA - PRODUCTO =====
-        if (!validarIdProducto($id_producto)) {
+        if (!$entrada->validarIdProducto($id_producto)) {
             $mensaje_error = 'El producto en la posición ' . ($i + 1) . ' no es válido o no está disponible.';
             if (esAjax()) {
                 header('Content-Type: application/json');

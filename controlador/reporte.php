@@ -171,25 +171,100 @@ function validarEstadoPedidoWeb($estado) {
     return in_array($estado, $estados_validos, true);
 }
 
-// 1) Recoger valores "raw" (pueden venir como string vacíos)
-$startRaw = $_REQUEST['f_start'] ?? '';
-$endRaw   = $_REQUEST['f_end']   ?? '';
-$prodRaw  = $_REQUEST['f_id']    ?? '';
-$provRaw  = $_REQUEST['f_prov']  ?? '';
-$catRaw   = $_REQUEST['f_cat']   ?? '';
-$marcaRaw = $_REQUEST['f_marca'] ?? '';
+// ============================================
+// CAPA 4: SANITIZACIÓN DE DATOS
+// ============================================
+// 1) Recoger valores "raw" y sanitizar
+$startRaw = trim($_REQUEST['f_start'] ?? '');
+$endRaw   = trim($_REQUEST['f_end']   ?? '');
+$prodRaw  = trim($_REQUEST['f_id']    ?? '');
+$provRaw  = trim($_REQUEST['f_prov']  ?? '');
+$catRaw   = trim($_REQUEST['f_cat']   ?? '');
+$marcaRaw = trim($_REQUEST['f_marca'] ?? '');
 
-// 2) Nuevos filtros avanzados
-$montoMinRaw = $_REQUEST['monto_min'] ?? '';
-$montoMaxRaw = $_REQUEST['monto_max'] ?? '';
-$precioMinRaw = $_REQUEST['precio_min'] ?? '';
-$precioMaxRaw = $_REQUEST['precio_max'] ?? '';
-$stockMinRaw = $_REQUEST['stock_min'] ?? '';
-$stockMaxRaw = $_REQUEST['stock_max'] ?? '';
-$metodoPagoRaw = $_REQUEST['f_mp'] ?? '';
-$metodoPagoWebRaw = $_REQUEST['metodo_pago'] ?? '';
-$estadoRaw = $_REQUEST['estado'] ?? '';
+// Nuevos filtros avanzados - sanitizar
+$montoMinRaw = trim($_REQUEST['monto_min'] ?? '');
+$montoMaxRaw = trim($_REQUEST['monto_max'] ?? '');
+$precioMinRaw = trim($_REQUEST['precio_min'] ?? '');
+$precioMaxRaw = trim($_REQUEST['precio_max'] ?? '');
+$stockMinRaw = trim($_REQUEST['stock_min'] ?? '');
+$stockMaxRaw = trim($_REQUEST['stock_max'] ?? '');
+$metodoPagoRaw = trim($_REQUEST['f_mp'] ?? '');
+$metodoPagoWebRaw = trim($_REQUEST['metodo_pago'] ?? '');
+$estadoRaw = trim($_REQUEST['estado'] ?? '');
 
+// ============================================
+// CAPA 5: VALIDACIÓN CON EXPRESIONES REGULARES
+// ============================================
+// Validar formato de fechas (YYYY-MM-DD) si vienen proporcionadas
+if (!empty($startRaw) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startRaw)) {
+    throw new \Exception('Formato de fecha de inicio inválido. Debe ser YYYY-MM-DD');
+}
+
+if (!empty($endRaw) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endRaw)) {
+    throw new \Exception('Formato de fecha fin inválido. Debe ser YYYY-MM-DD');
+}
+
+// Validar IDs si vienen proporcionados (solo números enteros)
+if (!empty($prodRaw) && !preg_match('/^\d+$/', $prodRaw)) {
+    throw new \Exception('ID de producto inválido. Debe ser un número entero');
+}
+
+if (!empty($provRaw) && !preg_match('/^\d+$/', $provRaw)) {
+    throw new \Exception('ID de proveedor inválido. Debe ser un número entero');
+}
+
+if (!empty($catRaw) && !preg_match('/^\d+$/', $catRaw)) {
+    throw new \Exception('ID de categoría inválido. Debe ser un número entero');
+}
+
+if (!empty($marcaRaw) && !preg_match('/^\d+$/', $marcaRaw)) {
+    throw new \Exception('ID de marca inválido. Debe ser un número entero');
+}
+
+// Validar montos si vienen proporcionados (números decimales positivos)
+if (!empty($montoMinRaw) && !preg_match('/^\d+(\.\d{1,2})?$/', $montoMinRaw)) {
+    throw new \Exception('Monto mínimo inválido. Debe ser un número decimal positivo');
+}
+
+if (!empty($montoMaxRaw) && !preg_match('/^\d+(\.\d{1,2})?$/', $montoMaxRaw)) {
+    throw new \Exception('Monto máximo inválido. Debe ser un número decimal positivo');
+}
+
+if (!empty($precioMinRaw) && !preg_match('/^\d+(\.\d{1,2})?$/', $precioMinRaw)) {
+    throw new \Exception('Precio mínimo inválido. Debe ser un número decimal positivo');
+}
+
+if (!empty($precioMaxRaw) && !preg_match('/^\d+(\.\d{1,2})?/$', $precioMaxRaw)) {
+    throw new \Exception('Precio máximo inválido. Debe ser un número decimal positivo');
+}
+
+// Validar stock si viene proporcionado (números enteros no negativos)
+if (!empty($stockMinRaw) && !preg_match('/^\d+$/', $stockMinRaw)) {
+    throw new \Exception('Stock mínimo inválido. Debe ser un número entero no negativo');
+}
+
+if (!empty($stockMaxRaw) && !preg_match('/^\d+$/', $stockMaxRaw)) {
+    throw new \Exception('Stock máximo inválido. Debe ser un número entero no negativo');
+}
+
+// Validar método de pago si viene proporcionado (solo números)
+if (!empty($metodoPagoRaw) && !preg_match('/^\d+$/', $metodoPagoRaw)) {
+    throw new \Exception('Método de pago inválido. Debe ser un número entero');
+}
+
+if (!empty($metodoPagoWebRaw) && !preg_match('/^\d+$/', $metodoPagoWebRaw)) {
+    throw new \Exception('Método de pago web inválido. Debe ser un número entero');
+}
+
+// Validar estado si viene proporcionado (solo números)
+if (!empty($estadoRaw) && !preg_match('/^\d+$/', $estadoRaw)) {
+    throw new \Exception('Estado inválido. Debe ser un número entero');
+}
+
+// ============================================
+// NORMALIZACIÓN DE DATOS (YA EXISTÍA)
+// ============================================
 // 3) Normalizar para que sean null o int/float
 $start  = $startRaw ?: null;
 $end    = $endRaw   ?: null;
@@ -213,8 +288,23 @@ $estado = is_numeric($estadoRaw) ? (int)$estadoRaw : null;
 $today = date('Y-m-d');
 if ($start && $start > $today) $start = $today;
 if ($end   && $end   > $today) $end   = $today;
+
+// ============================================
+// CAPA 3: VALIDACIÓN DE CAMPOS VACÍOS Y LÓGICA DE NEGOCIO
+// ============================================
+// Validar consistencia de rangos (solo si ambos valores fueron proporcionados)
 if ($start && $end && $start > $end) {
+    // Intercambiar para mantener comportamiento existente
     list($start, $end) = [$end, $start];
+}
+
+// Validar que las fechas no sean futuras
+if ($start && $start > date('Y-m-d')) {
+    throw new \Exception('La fecha de inicio no puede ser futura');
+}
+
+if ($end && $end > date('Y-m-d')) {
+    throw new \Exception('La fecha fin no puede ser futura');
 }
 
 // Acción solicitada
@@ -226,63 +316,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
 ) {
     header('Content-Type: application/json');
     
-    // Obtener listas para validación
-    $productos_lista = (new Producto())->consultar();
-    $proveedores_lista = (new Proveedor())->consultar();
-    $categorias_lista = (new Categoria())->consultar();
-    $marcas_lista = (new Marca())->consultar();
-    
     try {
-    // Validar parámetros comunes
-    if (!validarIdProducto($prodRaw, $productos_lista)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
+        // ============================================
+        // CAPA 3: VALIDACIÓN DE CAMPOS VACÍOS (EXISTENTE MEJORADA)
+        // ============================================
+        // Obtener listas para validación
+        $productos_lista = (new Producto())->consultar();
+        $proveedores_lista = (new Proveedor())->consultar();
+        $categorias_lista = (new Categoria())->consultar();
+        $marcas_lista = (new Marca())->consultar();
+        
+        // Validar parámetros comunes usando funciones existentes
+        if (!validarIdProducto($prodRaw, $productos_lista)) {
+            echo json_encode(['count' => 0]);
+            exit;
+        }
 
-    if (!validarIdProveedor($provRaw, $proveedores_lista)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
+        if (!validarIdProveedor($provRaw, $proveedores_lista)) {
+            echo json_encode(['count' => 0]);
+            exit;
+        }
 
-    if (!validarIdCategoria($catRaw, $categorias_lista)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
+        if (!validarIdCategoria($catRaw, $categorias_lista)) {
+            echo json_encode(['count' => 0]);
+            exit;
+        }
 
-    if (!validarIdMarca($marcaRaw, $marcas_lista)) {
-        echo json_encode(['count' => 0]);
-        exit;
-    }
+        if (!validarIdMarca($marcaRaw, $marcas_lista)) {
+            echo json_encode(['count' => 0]);
+            exit;
+        }
 
-    // Validaciones específicas por acción
-    switch ($accion) {
-        case 'countProducto':
-            if (!validarEstadoProducto($estadoRaw)) {
-                echo json_encode(['count' => 0]);
-                exit;
-            }
-            break;
-        case 'countVenta':
-            if (!validarMetodoPago($metodoPagoRaw)) {
-                echo json_encode(['count' => 0]);
-                exit;
-            }
-            break;
-        case 'countPedidoWeb':
-            if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
-                echo json_encode(['count' => 0]);
-                exit;
-            }
-            if (!validarEstadoPedidoWeb($estadoRaw)) {
-                echo json_encode(['count' => 0]);
-                exit;
-            }
-            break;
-        case 'countCompra':
-        default:
-            // No validations extra
-            break;
-    }
+        // Validaciones específicas por acción
+        switch ($accion) {
+            case 'countProducto':
+                if (!validarEstadoProducto($estadoRaw)) {
+                    echo json_encode(['count' => 0]);
+                    exit;
+                }
+                break;
+            case 'countVenta':
+                if (!validarMetodoPago($metodoPagoRaw)) {
+                    echo json_encode(['count' => 0]);
+                    exit;
+                }
+                break;
+            case 'countPedidoWeb':
+                if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
+                    echo json_encode(['count' => 0]);
+                    exit;
+                }
+                if (!validarEstadoPedidoWeb($estadoRaw)) {
+                    echo json_encode(['count' => 0]);
+                    exit;
+                }
+                break;
+            case 'countCompra':
+            default:
+                // No validations extra
+                break;
+        }
 
     switch ($accion) {
         case 'countCompra':
@@ -322,217 +415,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET'
 if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && in_array($accion, ['compra','producto','venta','pedidoWeb'], true)
 ) {
-    // Obtener listas para validación
-    $productos_lista = (new Producto())->consultar();
-    $proveedores_lista = (new Proveedor())->consultar();
-    $categorias_lista = (new Categoria())->consultar();
-    $marcas_lista = (new Marca())->consultar();
-    
-    // Validar parámetros
-    if (!validarIdProducto($prodRaw, $productos_lista)) {
-        echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El producto seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-        exit;
-    }
-    
-    if (!validarIdProveedor($provRaw, $proveedores_lista)) {
-        echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El proveedor seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-        exit;
-    }
-    
-    if (!validarIdCategoria($catRaw, $categorias_lista)) {
-        echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>La categoría seleccionada no es válida.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-        exit;
-    }
-    
-    if (!validarIdMarca($marcaRaw, $marcas_lista)) {
-        echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>La marca seleccionada no es válida.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-        exit;
-    }
-    
-    // Validaciones específicas por acción (POST)
-    if ($accion === 'venta') {
-        if (!validarMetodoPago($metodoPagoRaw)) {
-            echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El método de pago seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-            exit;
-        }
-    }
-
-    if ($accion === 'pedidoWeb') {
-        if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
-            echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El método de pago web seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-            exit;
-        }
-        if (!validarEstadoPedidoWeb($estadoRaw)) {
-            echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El estado del pedido web seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-            exit;
-        }
-    }
-
-    if ($accion === 'producto') {
-        if (!validarEstadoProducto($estadoRaw)) {
-            echo '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Error al generar reporte</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #721c24; }
-        p { color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>Error al generar el reporte</h1>
-        <p>El estado del producto seleccionado no es válido.</p>
-        <p><a href="?pagina=reporte">Volver a Reportes</a></p>
-    </div>
-</body>
-</html>';
-            exit;
-        }
-    }
-
-    $userId = $_SESSION['id'];
-    $rol    = $_SESSION['nivel_rol'] == 2
-            ? 'Asesora de Ventas'
-            : 'Administrador';
-
     try {
+        // ============================================
+        // CAPA 3: VALIDACIÓN DE CAMPOS VACÍOS (EXISTENTE MEJORADA)
+        // ============================================
+        // Obtener listas para validación
+        $productos_lista = (new Producto())->consultar();
+        $proveedores_lista = (new Proveedor())->consultar();
+        $categorias_lista = (new Categoria())->consultar();
+        $marcas_lista = (new Marca())->consultar();
+        
+        // Validar parámetros comunes usando funciones existentes
+        if (!validarIdProducto($prodRaw, $productos_lista)) {
+            throw new \Exception('El producto seleccionado no es válido');
+        }
+        
+        if (!validarIdProveedor($provRaw, $proveedores_lista)) {
+            throw new \Exception('El proveedor seleccionado no es válido');
+        }
+        
+        if (!validarIdCategoria($catRaw, $categorias_lista)) {
+            throw new \Exception('La categoría seleccionada no es válida');
+        }
+        
+        if (!validarIdMarca($marcaRaw, $marcas_lista)) {
+            throw new \Exception('La marca seleccionada no es válida');
+        }
+        
+        // Validaciones específicas por acción (POST)
+        if ($accion === 'venta') {
+            if (!validarMetodoPago($metodoPagoRaw)) {
+                throw new \Exception('El método de pago seleccionado no es válido');
+            }
+        }
+
+        if ($accion === 'pedidoWeb') {
+            if (!validarMetodoPagoWeb($metodoPagoWebRaw)) {
+                throw new \Exception('El método de pago web seleccionado no es válido');
+            }
+            if (!validarEstadoPedidoWeb($estadoRaw)) {
+                throw new \Exception('El estado del pedido web seleccionado no es válido');
+            }
+        }
+
+        if ($accion === 'producto') {
+            if (!validarEstadoProducto($estadoRaw)) {
+                throw new \Exception('El estado del producto seleccionado no es válido');
+            }
+        }
+
+        $userId = $_SESSION['id'];
+        $rol    = $_SESSION['nivel_rol'] == 2
+                ? 'Asesora de Ventas'
+                : 'Administrador';
+
         // Log de diagnóstico: volcar parámetros recibidos antes de generar el reporte
         error_log(sprintf(
             "reporte.php: accion=%s start=%s end=%s prodRaw=%s prodId=%s catRaw=%s catId=%s provRaw=%s provId=%s metodoPagoRaw=%s metodoPago=%s metodoPagoWebRaw=%s metodoPagoWeb=%s montoMin=%s montoMax=%s estadoRaw=%s estado=%s",

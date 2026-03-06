@@ -33,6 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // 1) Registrar
 if (isset($_POST['registrar'])) {
+    if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(7, 2)) { // requiere nivel >=2 y permiso 2 (registrar)
+        echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+        exit;
+    }
     $datos = ['nombre'=>$_POST['nombre']];
     $res   = $Cat->procesarMarca(
         json_encode(['operacion'=>'incluir','datos'=>$datos])
@@ -50,6 +54,10 @@ if (isset($_POST['registrar'])) {
 
 // 2) Modificar
 if (isset($_POST['modificar'])) {
+    if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(7, 3)) { // requiere nivel >=2 y permiso 3 (modificar)
+        echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+        exit;
+    }
     $datos = [
         'id_marca'=>$_POST['id_marca'],
         'nombre'      =>$_POST['nombre']
@@ -70,6 +78,10 @@ if (isset($_POST['modificar'])) {
 
 // 3) Eliminar
 if (isset($_POST['eliminar'])) {
+    if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(7, 4)) { // requiere nivel >=2 y permiso 4 (eliminar)
+        echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+        exit;
+    }
     $id = (int) $_POST['id_marca'];
 
     // obtener nombre antes de eliminar
@@ -96,7 +108,7 @@ if (isset($_POST['eliminar'])) {
     echo json_encode($res);
     exit;
 
-} else if ($_SESSION["nivel_rol"] == 3 && tieneAcceso(7, 1)) {
+} else if (isset($_SESSION["nivel_rol"]) && $_SESSION["nivel_rol"] >= 2 && tieneAcceso(7, 1)) {
          $bitacora = [
             'id_persona' => $_SESSION["id"],
             'accion' => 'Acceso a Módulo',

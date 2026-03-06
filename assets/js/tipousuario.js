@@ -303,10 +303,10 @@ $('#btnAyuda').on("click", function () {
         }
       },
       {
-        element: 'button[data-bs-target="#infoModal"]',
+        element: '.permisotur',
         popover: {
-          title:       'Ver Información',
-          description: 'Haz clic aquí para ver los detalles del tipo de usuario.',
+          title:       'Modificar Permisos',
+          description: 'Haz clic aquí para ver y modificar los permisos del tipo de usuario.',
           side:        'left'
         }
       },
