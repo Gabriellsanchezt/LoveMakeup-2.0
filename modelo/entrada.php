@@ -13,6 +13,65 @@ class Entrada extends Conexion {
         parent::__construct();
     }
 
+    
+    public function validarIdProveedor($id_proveedor) {
+        if (empty($id_proveedor) || !is_numeric($id_proveedor)) {
+            return false;
+        }
+        $conex = $this->getConex1();
+        $sql = "SELECT COUNT(*) FROM proveedor WHERE id_proveedor = :id_proveedor AND estatus = 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_proveedor' => intval($id_proveedor)]);
+        $count = $stmt->fetchColumn();
+        $conex = null;
+        return ($count > 0);
+    }
+
+    
+    public function validarIdProducto($id_producto) {
+        if (empty($id_producto) || !is_numeric($id_producto)) {
+            return false;
+        }
+        $conex = $this->getConex1();
+        $sql = "SELECT COUNT(*) FROM producto WHERE id_producto = :id_producto AND estatus = 1";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute(['id_producto' => intval($id_producto)]);
+        $count = $stmt->fetchColumn();
+        $conex = null;
+        return ($count > 0);
+    }
+
+  
+    public function validarIdsProductos(array $ids_productos) {
+        if (empty($ids_productos)) {
+            return false;
+        }
+
+        // Filtrar valores vacíos
+        $ids_filtrados = array_values(array_filter($ids_productos, function($v) {
+            return $v !== '' && $v !== null;
+        }));
+
+        if (empty($ids_filtrados)) {
+            return false;
+        }
+
+        // Normalizar a enteros y crear placeholders
+        $ids_enteros = array_map('intval', $ids_filtrados);
+        $placeholders = implode(',', array_fill(0, count($ids_enteros), '?'));
+
+        $conex = $this->getConex1();
+        $sql = "SELECT id_producto FROM producto WHERE estatus = 1 AND id_producto IN ($placeholders)";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute($ids_enteros);
+        $result = $stmt->fetchAll(\PDO::FETCH_COLUMN, 0);
+        $conex = null;
+
+        // Comparar conjuntos: todos los ids_enteros deben aparecer en result
+        $faltantes = array_diff($ids_enteros, array_map('intval', $result));
+        return empty($faltantes);
+    }
+
     public function procesarCompra($jsonDatos) {
         $datos = json_decode($jsonDatos, true);
         $operacion = $datos['operacion'];
