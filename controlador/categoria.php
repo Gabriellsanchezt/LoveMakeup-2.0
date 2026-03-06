@@ -116,10 +116,6 @@ if (isset($_POST['registrar'])) {
     }
     
     // ========================================
-    // CAPA 3: Claves foráneas (NO APLICA - no hay FKs en categoría)
-    // ========================================
-    
-    // ========================================
     // CAPA 4: Validación de campos vacíos
     // ========================================
     $nombre_raw = trim($_POST['nombre']);
