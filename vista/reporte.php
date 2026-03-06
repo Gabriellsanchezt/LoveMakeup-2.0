@@ -803,13 +803,11 @@
                   <i class="fas fa-question-circle text-info ms-1" 
                      data-bs-toggle="tooltip" 
                      data-bs-html="true" 
-                     title="<strong>📊 Estados de Pedidos Web:</strong><br>• <strong>Vacío:</strong> TODOS los estados<br>• <strong>Pago verificado:</strong> Pago confirmado<br>• <strong>Pendiente envío:</strong> Preparando pedido<br>• <strong>En camino:</strong> Pedido enviado<br>• <strong>Entregado:</strong> Recibido por el cliente"></i>
+                     title="<strong>📊 Estados de Pedidos Web:</strong><br>• <strong>Vacío:</strong> TODOS los estados<br>• <strong>Pago verificado:</strong> Pago confirmado<br>• <strong>Entregado:</strong> Recibido por el cliente"></i>
                 </label>
                 <select name="estado" class="form-select">
                   <option value="">— Todos —</option>
                   <option value="2">Pago verificado</option>
-                  <option value="3">Pendiente envío</option>
-                  <option value="4">En camino</option>
                   <option value="5">Entregado</option>
                 </select>
               </div>
