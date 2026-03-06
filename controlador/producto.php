@@ -14,6 +14,7 @@ if (empty($_SESSION["id"])) {
     exit;
 }
 
+require_once 'permiso.php';
 
 if (!empty($_SESSION['id'])) {
     require_once 'verificarsession.php';
@@ -41,6 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // 1. Obtener Imágenes (AJAX)
     if (isset($_POST['accion']) && $_POST['accion'] === 'obtenerImagenes') {
+        if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(6, 1)) { // requiere nivel >=2 y permiso 1 (ver)
+            echo json_encode(['respuesta' => 0, 'accion' => 'obtenerImagenes', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         $id_producto = $_POST['id_producto'];
         $imagenes = $objproducto->obtenerImagenes($id_producto);
         echo json_encode(['respuesta' => 1, 'imagenes' => $imagenes]);
@@ -49,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. Registrar Producto
     if (isset($_POST['registrar'])) {
+        if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(6, 2)) { // requiere nivel >=2 y permiso 2
+            echo json_encode(['respuesta' => 0, 'accion' => 'incluir', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         // Validación básica de campos requeridos
         if (!empty($_POST['nombre']) && !empty($_POST['descripcion']) && !empty($_POST['marca']) && 
             !empty($_POST['cantidad_mayor']) && !empty($_POST['precio_mayor']) && !empty($_POST['precio_detal']) && 
@@ -110,6 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 3. Actualizar Producto
     else if (isset($_POST['actualizar'])) {
+        if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(6, 3)) { // requiere nivel >=2 y permiso 3
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         $imagenes = [];
         $imagenesReemplazos = [];
 
@@ -205,6 +218,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 4. Eliminar Producto
     else if (isset($_POST['eliminar'])) {
+        if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(6, 4)) { // requiere nivel >=2 y permiso 4
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         $datosProducto = [
             'operacion' => 'eliminar',
             'datos' => [
@@ -231,6 +248,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 5. Cambiar Estatus
     else if (isset($_POST['accion']) && $_POST['accion'] == 'cambiarEstatus') {
+        if (!isset($_SESSION['nivel_rol']) || $_SESSION['nivel_rol'] < 2 || !tieneAcceso(6, 5)) { // requiere nivel >=2 y permiso 5
+            echo json_encode(['respuesta' => 0, 'accion' => 'cambiarEstatus', 'mensaje' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
         $datosProducto = [
             'operacion' => 'cambiarEstatus',
             'datos' => [
