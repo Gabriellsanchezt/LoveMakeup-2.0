@@ -136,6 +136,7 @@
           
                 </select>
                 <input type="text" class="form-control text-dark" id="cedula" name="cedula" value="<?php echo $_SESSION['id'] ?>">
+                <input type="hidden"  name="cedula_actual" value="<?php echo $_SESSION['id'] ?>">
               </div>
               <p id="textocedula" class="text-danger"></p>
             </div>
@@ -172,6 +173,7 @@
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-envelope" style="color:#ff2bc3;"></i></span>
                 <input type="text" class="form-control text-dark" id="correo" name="correo" value="<?php echo $_SESSION['correo'] ?>">
+                <input type="hidden"  name="correo_actual" value="<?php echo $_SESSION['correo'] ?>">
               </div>
               <p id="textocorreo" class="text-danger"></p>
             </div>

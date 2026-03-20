@@ -45,7 +45,7 @@ function eliminarRol(id_rol) {
     text: '¿Desea eliminarlo?',
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#116d15',
+    confirmButtonColor: '#0d6b29',
     cancelButtonColor: '#d33',
     confirmButtonText: 'Sí, eliminar',
     cancelButtonText: 'Cancelar'
@@ -130,7 +130,7 @@ $(document).ready(function() {
               showCancelButton: true,
               confirmButtonText: 'Sí, registrar',
               cancelButtonText: 'Cancelar',
-              confirmButtonColor: '#298a29',
+              confirmButtonColor: '#0d6b29',
               cancelButtonColor: '#ac2424'
           }).then((result) => {
               if (result.isConfirmed) {
@@ -143,7 +143,7 @@ $(document).ready(function() {
       }
   });
 
-    $('#btnModificar').on("click", function () {
+  $('#btnModificar').on("click", function () {
      
           Swal.fire({
               title: '¿Deseas Actualizar?',
@@ -152,7 +152,7 @@ $(document).ready(function() {
               showCancelButton: true,
               confirmButtonText: 'Sí, actualizar',
               cancelButtonText: 'Cancelar',
-              confirmButtonColor: '#298a29',
+              confirmButtonColor: '#0d6b29',
               cancelButtonColor: '#ac2424'
           }).then((result) => {
               if (result.isConfirmed) {
@@ -164,8 +164,6 @@ $(document).ready(function() {
           });
      
   });
-
-
 
 });
 

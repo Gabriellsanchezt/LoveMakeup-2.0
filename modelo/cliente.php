@@ -6,8 +6,7 @@ use LoveMakeup\Proyecto\Config\Conexion;
 
 /*||||||||||||||||||||||||||||||| TOTAL DE METODOS =  |||||||||||||||||||||||||  04  |||||*/    
 
-class Cliente extends Conexion
-{
+class Cliente extends Conexion{
 
     function __construct() {
         parent::__construct(); // Llama al constructor de la clase padre

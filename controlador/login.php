@@ -99,7 +99,7 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                     echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => '#0320 - El tipo de documento no es válido']);
                     exit;
                 }
-
+ 
                 $datosLogin = [
                     'operacion' => 'verificar',
                         'datos' => [

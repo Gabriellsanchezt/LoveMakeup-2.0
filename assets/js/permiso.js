@@ -31,6 +31,8 @@ $('#actualizar_permisos').on("click", function () {
         text: 'Esto actualizará los permisos del usuario.',
         icon: 'warning',
         showCancelButton: true,
+              confirmButtonColor: '#0d6b29',
+              cancelButtonColor: '#ac2424',
         confirmButtonText: 'Sí, actualizar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
