@@ -94,18 +94,28 @@ private $objEntrega;
         $conex->beginTransaction();
         $conex2->beginTransaction();
 
-        // 1. Primero actualizar usuario (tabla hija)
-        $sqlUsuario = "UPDATE usuario 
-                       SET cedula = :cedula_nueva
-                       WHERE cedula = :cedula_actual";
+        // 1. Finalmente actualizar persona (tabla padre)
+        $sql = "UPDATE persona 
+                SET cedula = :cedula, 
+                    correo = :correo, 
+                    nombre = :nombre,
+                    apellido = :apellido,
+                    telefono = :telefono,
+                    tipo_documento = :tipo_documento
+                WHERE cedula = :cedula_actual";
 
-        $paramUsuario = [
-            'cedula_nueva' => $datos['cedula'],
+        $parametros = [
+            'cedula' => $datos['cedula'],
+            'correo' => $datos['correo'],
+            'nombre' => $datos['nombre'],
+            'apellido' => $datos['apellido'],
+            'telefono' => $datos['telefono'],
+            'tipo_documento' => $datos['tipo_documento'], 
             'cedula_actual' => $datos['cedula_actual']
         ];
 
-        $stmtUsuario = $conex->prepare($sqlUsuario);
-        $stmtUsuario->execute($paramUsuario);
+        $stmt = $conex->prepare($sql);
+        $stmt->execute($parametros);
 
         // 2. Actualizar pedidos y direcciones si aplica
         if ($datos['cedula'] !== $datos['cedula_actual']) {
@@ -139,28 +149,7 @@ private $objEntrega;
             }
         }
 
-        // 3. Finalmente actualizar persona (tabla padre)
-        $sql = "UPDATE persona 
-                SET cedula = :cedula, 
-                    correo = :correo, 
-                    nombre = :nombre,
-                    apellido = :apellido,
-                    telefono = :telefono,
-                    tipo_documento = :tipo_documento
-                WHERE cedula = :cedula_actual";
-
-        $parametros = [
-            'cedula' => $datos['cedula'],
-            'correo' => $datos['correo'],
-            'nombre' => $datos['nombre'],
-            'apellido' => $datos['apellido'],
-            'telefono' => $datos['telefono'],
-            'tipo_documento' => $datos['tipo_documento'], 
-            'cedula_actual' => $datos['cedula_actual']
-        ];
-
-        $stmt = $conex->prepare($sql);
-        $stmt->execute($parametros);
+        
 
         // 4. Confirmar transacciones
         $conex->commit();
