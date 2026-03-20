@@ -42,11 +42,12 @@ class Login extends Conexion {
         $datos = json_decode($jsonDatos, true);
         $operacion = $datos['operacion'];
         $datosProcesar = $datos['datos'];
-        
+         
         try {
             switch ($operacion) {
-                case 'verificar':
+                case 'verificar': 
                     return $this->verificarCredenciales($datosProcesar);
+
                 case 'registrar':
                     if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
                         return ['respuesta' => 0, 'accion' => 'incluir', 'text' => 'La cédula ya está registrada'];
@@ -60,13 +61,10 @@ class Login extends Conexion {
 
                 case 'dolar':
 
-                     if ($this->verificarFechaNoExiste($datosProcesar['fecha'])) {
+                    if ($this->verificarFechaNoExiste($datosProcesar['fecha'])) {
                          return $this->ejecutarRegistro($datosProcesar);
                     }
                     return null;
-                    
-                case 'activousuaio':
-                    return $this->activousuario($datosProcesar);
                 
                 case 'verificarcedula':
                   if ($this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
@@ -177,7 +175,7 @@ class Login extends Conexion {
             ];
 
             $stmtUsuario = $conex->prepare($sqlUsuario);
-            $stmtUsuario->execute($paramUsuario);
+            $stmtUsuario->execute($paramUsuario); 
             
             if ($stmtUsuario) {
                 $conex->commit();
@@ -222,41 +220,40 @@ class Login extends Conexion {
 
 /*||||||||||||||||||||||||||||||| OBTENER CEDULA PARA INGRESAR OLVIDO CLAVE  |||||||||||||||||||||||||  07  |||||*/            
     private function obtenerPersonaPorCedula($datos) {
+        $conex = $this->getConex2();
+        try {
+            $sql = "SELECT 
+                        p.cedula,
+                        p.nombre,
+                        p.apellido,
+                        p.correo,
+                        p.telefono,
+                        p.tipo_documento,
+                        u.id_usuario,
+                        u.estatus,
+                        u.id_rol,
+                        ru.nivel
+                    FROM persona p
+                    INNER JOIN usuario u ON p.cedula = u.cedula
+                    INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                    WHERE u.cedula = :cedula AND p.tipo_documento = :tipo_documento AND u.estatus >= 1";
 
-    $conex = $this->getConex2();
-    try {
-    $sql = "SELECT 
-                p.cedula,
-                p.nombre,
-                p.apellido,
-                p.correo,
-                p.telefono,
-                p.tipo_documento,
-                u.id_usuario,
-                u.estatus,
-                u.id_rol,
-                ru.nivel
-            FROM persona p
-            INNER JOIN usuario u ON p.cedula = u.cedula
-            INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
-            WHERE p.cedula = :cedula AND p.tipo_documento = :tipo_documento AND u.estatus >= 1";
+            $stmt = $conex->prepare($sql);
+            $stmt->execute([
+                'cedula' => $datos['cedula'],
+                'tipo_documento' => $datos['tipo_documento']
+            ]);
 
-    $stmt = $conex->prepare($sql);
-    $stmt->execute([
-        'cedula' => $datos['cedula'],
-        'tipo_documento' => $datos['tipo_documento']
-    ]);
+            $resultado = $stmt->fetchObject();
 
-    $resultado = $stmt->fetchObject();
+            $conex = null;
+            return $resultado ?: null;
 
-    $conex = null;
-    return $resultado ?: null;
-
-} catch (\PDOException $e) {
-    if ($conex) $conex = null;
-    return null;
-}
-}
+        } catch (\PDOException $e) {
+            if ($conex) $conex = null;
+            return null;
+        }
+    }
 
 
 /*||||||||||||||||||||||||||||||| CONSULTAR PERMISOS ID PERMISOS  |||||||||||||||||||||||||  08  |||||*/            
@@ -339,35 +336,35 @@ class Login extends Conexion {
 }
 
     private function ejecutarRegistro($datos) {
-    $conex = $this->getConex1();
-  
-    try {
-        $conex->beginTransaction();
+        $conex = $this->getConex1();
+    
+        try {
+            $conex->beginTransaction();
 
-        $sql = "INSERT tasa_dolar (fecha, tasa_bs, fuente, estatus)
-                         VALUES (:fecha,:tasa,:fuente, 1)";
+            $sql = "INSERT tasa_dolar (fecha, tasa_bs, fuente, estatus)
+                            VALUES (:fecha,:tasa,:fuente, 1)";
 
-        $parametros = [
-            'tasa' => $datos['tasa'],
-            'fuente' => $datos['fuente'],
-            'fecha' => $datos['fecha']
-        ];
+            $parametros = [
+                'tasa' => $datos['tasa'],
+                'fuente' => $datos['fuente'],
+                'fecha' => $datos['fecha']
+            ];
 
-        $stmt = $conex->prepare($sql);
-        $stmt->execute($parametros);
+            $stmt = $conex->prepare($sql);
+            $stmt->execute($parametros);
 
-        $conex->commit();
-        $conex = null;
-        return ['respuesta' => 1, 'accion' => 'sincronizar'];
-
-    } catch (\PDOException $e) {
-        if ($conex) {
-            $conex->rollBack();
+            $conex->commit();
             $conex = null;
+            return ['respuesta' => 1, 'accion' => 'sincronizar'];
+
+        } catch (\PDOException $e) {
+            if ($conex) {
+                $conex->rollBack();
+                $conex = null;
+            }
+            return ['respuesta' => 0, 'text' => $e->getMessage()];
         }
-        return ['respuesta' => 0, 'text' => $e->getMessage()];
     }
-}
 
 
 

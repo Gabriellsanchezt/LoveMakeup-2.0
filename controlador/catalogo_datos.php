@@ -13,11 +13,12 @@ $sesion_activa = isset($_SESSION["id"]) && !empty($_SESSION["id"]);
 
 if (!empty($_SESSION['id'])) {
     require_once 'verificarsession.php';
+    require_once 'permiso.php';
 }
 
 $objdatos = new Catalogo_datos();
 
-function validarEntradaSQL($input) {
+ function validarEntradaSQL($input) {
         // Si es array → validar cada elemento
         if (is_array($input)) {
             foreach ($input as $valor) {
@@ -45,7 +46,7 @@ function validarEntradaSQL($input) {
             }
         }
         return true;
-}
+    }
 
 
 //Valida que el tipo_documento sea válido
@@ -57,12 +58,14 @@ function validarTipoDocumento($tipo_documento) {
 if (isset($_POST['actualizar'])) {
 
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
+        if ($_SESSION["nivel_rol"] == 1 && tieneAcceso(20, 3)) { 
 
         if(!empty($_POST['nombre']) &&!empty($_POST['apellido']) && !empty($_POST['cedula']) &&!empty($_POST['correo'])
-         && !empty($_POST['telefono']) && !empty($_POST['tipo_documento'])){ /* V2 */ 
-            
+         && !empty($_POST['telefono']) && !empty($_POST['tipo_documento']) && !empty($_POST['cedula_actual']) && !empty($_POST['correo_actual'])){ /* V2 */ 
+          
             $nombre =  ucfirst(strtolower($_POST['nombre'])); $apellido = ucfirst(strtolower($_POST['apellido'])); $cedula = $_POST['cedula']; 
             $correo = strtolower($_POST['correo']);  $telefono = $_POST['telefono']; $documento = $_POST['tipo_documento'];
+            $cedula_actual = $_POST['cedula_actual']; $correo_actual = strtolower($_POST['correo_actual']);
 
             $campos = [
                 'Nombre' => $nombre,
@@ -127,9 +130,8 @@ if (isset($_POST['actualizar'])) {
                             'correo' => $correo,
                             'telefono' => $telefono,
                             'tipo_documento' => $documento,
-                            'cedula_actual' => $_SESSION["id"],
-                            'correo_actual' => $_SESSION["correo"]
-                        ]
+                            'cedula_actual' =>$cedula_actual,
+                            'correo_actual' => $correo_actual                        ]
                     ];
 
                     $resultado = $objdatos->procesarCliente(json_encode($datosCliente));
@@ -153,10 +155,14 @@ if (isset($_POST['actualizar'])) {
                 
                     echo json_encode($resultado);
                     exit;   
-        } else{
-            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => '#0200 - Datos Vacios']);
-            exit; 
-        }
+            } else{
+                echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => '#0200 - Datos Vacios']);
+                exit; 
+            }
+        } else{  /* 2 */ 
+            echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => '#3200 - No puedes realizar esta operacion, intente mas tarde']);
+            exit;
+        }  
     } else{ /* V1 */ 
         echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => '#0100 - Session no encontrada']);
         exit;
@@ -164,6 +170,7 @@ if (isset($_POST['actualizar'])) {
 
 } else if(isset($_POST['eliminar'])){ // ||||||||||||||||||||||||||||||||||||||||||||||||||||||| ELIMINAR CLIENTE 
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
+      if ($_SESSION["nivel_rol"] == 1 && tieneAcceso(20, 4)) { 
 
         if(!empty($_POST['persona'])){/* V2 */
             $persona = $_POST['persona']; 
@@ -209,14 +216,19 @@ if (isset($_POST['actualizar'])) {
                         }
 
                 } else{
-                    echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'La datos no encontrados']);
+                    echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => 'La datos de la persona no encontrados ']);
                     exit; 
                 }
               
-        } else{
-            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0200 - datos vacios']);
-            exit; 
-        }
+            } else{
+                echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0200 - datos vacios']);
+                exit; 
+            }
+
+        } else{  /* 2 */ 
+            echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#3200 - No puedes realizar esta operacion, intente mas tarde']);
+            exit;
+        }  
     
     } else{ /* V1 */ 
         echo json_encode(['respuesta' => 0, 'accion' => 'eliminar', 'text' => '#0100 - Session no encontrada']);
@@ -225,6 +237,7 @@ if (isset($_POST['actualizar'])) {
  
 } else if(isset($_POST['actualizarclave'])){ //||||||||||||||||||||||||||||||||||||||||||||||||||||| ACTUALIZAR CLAVE
     if (isset($_SESSION['id']) && !empty($_SESSION['id'])) { /* V1 */
+     if ($_SESSION["nivel_rol"] == 1 && tieneAcceso(20, 3)) { 
 
         if(!empty($_POST['clave'])&&!empty($_POST['clavenueva'])){ 
 
@@ -266,10 +279,14 @@ if (isset($_POST['actualizar'])) {
                         echo json_encode($resultado);
                         exit;
 
-        }else{ // datos vacios
-            echo json_encode(['respuesta' => 0, 'accion' => 'clave', 'text' => '#0200 - Datos Vacios']);
+            }else{ // datos vacios
+                echo json_encode(['respuesta' => 0, 'accion' => 'clave', 'text' => '#0200 - Datos Vacios']);
+                exit;
+            }
+        } else{  /* 2 */ 
+            echo json_encode(['respuesta' => 0, 'accion' => 'clave', 'text' => '#3200 - No puedes realizar esta operacion, intente mas tarde']);
             exit;
-        }
+        }  
 
     } else{ /* V1 */ 
         echo json_encode(['respuesta' => 0, 'accion' => 'clave', 'text' => '#0100 - Session no encontrada']);
@@ -277,7 +294,7 @@ if (isset($_POST['actualizar'])) {
     }  
      
 } if ($sesion_activa) {
-     if($_SESSION["nivel_rol"] == 1) { 
+     if($_SESSION["nivel_rol"] == 1  && tieneAcceso(20, 1))  { 
       require_once('vista/tienda/catalogo_datos.php');
     } else{
         header('Location: ?pagina=catalogo');
