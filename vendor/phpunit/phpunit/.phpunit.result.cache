@@ -1,1 +1,1 @@
-{"version":2,"defects":[],"times":{"Tests\\PruebaPHPUnit\\LoginTest::testCorreoInexistente":0.397}}
+{"version":2,"defects":[],"times":{"Tests\\PruebaPHPUnit\\LoginTest::testCorreoInexistente":0.397,"Tests\\PruebaPHPUnit\\LoginTest::testEncriptacionYDesencriptacion":0.014,"LoveMakeup\\Tests\\VentaWebTest::testDetectarInyeccionSQL":0.983,"LoveMakeup\\Tests\\VentaWebTest::testSeguridadInyeccion":0.01,"LoveMakeup\\Tests\\VentaWebTest::testSanitizacionLimites":0.055,"LoveMakeup\\Tests\\VentaWebTest::testInsercionMasivaUnica":0.06}}
