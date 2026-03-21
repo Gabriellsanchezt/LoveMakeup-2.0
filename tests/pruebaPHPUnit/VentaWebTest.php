@@ -59,23 +59,23 @@ class VentaWebTest extends TestCase
      */
     public function testInsercionMasivaUnica()
     {
-        $cantidad = 3; // Probaremos con 20 para no saturar la salida, puedes subirlo
+        $cantidad = 20; // Probaremos con 20 para no saturar la salida, puedes subirlo
         $exitosos = 0;
 
         fwrite(STDOUT, "\n\e[0;34m[INICIO]\e[0m Iniciando inserción masiva de $cantidad registros...");
 
         for ($i = 1; $i <= $cantidad; $i++) {
-            $refUnica = "" . bin2hex(random_bytes(3)) . "-" . $i;
+            $refUnica = "TEST-REF-" . bin2hex(random_bytes(3)) . "-" . $i;
             
             // Estructura de datos para procesarPedido
             $datos = [
                 'datos' => [
-                    'id_persona' => '30559878' . $i,
+                    'id_persona' => '2026' . $i,
                     'id_metodoentrega' => 1,
                     'direccion_envio' => 'Direccion de prueba ' . $i,
                     'sucursal_envio' => 'Sucursal ' . $i,
                     'id_delivery' => 1,
-                    'tipo' => 2,
+                    'tipo' => 'web',
                     'fecha' => date('Y-m-d'),
                     'estado' => 1,
                     'precio_total_usd' => 5.0,
