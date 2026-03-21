@@ -150,4 +150,75 @@ class ProductoTest extends TestCase {
         $this->assertIsArray($resultado);
         $this->assertEquals('cambiarEstatus', $resultado['accion']);
     }
+    public function testRegistrarVariosProductos() {
+    fwrite(STDOUT, "\n\n >---- INICIO DEL TEST DE REGISTRO MASIVO DE PRODUCTOS ------<\n");
+
+    $cantidad = 500;
+
+    for ($i = 1; $i <= $cantidad; $i++) {
+
+        $nombre = "ProductoTest{$i}";
+
+        $datosProducto = [
+            'operacion' => 'registrar',
+            'datos' => [
+                'nombre' => $nombre,
+                'id_marca' => 1,
+                'descripcion' => "Descripción del producto {$i}",
+                'cantidad_mayor' => 10,
+                'precio_mayor' => 20 + $i,
+                'precio_detal' => 25 + $i,
+                'stock_maximo' => 100,
+                'stock_minimo' => 1,
+                'imagenes' => ["img{$i}.png"],
+                'id_categoria' => 1
+            ]
+        ];
+
+        $resultado = $this->producto->getProducto()->procesarProducto(json_encode($datosProducto));
+
+        fwrite(STDOUT, "\n → Intento #{$i} | Nombre: {$nombre}\n");
+
+        
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('accion', $resultado);
+
+        
+        $this->assertEquals('incluir', $resultado['accion']);
+
+        
+        if ($resultado['respuesta'] === 1) {
+
+            fwrite(STDOUT, "  Registro exitoso.\n");
+            $this->assertEquals(1, $resultado['respuesta']);
+
+       
+        } elseif ($resultado['respuesta'] === 0) {
+
+            fwrite(STDOUT, "   Error: " . ($resultado['mensaje'] ?? 'Sin mensaje') . "\n");
+
+            $this->assertTrue(
+                isset($resultado['mensaje']) || isset($resultado['text']),
+                "Debe traer mensaje de error en el intento #{$i}"
+            );
+
+            $mensaje = $resultado['mensaje'] ?? $resultado['text'];
+
+            $this->assertContains(
+                $mensaje,
+                [
+                    'El producto ya existe',
+                    'La marca no existe',
+                    'La categoría no existe'
+                ],
+                "Mensaje inesperado en el intento #{$i}"
+            );
+
+        } else {
+            $this->fail("Respuesta inesperada en el intento #{$i}");
+        }
+    }
+
+    fwrite(STDOUT, "\n _-_-____ FIN DEL TEST DE PRODUCTOS _-_-____\n\n");
+}
 }

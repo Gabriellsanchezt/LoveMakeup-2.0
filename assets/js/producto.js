@@ -15,22 +15,30 @@ $(document).ready(function () {
     }
   });
 
-  if (productosStockBajo.length > 0) {
-    Swal.fire({
-      icon: "warning",
-      title: "¡Atención! Stock bajo",
-      html: `En los productos: <strong>${productosStockBajo.join(', ')}</strong>.`,
-      toast: true,
-      position: "top",
-      showConfirmButton: false,
-      timer: 5000,
-      timerProgressBar: true,
-      didOpen: (toast) => {
-          toast.onmouseenter = Swal.stopTimer;
-          toast.onmouseleave = Swal.resumeTimer;
-      }
-    });
+const LIMITE = 5;
+
+if (productosStockBajo.length > 0) {
+
+  let productosMostrar = productosStockBajo.slice(0, LIMITE);
+  let restantes = productosStockBajo.length - LIMITE;
+
+  let mensaje = productosMostrar.join(', ');
+
+  if (restantes > 0) {
+    mensaje += ` y ${restantes} más...`;
   }
+
+  Swal.fire({
+    icon: "warning",
+    title: "¡Atención! Stock bajo",
+    html: `En los productos: <strong>${mensaje}</strong>.`,
+    toast: true,
+    position: "top",
+    showConfirmButton: false,
+    timer: 5000,
+    timerProgressBar: true
+  });
+}
 });
 
 
