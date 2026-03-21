@@ -29,7 +29,7 @@ class UsuarioTestable {
     }
 }
 
-
+//---------------------- TEST PRUEBA
 class UsuarioTest extends TestCase {
     private Usuario $usuario;
 

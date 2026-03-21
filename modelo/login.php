@@ -235,7 +235,7 @@ class Login extends Conexion {
                         ru.nivel
                     FROM persona p
                     INNER JOIN usuario u ON p.cedula = u.cedula
-                    INNER JOIN rol_usuario ru ON u.id_rol = ru.id_rol
+                    INNER JOIN rol ru ON u.id_rol = ru.id_rol
                     WHERE u.cedula = :cedula AND p.tipo_documento = :tipo_documento AND u.estatus >= 1";
 
             $stmt = $conex->prepare($sql);
