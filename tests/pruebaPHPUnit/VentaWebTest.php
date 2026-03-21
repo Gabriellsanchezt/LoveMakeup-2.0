@@ -90,7 +90,7 @@ class VentaWebTest extends TestCase
                     'imagen' => '',
                     'carrito' => [
                         [
-                            'id' => 1, // Asegúrate que este ID exista en tu tabla producto
+                            'id' => 2, // Asegúrate que este ID exista en tu tabla producto
                             'cantidad' => 1,
                             'cantidad_mayor' => 5,
                             'precio_detal' => 5.0,

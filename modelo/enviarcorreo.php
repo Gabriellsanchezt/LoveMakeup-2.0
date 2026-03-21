@@ -8,12 +8,12 @@ function enviarCodigoRecuperacion($correo, $codigo) {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'help.lovemakeupca@gmail.com'; // Tu dirección de correo de Gmail
-        $mail->Password = 'uoteptddjgljeukw'; // Tu contraseña de Gmail o contraseña de aplicación
+        $mail->Username = 'danielsanchezcev@gmail.com'; // Tu dirección de correo de Gmail
+        $mail->Password = 'psktsdtkrqyqjcbk'; // Tu contraseña de Gmail o contraseña de aplicación
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
-        $mail->setFrom('help.lovemakeupca@gmail.com', 'Love Makeup');
+        $mail->setFrom('danielsanchezcev@gmail.com', 'Love Makeup');
         $mail->addAddress($correo);
         $mail->Subject = 'Codigo de Recuperacion de Clave';
         $mail->isHTML(true); // Habilitar HTML en el correo
