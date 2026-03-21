@@ -36,6 +36,10 @@ class Cliente extends Conexion{
                         }
                     }
 
+                    if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula_actual']])) {
+                        return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'el usuario no existe'];
+                    }
+
                     return $this->ejecutarActualizacion($datosProcesar);
                 
                 case 'verificar':

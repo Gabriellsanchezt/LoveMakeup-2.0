@@ -68,7 +68,7 @@ class Usuario extends Conexion
                         }
                     }
 
-                    if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                    if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula_actual']])) {
                         return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'el usuario no existe'];
                     }
                     
@@ -108,10 +108,10 @@ class Usuario extends Conexion
                     }        
 
                 default:
-                    return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
+                    return ['respuesta' => 0, 'accion' => 'verifirol', 'mensaje' => 'Operación no válida'];
             }
         } catch (\Exception $e) {
-            return ['respuesta' => 0, 'mensaje' => $e->getMessage()];
+            return ['respuesta' => 0, 'accion' => 'verifirol', 'mensaje' => $e->getMessage()];
         }
     }
 
@@ -153,8 +153,10 @@ class Usuario extends Conexion
 
     } catch (\PDOException $e) {
         if ($conex) {
+             
             $conex->rollBack();
             $conex = null;
+            return ['respuesta' => 0, 'accion' => 'incluir', 'text' => $e->getMessage()];
         }
         throw $e;
     }

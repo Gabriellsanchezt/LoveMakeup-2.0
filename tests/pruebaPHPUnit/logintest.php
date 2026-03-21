@@ -112,7 +112,7 @@ class LoginTest extends TestCase {
             'datos' => [
                 'nombre' => 'Daniel',
                 'apellido' => 'Sánchez',
-                'cedula' => '30800133',          
+                'cedula' => '30716541',          
                 'telefono' => '04141234567',
                 'correo' => 'daniel.sanc3hez.test@gmail.com',
                 'tipo_documento' => 'V',
