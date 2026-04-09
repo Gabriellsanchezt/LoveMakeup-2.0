@@ -7,6 +7,13 @@ use PHPMailer\PHPMailer\Exception;
 
 use LoveMakeup\Proyecto\Config\Conexion;
 
+use Dotenv\Dotenv;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$dotenv = Dotenv::createImmutable(dirname(__DIR__), 'passconfig.env');
+$dotenv->load();
+
 class PedidoWeb extends Conexion {
    
 
@@ -399,14 +406,14 @@ public function consultarDetallesPedido($id_pedido) {
         try {
             $mail = new PHPMailer(true);
             $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
+            $mail->Host = $_ENV['SMTP_HOST'];
             $mail->SMTPAuth = true;
-             $mail->Username = 'danielsanchezcev@gmail.com'; // Tu dirección de correo de Gmail
-               $mail->Password = 'psktsdtkrqyqjcbk'; 
+             $mail->Username = $_ENV['SMTP_USER'];
+               $mail->Password = $_ENV['SMTP_PASS']; 
             $mail->SMTPSecure = 'tls';
-            $mail->Port = 587;
+            $mail->Port = $_ENV['SMTP_PORT'];
     
-            $mail->setFrom('danielsanchezcev@gmail.com', 'Love Makeup');
+            $mail->setFrom($_ENV['SMTP_USER'], 'Love Makeup');
             $mail->addAddress($correo, $nombre_cliente);
             $mail->Subject = 'Informacion de Envio: Numero de Tracking';
             $mail->isHTML(true);

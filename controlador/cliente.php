@@ -21,7 +21,7 @@ if (isset($_POST['ver_mas'])) {
     exit;
 }
 //---
-require_once 'permiso.php';
+require_once 'permiso.php'; 
 $objcliente = new Cliente();
 //---
 $registro = $objcliente->consultar($_SESSION['limite_cliente']);
