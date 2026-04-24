@@ -345,12 +345,12 @@ if (isset($_POST['registrar'])) { //---------------------------------- REGISTRAR
                         }
 
                         // Validar y corregir nivel según el id_rol (por seguridad, ignoramos el nivel enviado y usamos el del rol)
-                        $nivel_valido = obtenerNivelPorRol($id_rol, $roll);
+                       /* $nivel_valido = obtenerNivelPorRol($id_rol, $roll);
                         
                         if ($nivel_valido === null) {
                             echo json_encode(['respuesta' => 0, 'accion' => 'actualizar', 'text' => '#0520 -No se pudo obtener el nivel del rol']);
                             exit;
-                        }
+                        }*/
 
                         //VALIDACION EXISTENTE
                         // USUARIO EXISTE
@@ -383,7 +383,7 @@ if (isset($_POST['registrar'])) { //---------------------------------- REGISTRAR
                                         'correo_actual' => $correo_actual,
                                         'rol_actual' => $rol_actual,
                                         'tipo_documento' => $tipo_documento,
-                                        'nivel' => $nivel_valido
+                                        //'nivel' => $nivel_valido
                                     ]
                             ]; 
                     

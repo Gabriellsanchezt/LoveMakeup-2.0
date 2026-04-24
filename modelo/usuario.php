@@ -364,7 +364,7 @@ private function verificarExistenciaROL($datos) {
 
     public function contarTotal(){
         $conex = $this->getConex2();
-        $sql = "SELECT COUNT(*) AS total FROM usuario WHERE estatus >= 1";
+        $sql = "SELECT COUNT(*) AS total FROM usuario WHERE estatus >= 1 AND id_rol = 1 OR id_rol >= 3";
         $consulta = $conex->prepare($sql);
         $consulta->execute();
         $fila = $consulta->fetch(\PDO::FETCH_ASSOC);

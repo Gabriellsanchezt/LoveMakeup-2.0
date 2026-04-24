@@ -1,19 +1,26 @@
 <?php 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use Dotenv\Dotenv;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+
+$dotenv = Dotenv::createImmutable(dirname(__DIR__), 'passconfig.env');
+$dotenv->load();
 
 function enviarBienvenida($correo) {
     try {
         $mail = new PHPMailer(true);
         $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
+        $mail->Host = $_ENV['SMTP_HOST'];
         $mail->SMTPAuth = true;
-        $mail->Username = 'danielsanchezcev@gmail.com'; // Tu dirección de correo de Gmail
-        $mail->Password = 'psktsdtkrqyqjcbk'; // Tu contraseña de Gmail o contraseña de aplicación
+        $mail->Username = $_ENV['SMTP_USER'];  
+        $mail->Password = $_ENV['SMTP_PASS'];
         $mail->SMTPSecure = 'tls';
-        $mail->Port = 587;
+        $mail->Port = $_ENV['SMTP_PORT'];
 
-        $mail->setFrom('danielsanchezcev@gmail.com', 'Love Makeup');
+        $mail->setFrom($_ENV['SMTP_USER'], 'Love Makeup');
         $mail->addAddress($correo);
         $mail->Subject = 'Love Makeup Tienda | Bienvenido';
         $mail->isHTML(true); // Habilitar HTML en el correo

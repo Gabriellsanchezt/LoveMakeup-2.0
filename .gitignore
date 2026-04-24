@@ -1,0 +1,14 @@
+# Configuración y Secretos
+passconfig.env
+
+# Dependencias de Composer
+/vendor/
+
+# Imagenes de archivos
+#/assets/img/captures/
+#/assets/img/Imgproductos/
+/assets/img/grafica_reportes/
+
+# PHPUnit
+.phpunit.result.cache
+/tests/.phpunit.result.cache

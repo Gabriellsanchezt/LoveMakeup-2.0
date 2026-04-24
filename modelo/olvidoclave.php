@@ -16,7 +16,7 @@ class Olvidoclave extends Conexion{
     }
 
 /*||||||||||||||||||||||||||||||| ENCRIPTACION DE CLAVE  |||||||||||||||||||||||||  01  |||||*/        
-     protected function encryptClave($datos) {
+     private function encryptClave($datos) {
             $config = [
                 'key' => "MotorLoveMakeup",
                 'method' => "AES-256-CBC"
@@ -28,7 +28,7 @@ class Olvidoclave extends Conexion{
     }
 
 /*||||||||||||||||||||||||||||||| DESINCRIPTACION DE CLAVE   |||||||||||||||||||||||||  02  |||||*/        
-    protected function decryptClave($datos) {
+    private function decryptClave($datos) {
         $config = [
             'key' => "MotorLoveMakeup",
             'method' => "AES-256-CBC"
@@ -51,7 +51,13 @@ class Olvidoclave extends Conexion{
         try {
             switch ($operacion) {
                  case 'actualizar':
-                     return $this->ejecutarActualizacionUsuario($datosProcesar);            
+
+                    if (!$this->verificarExistencia(['campo' => 'cedula', 'valor' => $datosProcesar['cedula']])) {
+                        return ['respuesta' => 0, 'accion' => 'actualizar', 'text' => 'El usuario no existe'];
+                    }
+
+                    return $this->ejecutarActualizacionUsuario($datosProcesar);
+
                 default:
                     return ['respuesta' => 0, 'mensaje' => 'Operación no válida'];
             }
@@ -91,6 +97,7 @@ class Olvidoclave extends Conexion{
             
         } catch (\PDOException $e) {
             if ($conex) {
+                return ['respuesta' => 0, 'accion' => 'actualizar'];
                 $conex->rollBack();
                 $conex = null;
             }
@@ -98,7 +105,25 @@ class Olvidoclave extends Conexion{
         }
     }
 
-   
+    private function verificarExistencia($datos) {
+        $conex = $this->getConex2();
+        try {
+            $conex->beginTransaction();
+            $sql = "SELECT COUNT(*) FROM persona 
+                    WHERE ({$datos['campo']} = :valor)";
+
+            $stmt = $conex->prepare($sql);
+            $stmt->execute(['valor' => $datos['valor']]);
+            $existe = $stmt->fetchColumn() > 0;
+
+            $conex->commit();
+            $conex = null;
+            return $existe;
+        } catch (\PDOException $e) {
+            if ($conex) $conex = null;
+            throw $e;
+        }
+    }
    
   
 }

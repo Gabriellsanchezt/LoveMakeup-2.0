@@ -89,11 +89,13 @@ if (isset($_POST['ingresar'])) { /*|||||||||||||||||||||||||||||||||||||||||||||
                     exit;
                 }
 
-                if (!preg_match('/^\d{1,5}([.,]\d{1,3})?$/', $dolar) || strlen(str_replace([',','.'],'',$dolar)) < 4 || strlen(str_replace([',','.'],'',$dolar)) > 8) {
-                    echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Tasa inválida ($dolar)"]);
-                    exit;
+                if(!$dolar === 0){
+                    if (!preg_match('/^\d{1,5}([.,]\d{1,3})?$/', $dolar) || strlen(str_replace([',','.'],'',$dolar)) < 4 || strlen(str_replace([',','.'],'',$dolar)) > 8) {
+                        echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => "#0310 - Tasa inválida ($dolar)"]);
+                        exit;
+                    }
                 }
-
+               
                 // Validar tipo_documento
                 if (!validarTipoDocumento($documento)) {
                     echo json_encode(['respuesta' => 0, 'accion' => 'ingresar', 'text' => '#0320 - El tipo de documento no es válido']);

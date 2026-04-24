@@ -280,8 +280,8 @@ class UsuarioTest extends TestCase {
         $cantidad = 1000;
         for ($i = 1; $i <= $cantidad; $i++) {
            
-            $cedula = "10120" . $i;
-            $correo = "usuaT{$i}@test.com";
+            $cedula = "1011" . $i;
+            $correo = "usuaTEST{$i}@test.com";
 
             $datosUsuario = [
                 'operacion' => 'registrar',
