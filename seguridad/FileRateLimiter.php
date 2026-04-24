@@ -53,5 +53,15 @@ class FileRateLimiter {
         fclose($handle);
 
         return $data['count'] <= $this->limit;
+
+        // Al final del método check, antes de cerrar el archivo:
+if (rand(1, 100) === 1) { // Solo corre el 1% de las veces para no afectar rendimiento
+    $files = glob($this->storagePath . '*.json');
+    foreach ($files as $f) {
+        if (filemtime($f) < (time() - 3600)) { // Borra archivos de hace más de 1 hora
+            unlink($f);
+        }
+    }
+}
     }
 }
