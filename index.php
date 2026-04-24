@@ -1,6 +1,17 @@
 <?php
     require __DIR__ . '/vendor/autoload.php';
 
+    use Seguridad\FileRateLimiter;
+
+// --- INICIO DE PROTECCIÓN ---
+// Instanciamos con 60 peticiones por cada 60 segundos
+$limiter = new FileRateLimiter(60, 60); 
+
+if (!$limiter->check($_SERVER['REMOTE_ADDR'])) {
+    http_response_code(429);
+    // Puedes personalizar este mensaje o redirigir a una página de error
+    exit('<h1>429 Too Many Requests</h1><p>Has excedido el límite de seguridad. Por favor, espera un minuto.</p>');
+}
     // Iniciar sesión para validar acceso (si no está ya iniciada)
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
