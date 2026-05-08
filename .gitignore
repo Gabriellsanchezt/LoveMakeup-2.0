@@ -5,8 +5,8 @@ passconfig.env
 /vendor/
 
 # Imagenes de archivos
-#/assets/img/captures/
-#/assets/img/Imgproductos/
+/assets/img/captures/
+/assets/img/Imgproductos/
 /assets/img/grafica_reportes/
 
 # PHPUnit
